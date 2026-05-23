@@ -56,6 +56,7 @@ export function useTvRoom(code) {
 
   // ── Load ─────────────────────────────────────────────────
   const loadRoom = useCallback(async () => {
+    if (!code) return null
     const { data } = await supabase
       .from('tv_rooms').select('*').eq('code', code).single()
     if (data) setRoom(data)
@@ -77,33 +78,46 @@ export function useTvRoom(code) {
   }, [])
 
   useEffect(() => {
-    let roomId
+    if (!code) { setLoading(false); return }
     ;(async () => {
       const r = await loadRoom()
       if (!r) { setLoading(false); return }
-      roomId = r.id
       await Promise.all([loadParticipants(r.id), loadAnswers(r.id)])
       setLoading(false)
 
-      // ── Realtime ────────────────────────────────────────
-      channelRef.current = supabase.channel(`tv-${r.id}`)
+      // Pas de filtre côté serveur (instable avec UUIDs sur postgres_changes)
+      // → on filtre par room_id côté client
+      channelRef.current = supabase
+        .channel(`tv-room-${r.id}`)
         .on('postgres_changes',
-          { event: 'UPDATE', schema: 'public', table: 'tv_rooms', filter: `id=eq.${r.id}` },
-          ({ new: updated }) => setRoom(updated))
+          { event: 'UPDATE', schema: 'public', table: 'tv_rooms' },
+          ({ new: updated }) => {
+            if (updated.id === r.id) setRoom(updated)
+          })
         .on('postgres_changes',
-          { event: 'INSERT', schema: 'public', table: 'tv_participants', filter: `room_id=eq.${r.id}` },
-          () => loadParticipants(r.id))
+          { event: 'INSERT', schema: 'public', table: 'tv_participants' },
+          ({ new: row }) => {
+            if (row?.room_id === r.id) loadParticipants(r.id)
+          })
         .on('postgres_changes',
-          { event: 'UPDATE', schema: 'public', table: 'tv_participants', filter: `room_id=eq.${r.id}` },
-          () => loadParticipants(r.id))
+          { event: 'UPDATE', schema: 'public', table: 'tv_participants' },
+          ({ new: row }) => {
+            if (row?.room_id === r.id) loadParticipants(r.id)
+          })
         .on('postgres_changes',
-          { event: 'INSERT', schema: 'public', table: 'tv_answers', filter: `room_id=eq.${r.id}` },
-          ({ new: ans }) => setAnswers(prev => [...prev.filter(a => a.id !== ans.id), ans]))
+          { event: 'INSERT', schema: 'public', table: 'tv_answers' },
+          ({ new: ans }) => {
+            if (ans?.room_id === r.id)
+              setAnswers(prev => [...prev.filter(a => a.id !== ans.id), ans])
+          })
         .subscribe()
     })()
 
     return () => {
-      if (channelRef.current) supabase.removeChannel(channelRef.current)
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current)
+        channelRef.current = null
+      }
     }
   }, [code, loadRoom, loadParticipants, loadAnswers])
 
