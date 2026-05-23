@@ -1,6 +1,8 @@
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useGame, levelFromXP } from '../context/GameContext.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
+import { supabase } from '../lib/supabase.js'
 import { THEME_LIST } from '../data/themes.js'
 import { useAllQuestions } from '../hooks/useQuestions.js'
 
@@ -112,6 +114,9 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Classement */}
+      <LeaderboardWidget currentUserId={user?.id} />
+
       {/* Invite à créer un compte si non connecté */}
       {!user && (
         <section className="card p-6 flex flex-col sm:flex-row items-center gap-4 border border-midi-accent/20 bg-midi-accent/5">
@@ -124,6 +129,94 @@ export default function Home() {
         </section>
       )}
     </div>
+  )
+}
+
+function LeaderboardWidget({ currentUserId }) {
+  const [rows, setRows]       = useState([])
+  const [loading, setLoading] = useState(true)
+  const medals = ['🥇', '🥈', '🥉']
+
+  useEffect(() => {
+    async function load() {
+      const [{ data: profiles }, { data: scores }] = await Promise.all([
+        supabase.from('profiles').select('id, nickname, avatar, city, country, is_icam'),
+        supabase.from('tv_participants').select('profile_id, score'),
+      ])
+      const scoreMap = {}
+      for (const s of (scores ?? [])) {
+        scoreMap[s.profile_id] = (scoreMap[s.profile_id] ?? 0) + (s.score ?? 0)
+      }
+      const ranked = (profiles ?? [])
+        .map(p => ({ ...p, total_score: scoreMap[p.id] ?? 0 }))
+        .sort((a, b) => b.total_score - a.total_score)
+        .slice(0, 8)
+      setRows(ranked)
+      setLoading(false)
+    }
+    load()
+  }, [])
+
+  return (
+    <section>
+      <div className="flex items-center justify-between mb-4">
+        <SectionTitle>🏆 Classement</SectionTitle>
+        <Link to="/classement" className="text-sm text-midi-accent hover:underline">
+          Voir tout →
+        </Link>
+      </div>
+
+      <div className="card overflow-hidden">
+        {loading ? (
+          <div className="flex justify-center py-10">
+            <div className="w-6 h-6 rounded-full border-2 border-midi-accent border-t-transparent animate-spin" />
+          </div>
+        ) : rows.length === 0 ? (
+          <p className="text-center text-slate-500 py-10 text-sm">
+            Aucune partie TV jouée pour l'instant.<br />
+            <Link to="/tv" className="text-midi-accent hover:underline">Lance une partie →</Link>
+          </p>
+        ) : (
+          <div>
+            {rows.map((row, i) => {
+              const isMe = row.id === currentUserId
+              return (
+                <div key={row.id}
+                  className={`flex items-center gap-3 px-5 py-3 border-b border-white/5 last:border-0
+                    ${isMe ? 'bg-midi-accent/5' : 'hover:bg-white/3 transition-colors'}`}>
+                  <span className="w-7 text-center shrink-0">
+                    {i < 3
+                      ? <span className="text-lg">{medals[i]}</span>
+                      : <span className="text-slate-500 text-sm font-mono">{i + 1}</span>}
+                  </span>
+                  <span className="text-xl shrink-0">{row.avatar ?? '🎭'}</span>
+                  <div className="flex-1 min-w-0">
+                    <span className={`font-semibold truncate block ${isMe ? 'text-midi-accent' : 'text-white'}`}>
+                      {row.nickname}{isMe && <span className="ml-1 text-xs opacity-60">(moi)</span>}
+                    </span>
+                    {(row.city || row.country) && (
+                      <span className="text-xs text-slate-600">
+                        {[row.city, row.country].filter(Boolean).join(', ')}
+                      </span>
+                    )}
+                  </div>
+                  {row.is_icam && (
+                    <span className="text-xs bg-midi-accent/20 text-midi-accent px-2 py-0.5 rounded-full font-semibold shrink-0">
+                      ICAM
+                    </span>
+                  )}
+                  <span className="font-bold tabular-nums text-midi-accent shrink-0 min-w-[60px] text-right">
+                    {row.total_score > 0
+                      ? row.total_score.toLocaleString('fr-FR') + ' €'
+                      : <span className="text-slate-600 font-normal">—</span>}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
+    </section>
   )
 }
 

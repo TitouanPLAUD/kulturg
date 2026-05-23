@@ -2,20 +2,10 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useGame, levelFromXP, nextLevelThreshold } from '../context/GameContext.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 
-const gameLinks = [
-  { to: '/qcm',            label: 'QCM',             emoji: '❓' },
-  { to: '/duel',           label: 'Duel',            emoji: '⚔️' },
-  { to: '/coup-de-maitre', label: 'Coup de Maître',  emoji: '🎯' },
-  { to: '/mot',            label: 'Mot Mystérieux',  emoji: '🔤' },
-  { to: '/etoile',         label: 'Étoile',          emoji: '⭐' },
-  { to: '/revision',       label: 'Révision',        emoji: '🃏' },
-]
-
-const utilLinks = [
+const navLinks = [
+  { to: '/',           label: 'Accueil',    emoji: '🏠', end: true },
   { to: '/tv',         label: 'Jeu TV',     emoji: '📺' },
   { to: '/classement', label: 'Classement', emoji: '🏆' },
-  { to: '/profil',     label: 'Profil',     emoji: '👤' },
-  { to: '/admin',      label: 'Admin',      emoji: '⚙️' },
 ]
 
 function NavItem({ to, label, emoji, end = false }) {
@@ -55,12 +45,9 @@ export default function Layout() {
             <span className="hidden sm:block">KulturG</span>
           </NavLink>
 
-          {/* Nav desktop — jeux */}
-          <nav className="ml-4 hidden lg:flex items-center gap-0.5 overflow-x-auto">
-            <NavItem to="/" label="Accueil" emoji="🏠" end />
-            {gameLinks.map(l => <NavItem key={l.to} {...l} />)}
-            <span className="w-px h-5 bg-white/10 mx-1" />
-            {utilLinks.map(l => <NavItem key={l.to} {...l} />)}
+          {/* Nav desktop */}
+          <nav className="ml-4 hidden md:flex items-center gap-0.5">
+            {navLinks.map(l => <NavItem key={l.to} {...l} end={l.end} />)}
             {user && <NavItem to="/amis" label="Amis" emoji="👥" />}
           </nav>
 
@@ -106,10 +93,8 @@ export default function Layout() {
         </div>
 
         {/* Nav mobile */}
-        <nav className="lg:hidden flex items-center gap-0.5 overflow-x-auto scrollbar-thin px-3 py-2 border-t border-white/5">
-          <MobileLink to="/" label="🏠" end />
-          {gameLinks.map(l => <MobileLink key={l.to} to={l.to} label={l.emoji} />)}
-          {utilLinks.map(l => <MobileLink key={l.to} to={l.to} label={l.emoji} />)}
+        <nav className="md:hidden flex items-center gap-0.5 overflow-x-auto scrollbar-thin px-3 py-2 border-t border-white/5">
+          {navLinks.map(l => <MobileLink key={l.to} to={l.to} label={l.emoji} end={l.end} />)}
           {user && <MobileLink to="/amis" label="👥" />}
         </nav>
       </header>
