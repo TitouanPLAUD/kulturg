@@ -174,7 +174,7 @@ function LeaderboardWidget({ currentUserId }) {
         ) : rows.length === 0 ? (
           <p className="text-center text-slate-500 py-10 text-sm">
             Aucune partie TV jouée pour l'instant.<br />
-            <Link to="/tv" className="text-midi-accent hover:underline">Lance une partie →</Link>
+            <Link to="/multi" className="text-midi-accent hover:underline">Lance une partie →</Link>
           </p>
         ) : (
           <div>

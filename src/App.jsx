@@ -14,12 +14,15 @@ import Amis from './pages/Amis.jsx'
 import TvLanding from './pages/TvLanding.jsx'
 import TvGame from './pages/TvGame.jsx'
 import Classement from './pages/Classement.jsx'
+import Multijoueur from './pages/Multijoueur.jsx'
+import DuelGame from './pages/DuelGame.jsx'
 
 export default function App() {
   return (
     <Routes>
       <Route path="auth" element={<Auth />} />
       <Route path="tv/:code" element={<TvGame />} />
+      <Route path="pvp/:code" element={<DuelGame />} />
       <Route element={<Layout />}>
         <Route index element={<Home />} />
         <Route path="qcm" element={<QCM />} />
@@ -31,6 +34,7 @@ export default function App() {
         <Route path="profil" element={<Profil />} />
         <Route path="amis" element={<Amis />} />
         <Route path="classement" element={<Classement />} />
+        <Route path="multi" element={<Multijoueur />} />
         <Route path="tv" element={<TvLanding />} />
         <Route path="admin" element={<Admin />} />
       </Route>

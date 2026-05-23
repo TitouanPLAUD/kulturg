@@ -3,9 +3,9 @@ import { useGame, levelFromXP, nextLevelThreshold } from '../context/GameContext
 import { useAuth } from '../context/AuthContext.jsx'
 
 const navLinks = [
-  { to: '/',           label: 'Accueil',    emoji: '🏠', end: true },
-  { to: '/tv',         label: 'Jeu TV',     emoji: '📺' },
-  { to: '/classement', label: 'Classement', emoji: '🏆' },
+  { to: '/',           label: 'Accueil',      emoji: '🏠', end: true },
+  { to: '/multi',      label: 'Multijoueur',  emoji: '🎮' },
+  { to: '/classement', label: 'Classement',   emoji: '🏆' },
 ]
 
 function NavItem({ to, label, emoji, end = false }) {
