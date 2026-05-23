@@ -12,9 +12,10 @@ const gameLinks = [
 ]
 
 const utilLinks = [
-  { to: '/tv',     label: 'Jeu TV',  emoji: '📺' },
-  { to: '/profil', label: 'Profil',  emoji: '👤' },
-  { to: '/admin',  label: 'Admin',   emoji: '⚙️' },
+  { to: '/tv',         label: 'Jeu TV',     emoji: '📺' },
+  { to: '/classement', label: 'Classement', emoji: '🏆' },
+  { to: '/profil',     label: 'Profil',     emoji: '👤' },
+  { to: '/admin',      label: 'Admin',      emoji: '⚙️' },
 ]
 
 function NavItem({ to, label, emoji, end = false }) {

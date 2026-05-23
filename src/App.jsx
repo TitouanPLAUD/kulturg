@@ -13,6 +13,7 @@ import Auth from './pages/Auth.jsx'
 import Amis from './pages/Amis.jsx'
 import TvLanding from './pages/TvLanding.jsx'
 import TvGame from './pages/TvGame.jsx'
+import Classement from './pages/Classement.jsx'
 
 export default function App() {
   return (
@@ -29,6 +30,7 @@ export default function App() {
         <Route path="revision" element={<Revision />} />
         <Route path="profil" element={<Profil />} />
         <Route path="amis" element={<Amis />} />
+        <Route path="classement" element={<Classement />} />
         <Route path="tv" element={<TvLanding />} />
         <Route path="admin" element={<Admin />} />
       </Route>

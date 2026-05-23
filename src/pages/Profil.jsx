@@ -1,6 +1,8 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useGame, levelFromXP, nextLevelThreshold, BADGES } from '../context/GameContext.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
+import { supabase } from '../lib/supabase.js'
 import { THEME_LIST } from '../data/themes.js'
 
 export default function Profil() {
@@ -76,6 +78,9 @@ export default function Profil() {
           <Link to="/auth" className="btn btn-primary text-xs px-3 py-1.5 shrink-0">Connexion</Link>
         </div>
       )}
+
+      {/* Localisation & ICAM */}
+      {user && profile && <LocationCard profile={profile} />}
 
       {/* Stats */}
       <section>
@@ -161,6 +166,67 @@ export default function Profil() {
         </section>
       )}
     </div>
+  )
+}
+
+function LocationCard({ profile }) {
+  const [country, setCountry] = useState(profile.country ?? '')
+  const [city,    setCity]    = useState(profile.city    ?? '')
+  const [isIcam,  setIsIcam]  = useState(profile.is_icam ?? false)
+  const [saving,  setSaving]  = useState(false)
+  const [saved,   setSaved]   = useState(false)
+
+  async function save(e) {
+    e.preventDefault()
+    setSaving(true)
+    await supabase.from('profiles').update({
+      country: country.trim() || null,
+      city:    city.trim()    || null,
+      is_icam: isIcam,
+    }).eq('id', profile.id)
+    setSaving(false)
+    setSaved(true)
+    setTimeout(() => setSaved(false), 2500)
+  }
+
+  return (
+    <section className="card p-5">
+      <h2 className="heading text-xl mb-4">Localisation &amp; Classement</h2>
+      <form onSubmit={save} className="space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm text-slate-400 mb-1">Pays</label>
+            <input className="input w-full" placeholder="France"
+              value={country} onChange={e => setCountry(e.target.value)} maxLength={50} />
+          </div>
+          <div>
+            <label className="block text-sm text-slate-400 mb-1">Ville</label>
+            <input className="input w-full" placeholder="Paris"
+              value={city} onChange={e => setCity(e.target.value)} maxLength={50} />
+          </div>
+        </div>
+
+        <label className="flex items-center gap-3 cursor-pointer select-none group">
+          <div
+            onClick={() => setIsIcam(v => !v)}
+            className={`w-5 h-5 rounded border-2 flex items-center justify-center transition shrink-0
+              ${isIcam ? 'bg-midi-accent border-midi-accent' : 'border-white/20 group-hover:border-white/40'}`}>
+            {isIcam && <span className="text-slate-900 text-xs font-bold">✓</span>}
+          </div>
+          <span className="text-sm text-slate-300">
+            Je fais partie de <span className="text-midi-accent font-semibold">l'ICAM</span>
+          </span>
+        </label>
+
+        <div className="flex items-center gap-3">
+          <button type="submit" disabled={saving}
+            className="btn btn-primary text-sm px-4 py-2 disabled:opacity-60">
+            {saving ? 'Enregistrement…' : 'Enregistrer'}
+          </button>
+          {saved && <span className="text-green-400 text-sm">✓ Sauvegardé</span>}
+        </div>
+      </form>
+    </section>
   )
 }
 

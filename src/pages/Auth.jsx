@@ -5,13 +5,16 @@ import { useAuth } from '../context/AuthContext.jsx'
 
 export default function Auth() {
   const { user } = useAuth()
-  const [mode, setMode] = useState('login') // 'login' | 'signup'
-  const [email, setEmail] = useState('')
+  const [mode, setMode]       = useState('login')
+  const [email, setEmail]     = useState('')
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [nickname, setNickname] = useState('')
-  const [error, setError] = useState('')
-  const [info, setInfo] = useState('')
+  const [country, setCountry] = useState('')
+  const [city, setCity]       = useState('')
+  const [isIcam, setIsIcam]   = useState(false)
+  const [error, setError]     = useState('')
+  const [info, setInfo]       = useState('')
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
 
@@ -40,12 +43,20 @@ export default function Auth() {
           setError('Le pseudo doit faire au moins 2 caractères.')
           return
         }
-        const { error: err } = await supabase.auth.signUp({
+        const { data: signUpData, error: err } = await supabase.auth.signUp({
           email,
           password,
           options: { data: { nickname: nickname.trim() } },
         })
         if (err) throw err
+        // Persist extra profile fields (trigger already created the row)
+        if (signUpData?.user) {
+          await supabase.from('profiles').update({
+            country: country.trim() || null,
+            city:    city.trim()    || null,
+            is_icam: isIcam,
+          }).eq('id', signUpData.user.id)
+        }
         setInfo('Inscription réussie ! Vérifie ta boîte mail pour confirmer ton compte.')
       } else {
         const { error: err } = await supabase.auth.signInWithPassword({ email, password })
@@ -153,6 +164,47 @@ export default function Auth() {
                   required
                   autoComplete="new-password"
                 />
+              </div>
+            )}
+
+            {mode === 'signup' && (
+              <div className="space-y-3 pt-1 border-t border-white/10">
+                <p className="text-xs text-slate-500 pt-1">Localisation <span className="opacity-60">(optionnel, pour le classement)</span></p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm text-slate-300 mb-1">Pays</label>
+                    <input
+                      className="input w-full"
+                      type="text"
+                      placeholder="France"
+                      value={country}
+                      onChange={e => setCountry(e.target.value)}
+                      maxLength={50}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-slate-300 mb-1">Ville</label>
+                    <input
+                      className="input w-full"
+                      type="text"
+                      placeholder="Paris"
+                      value={city}
+                      onChange={e => setCity(e.target.value)}
+                      maxLength={50}
+                    />
+                  </div>
+                </div>
+                <label className="flex items-center gap-3 cursor-pointer select-none group">
+                  <div
+                    onClick={() => setIsIcam(v => !v)}
+                    className={`w-5 h-5 rounded border-2 flex items-center justify-center transition shrink-0
+                      ${isIcam ? 'bg-midi-accent border-midi-accent' : 'border-white/20 group-hover:border-white/40'}`}>
+                    {isIcam && <span className="text-slate-900 text-xs font-bold">✓</span>}
+                  </div>
+                  <span className="text-sm text-slate-300">
+                    Je fais partie de <span className="text-midi-accent font-semibold">l'ICAM</span>
+                  </span>
+                </label>
               </div>
             )}
 
