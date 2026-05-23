@@ -11,11 +11,14 @@ import Profil from './pages/Profil.jsx'
 import Admin from './pages/Admin.jsx'
 import Auth from './pages/Auth.jsx'
 import Amis from './pages/Amis.jsx'
+import TvLanding from './pages/TvLanding.jsx'
+import TvGame from './pages/TvGame.jsx'
 
 export default function App() {
   return (
     <Routes>
       <Route path="auth" element={<Auth />} />
+      <Route path="tv/:code" element={<TvGame />} />
       <Route element={<Layout />}>
         <Route index element={<Home />} />
         <Route path="qcm" element={<QCM />} />
@@ -26,6 +29,7 @@ export default function App() {
         <Route path="revision" element={<Revision />} />
         <Route path="profil" element={<Profil />} />
         <Route path="amis" element={<Amis />} />
+        <Route path="tv" element={<TvLanding />} />
         <Route path="admin" element={<Admin />} />
       </Route>
     </Routes>
