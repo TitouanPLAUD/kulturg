@@ -9,10 +9,12 @@ import EtoileMysterieuse from './pages/EtoileMysterieuse.jsx'
 import Revision from './pages/Revision.jsx'
 import Profil from './pages/Profil.jsx'
 import Admin from './pages/Admin.jsx'
+import Auth from './pages/Auth.jsx'
 
 export default function App() {
   return (
     <Routes>
+      <Route path="auth" element={<Auth />} />
       <Route element={<Layout />}>
         <Route index element={<Home />} />
         <Route path="qcm" element={<QCM />} />

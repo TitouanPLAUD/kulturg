@@ -1,5 +1,6 @@
-import { NavLink, Outlet } from 'react-router-dom'
+import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useGame, levelFromXP, nextLevelThreshold } from '../context/GameContext.jsx'
+import { useAuth } from '../context/AuthContext.jsx'
 
 const links = [
   { to: '/', label: 'Accueil', emoji: '🏠' },
@@ -15,9 +16,16 @@ const links = [
 
 export default function Layout() {
   const { state } = useGame()
+  const { user, profile, signOut } = useAuth()
+  const navigate = useNavigate()
   const level = levelFromXP(state.totalXP)
   const next = nextLevelThreshold(state.totalXP)
   const progress = next === 0 ? 100 : Math.min(100, ((state.totalXP - (next === 100 ? 0 : 0)) / next) * 100)
+
+  async function handleSignOut() {
+    await signOut()
+    navigate('/')
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -37,14 +45,38 @@ export default function Layout() {
               </NavLink>
             ))}
           </nav>
-          <div className="flex items-center gap-3">
-            <div className="text-right hidden sm:block">
-              <div className="text-xs text-slate-400">Niveau {level}</div>
-              <div className="text-sm font-semibold text-midi-accent">{state.totalXP} XP</div>
-            </div>
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-midi-accent to-amber-600 grid place-items-center font-display text-xl text-slate-900 shadow-lg">
-              {level}
-            </div>
+
+          <div className="flex items-center gap-3 ml-2">
+            {user ? (
+              <>
+                <div className="text-right hidden sm:block">
+                  <div className="text-xs text-slate-400 truncate max-w-[120px]">{profile?.nickname ?? user.email}</div>
+                  <div className="text-sm font-semibold text-midi-accent">{state.totalXP} XP</div>
+                </div>
+                <div className="w-11 h-11 rounded-full bg-gradient-to-br from-midi-accent to-amber-600 grid place-items-center font-display text-lg text-slate-900 shadow-lg select-none">
+                  {profile?.avatar ?? '🎭'}
+                </div>
+                <button
+                  onClick={handleSignOut}
+                  className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-slate-400 hover:bg-white/5 hover:text-white transition"
+                >
+                  Déconnexion
+                </button>
+              </>
+            ) : (
+              <>
+                <div className="text-right hidden sm:block">
+                  <div className="text-xs text-slate-400">Niveau {level}</div>
+                  <div className="text-sm font-semibold text-midi-accent">{state.totalXP} XP</div>
+                </div>
+                <NavLink
+                  to="/auth"
+                  className="px-4 py-2 rounded-lg text-sm font-medium bg-midi-accent text-slate-900 hover:bg-amber-400 transition"
+                >
+                  Connexion
+                </NavLink>
+              </>
+            )}
           </div>
         </div>
         <div className="h-1 bg-white/5">
@@ -57,6 +89,14 @@ export default function Layout() {
               {l.emoji} {l.label}
             </NavLink>
           ))}
+          {user && (
+            <button
+              onClick={handleSignOut}
+              className="px-3 py-1.5 rounded-lg text-xs text-slate-400 whitespace-nowrap ml-auto"
+            >
+              Déconnexion
+            </button>
+          )}
         </nav>
       </header>
 
