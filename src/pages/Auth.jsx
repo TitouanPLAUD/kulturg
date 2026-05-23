@@ -1,8 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase.js'
+import { useAuth } from '../context/AuthContext.jsx'
 
 export default function Auth() {
+  const { user } = useAuth()
   const [mode, setMode] = useState('login') // 'login' | 'signup'
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -12,6 +14,11 @@ export default function Auth() {
   const [info, setInfo] = useState('')
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
+
+  // Déjà connecté → redirection
+  useEffect(() => {
+    if (user) navigate('/', { replace: true })
+  }, [user, navigate])
 
   function reset() {
     setError('')

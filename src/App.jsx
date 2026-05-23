@@ -10,6 +10,7 @@ import Revision from './pages/Revision.jsx'
 import Profil from './pages/Profil.jsx'
 import Admin from './pages/Admin.jsx'
 import Auth from './pages/Auth.jsx'
+import Amis from './pages/Amis.jsx'
 
 export default function App() {
   return (
@@ -24,6 +25,7 @@ export default function App() {
         <Route path="etoile" element={<EtoileMysterieuse />} />
         <Route path="revision" element={<Revision />} />
         <Route path="profil" element={<Profil />} />
+        <Route path="amis" element={<Amis />} />
         <Route path="admin" element={<Admin />} />
       </Route>
     </Routes>
