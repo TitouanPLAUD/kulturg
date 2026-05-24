@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useTvRoom, gainForAnswer, computePrizePool } from '../hooks/useTvRoom.js'
+import { JLRProvider, useJLR } from '../components/JLRAvatar.jsx'
 
 // ─── Phase metadata ───────────────────────────────────────────
 const PHASE_META = {
@@ -47,10 +48,19 @@ function useTimer(startAt, duration) {
 
 // ─── Root ─────────────────────────────────────────────────────
 export default function TvGame() {
+  return (
+    <JLRProvider>
+      <TvGameCore />
+    </JLRProvider>
+  )
+}
+
+function TvGameCore() {
   const { code } = useParams()
   const { user } = useAuth()
   const { room, participants, answers, myAnswers, isHost, loading,
           submitAnswer, hostAdvance, startGame } = useTvRoom(code)
+  const { trigger } = useJLR()
 
   const [showTransition, setShowTransition] = useState(false)
   const [transPhase, setTransPhase]         = useState(null)
@@ -64,9 +74,14 @@ export default function TvGame() {
       setTransPhase(room.phase)
       setShowTransition(true)
       const t = setTimeout(() => setShowTransition(false), 2800)
+
+      // JLR annonce la phase
+      const phaseKey = room.phase === 'finished' ? 'finished' : room.phase
+      trigger('intro', phaseKey, 5000)
+
       return () => clearTimeout(t)
     }
-  }, [room?.phase])
+  }, [room?.phase, trigger])
 
   if (loading) return <TV><Centered><Spinner /><p className="text-slate-400 mt-4">Chargement…</p></Centered></TV>
   if (!room)   return <TV><Centered><p className="text-4xl mb-3">❓</p><p className="text-slate-400 mb-6">Salle introuvable.</p><BackBtn /></Centered></TV>
@@ -159,6 +174,22 @@ function TopBar({ phase, pd, prizePool }) {
 // ─── Lobby ────────────────────────────────────────────────────
 function LobbyPhase({ room, participants, isHost, onStart, code }) {
   const [copied, setCopied] = useState(false)
+  const { trigger } = useJLR()
+
+  // Accueil JLR dès l'entrée dans le lobby
+  useEffect(() => {
+    const t = setTimeout(() => trigger('idle', 'lobby', 0), 800)
+    return () => clearTimeout(t)
+  }, [trigger])
+
+  // JLR réagit quand un joueur rejoint
+  const prevCount = useRef(participants.length)
+  useEffect(() => {
+    if (participants.length > prevCount.current) {
+      trigger('excited', 'lobby', 4000)
+    }
+    prevCount.current = participants.length
+  }, [participants.length, trigger])
 
   function copyCode() {
     navigator.clipboard.writeText(code)
@@ -259,20 +290,46 @@ function GrandOralPhase({ pd, participants, answers, myAnswers, isHost, submitAn
   const { secs, pct, expired } = useTimer(pd.q_start_at, DURATIONS.grand_oral)
   const [selected, setSelected] = useState(null)
   const [revealed, setRevealed] = useState(false)
-  const advRef    = useRef(false)
-  const startedAt = pd.q_start_at ? new Date(pd.q_start_at).getTime() : Date.now()
+  const advRef     = useRef(false)
+  const urgentFired = useRef(false)
+  const revealFired = useRef(false)
+  const startedAt  = pd.q_start_at ? new Date(pd.q_start_at).getTime() : Date.now()
+  const { trigger } = useJLR()
 
   const myAnswer  = myAnswers.find(a => a.phase === phase && a.q_idx === q_idx)
   const qAnswers  = answers.filter(a => a.phase === phase && a.q_idx === q_idx)
 
-  useEffect(() => { setSelected(null); setRevealed(false); advRef.current = false }, [q_idx])
+  useEffect(() => {
+    setSelected(null); setRevealed(false)
+    advRef.current = false; urgentFired.current = false; revealFired.current = false
+    trigger('thinking', 'thinking', 3500)
+  }, [q_idx, trigger])
+
   useEffect(() => { if (expired && !revealed) setRevealed(true) }, [expired, revealed])
+
+  // JLR urgent à 5s
+  useEffect(() => {
+    if (secs <= 5 && secs > 0 && !revealed && !urgentFired.current) {
+      urgentFired.current = true
+      trigger('urgent', 'urgent', 3000)
+    }
+  }, [secs, revealed, trigger])
 
   useEffect(() => {
     if (!isHost || revealed) return
     if (participants.length > 0 && participants.every(p => qAnswers.some(a => a.profile_id === p.profile_id)))
       setRevealed(true)
   }, [qAnswers, participants, isHost, revealed])
+
+  // JLR réaction à la révélation
+  useEffect(() => {
+    if (!revealed || revealFired.current) return
+    revealFired.current = true
+    if (myAnswer) {
+      if (myAnswer.is_correct) trigger('excited', 'correct', 5000)
+      else trigger('sad', 'wrong', 5000)
+    }
+  }, [revealed, myAnswer, trigger])
 
   useEffect(() => {
     if (!isHost || !revealed || advRef.current) return
@@ -324,8 +381,12 @@ function DuelPhase({ pd, participants, answers, myAnswers, isHost, submitAnswer,
   const { secs, pct, expired } = useTimer(pd.q_start_at, DURATIONS.duel)
   const [selected, setSelected] = useState(null)
   const [revealed, setRevealed] = useState(false)
-  const advRef    = useRef(false)
-  const startedAt = pd.q_start_at ? new Date(pd.q_start_at).getTime() : Date.now()
+  const advRef      = useRef(false)
+  const urgentFired = useRef(false)
+  const buzzFired   = useRef(false)
+  const revealFired = useRef(false)
+  const startedAt   = pd.q_start_at ? new Date(pd.q_start_at).getTime() : Date.now()
+  const { trigger } = useJLR()
 
   const myAnswer  = myAnswers.find(a => a.phase === phase && a.q_idx === q_idx)
   const qAnswers  = answers.filter(a => a.phase === phase && a.q_idx === q_idx)
@@ -334,15 +395,50 @@ function DuelPhase({ pd, participants, answers, myAnswers, isHost, submitAnswer,
     .filter(a => a.is_correct)
     .sort((a, b) => new Date(a.answered_at) - new Date(b.answered_at))[0] ?? null
 
-  useEffect(() => { setSelected(null); setRevealed(false); advRef.current = false }, [q_idx])
+  // Cherche aussi le premier buzz (correct ou non)
+  const firstBuzz = qAnswers
+    .sort((a, b) => new Date(a.answered_at) - new Date(b.answered_at))[0] ?? null
+
+  useEffect(() => {
+    setSelected(null); setRevealed(false)
+    advRef.current = false; urgentFired.current = false
+    buzzFired.current = false; revealFired.current = false
+    trigger('thinking', 'thinking', 3500)
+  }, [q_idx, trigger])
+
   useEffect(() => { if (expired && !revealed) setRevealed(true) }, [expired, revealed])
 
-  // Reveal 1.2s after first correct buzz
+  // JLR sur buzz
+  useEffect(() => {
+    if (firstBuzz && !buzzFired.current) {
+      buzzFired.current = true
+      trigger('shocked', 'buzz', 2500)
+    }
+  }, [firstBuzz, trigger])
+
+  // JLR urgent
+  useEffect(() => {
+    if (secs <= 4 && secs > 0 && !revealed && !urgentFired.current && !firstBuzz) {
+      urgentFired.current = true
+      trigger('urgent', 'urgent', 3000)
+    }
+  }, [secs, revealed, firstBuzz, trigger])
+
+  // Révélation 1.2s après premier buzz correct
   useEffect(() => {
     if (revealed || !duelWinner) return
     const t = setTimeout(() => setRevealed(true), 1200)
     return () => clearTimeout(t)
   }, [duelWinner, revealed])
+
+  // JLR réaction révélation
+  useEffect(() => {
+    if (!revealed || revealFired.current) return
+    revealFired.current = true
+    if (duelWinner) trigger('excited', 'duel_win', 5000)
+    else if (firstBuzz && !duelWinner) trigger('sad', 'duel_miss', 5000)
+    else trigger('sad', 'wrong', 4000)
+  }, [revealed, duelWinner, firstBuzz, trigger])
 
   useEffect(() => {
     if (!isHost || !revealed || advRef.current) return
@@ -373,12 +469,18 @@ function DuelPhase({ pd, participants, answers, myAnswers, isHost, submitAnswer,
       <QuestionCard text={q.q} />
 
       {/* Buzz indicator */}
-      {duelWinner && !revealed && winnerPart && (
+      {firstBuzz && !revealed && (
         <div className="text-center bg-orange-500/10 border border-orange-500/30 rounded-2xl py-4 animate-pop">
-          <span className="text-3xl">{winnerPart.profile?.avatar ?? '🎭'}</span>
-          <p className="font-display text-xl text-orange-300 tracking-wider mt-1">
-            {winnerPart.profile?.nickname ?? '?'} buzzé !
-          </p>
+          {winnerPart || participants.find(p => p.profile_id === firstBuzz.profile_id) ? (
+            <>
+              <span className="text-3xl">
+                {(participants.find(p => p.profile_id === firstBuzz.profile_id))?.profile?.avatar ?? '🎭'}
+              </span>
+              <p className="font-display text-xl text-orange-300 tracking-wider mt-1">
+                {(participants.find(p => p.profile_id === firstBuzz.profile_id))?.profile?.nickname ?? '?'} buzzé !
+              </p>
+            </>
+          ) : null}
         </div>
       )}
 
@@ -400,7 +502,7 @@ function DuelPhase({ pd, participants, answers, myAnswers, isHost, submitAnswer,
 
       <ChoicesGrid choices={q.choices} answer={q.answer} revealed={revealed}
         selected={myAnswer?.answer_idx ?? selected} onPick={pick}
-        disableAll={!!duelWinner && !myAnswer} />
+        disableAll={!!firstBuzz && !myAnswer} />
 
       <PlayerBar participants={participants} qAnswers={qAnswers} revealed={revealed}
         answer={q.answer} duelWinnerId={duelWinner?.profile_id} />
@@ -416,15 +518,29 @@ function CoupDeMaitrePhase({ pd, participants, answers, myAnswers, isHost, submi
   const { secs, pct, expired } = useTimer(pd.q_start_at, DURATIONS.coup_de_maitre)
   const [selected, setSelected] = useState(null)
   const [revealed, setRevealed] = useState(false)
-  const advRef    = useRef(false)
-  const startedAt = pd.q_start_at ? new Date(pd.q_start_at).getTime() : Date.now()
+  const advRef      = useRef(false)
+  const urgentFired = useRef(false)
+  const revealFired = useRef(false)
+  const startedAt   = pd.q_start_at ? new Date(pd.q_start_at).getTime() : Date.now()
+  const { trigger } = useJLR()
 
-  // Player is locked if they've answered at any clue
   const myAnswer  = myAnswers.find(a => a.phase === phase)
   const qAnswers  = answers.filter(a => a.phase === phase)
 
-  useEffect(() => { setSelected(null); setRevealed(false); advRef.current = false }, [clue_idx])
+  useEffect(() => {
+    setSelected(null); setRevealed(false)
+    advRef.current = false; urgentFired.current = false; revealFired.current = false
+    trigger('thinking', 'coup_de_maitre', 4000)
+  }, [clue_idx, trigger])
+
   useEffect(() => { if (expired && !revealed) setRevealed(true) }, [expired, revealed])
+
+  useEffect(() => {
+    if (secs <= 4 && secs > 0 && !revealed && !urgentFired.current) {
+      urgentFired.current = true
+      trigger('urgent', 'urgent', 2500)
+    }
+  }, [secs, revealed, trigger])
 
   useEffect(() => {
     if (!isHost || !revealed || advRef.current) return
@@ -433,6 +549,14 @@ function CoupDeMaitrePhase({ pd, participants, answers, myAnswers, isHost, submi
     }, 3500)
     return () => clearTimeout(t)
   }, [revealed, isHost, hostAdvance])
+
+  // JLR révélation
+  useEffect(() => {
+    if (!revealed || revealFired.current) return
+    revealFired.current = true
+    if (myAnswer?.is_correct) trigger('excited', 'correct', 5000)
+    else if (myAnswer) trigger('sad', 'wrong', 5000)
+  }, [revealed, myAnswer, trigger])
 
   async function pick(idx) {
     if (myAnswer || revealed || selected !== null || !personality) return
@@ -464,12 +588,10 @@ function CoupDeMaitrePhase({ pd, participants, answers, myAnswers, isHost, submi
         </div>
       </div>
 
-      {/* Timer bar */}
       <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
         <div className="h-full bg-purple-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
       </div>
 
-      {/* Clues */}
       <div className="bg-white/5 border border-white/10 rounded-2xl p-5 space-y-4">
         <p className="text-xs text-slate-500 uppercase tracking-widest font-semibold">Qui suis-je ?</p>
         {personality.clues.slice(0, clue_idx + 1).map((clue, i) => (
@@ -483,7 +605,6 @@ function CoupDeMaitrePhase({ pd, participants, answers, myAnswers, isHost, submi
             </p>
           </div>
         ))}
-        {/* Hidden future clues */}
         {Array.from({ length: personality.clues.length - clue_idx - 1 }).map((_, i) => (
           <div key={i} className="flex gap-3 items-center opacity-15">
             <span className="shrink-0 w-7 h-7 rounded-full bg-white/10 flex items-center justify-center text-xs text-slate-600">
@@ -527,20 +648,42 @@ function EtoileQuizPhase({ pd, participants, answers, myAnswers, isHost, submitA
   const { secs, pct, expired } = useTimer(pd.q_start_at, DURATIONS.etoile_quiz)
   const [selected, setSelected] = useState(null)
   const [revealed, setRevealed] = useState(false)
-  const advRef    = useRef(false)
-  const startedAt = pd.q_start_at ? new Date(pd.q_start_at).getTime() : Date.now()
+  const advRef      = useRef(false)
+  const urgentFired = useRef(false)
+  const revealFired = useRef(false)
+  const startedAt   = pd.q_start_at ? new Date(pd.q_start_at).getTime() : Date.now()
+  const { trigger } = useJLR()
 
   const myAnswer  = myAnswers.find(a => a.phase === phase && a.q_idx === q_idx)
   const qAnswers  = answers.filter(a => a.phase === phase && a.q_idx === q_idx)
 
-  useEffect(() => { setSelected(null); setRevealed(false); advRef.current = false }, [q_idx])
+  useEffect(() => {
+    setSelected(null); setRevealed(false)
+    advRef.current = false; urgentFired.current = false; revealFired.current = false
+    trigger('thinking', 'thinking', 3000)
+  }, [q_idx, trigger])
+
   useEffect(() => { if (expired && !revealed) setRevealed(true) }, [expired, revealed])
+
+  useEffect(() => {
+    if (secs <= 5 && secs > 0 && !revealed && !urgentFired.current) {
+      urgentFired.current = true
+      trigger('urgent', 'urgent', 3000)
+    }
+  }, [secs, revealed, trigger])
 
   useEffect(() => {
     if (!isHost || revealed) return
     if (participants.length > 0 && participants.every(p => qAnswers.some(a => a.profile_id === p.profile_id)))
       setRevealed(true)
   }, [qAnswers, participants, isHost, revealed])
+
+  useEffect(() => {
+    if (!revealed || revealFired.current) return
+    revealFired.current = true
+    if (myAnswer?.is_correct) trigger('excited', 'correct', 5000)
+    else if (myAnswer) trigger('sad', 'wrong', 5000)
+  }, [revealed, myAnswer, trigger])
 
   useEffect(() => {
     if (!isHost || !revealed || advRef.current) return
@@ -558,7 +701,6 @@ function EtoileQuizPhase({ pd, participants, answers, myAnswers, isHost, submitA
 
   if (!q || !etoile) return <Centered><Spinner /></Centered>
 
-  // Reveal one hint per answered question
   const revealedHints = etoile.hints?.slice(0, q_idx + (revealed ? 1 : 0)) ?? []
 
   return (
@@ -567,7 +709,6 @@ function EtoileQuizPhase({ pd, participants, answers, myAnswers, isHost, submitA
         sub={`Q${q_idx + 1} / ${questions.length} · 300 €`}
         secs={secs} pct={pct} timerClass="bg-cyan-500" />
 
-      {/* Etoile silhouette + progressive hints */}
       <div className="bg-cyan-950/40 border border-cyan-500/20 rounded-2xl p-5 space-y-3">
         <div className="flex items-center gap-3">
           <span className="text-4xl filter blur-sm select-none">{etoile.silhouette}</span>
@@ -605,20 +746,42 @@ function EtoileGuessPhase({ pd, participants, answers, myAnswers, isHost, submit
   const { secs, pct, expired } = useTimer(pd.q_start_at, DURATIONS.etoile_guess)
   const [selected, setSelected] = useState(null)
   const [revealed, setRevealed] = useState(false)
-  const advRef    = useRef(false)
-  const startedAt = pd.q_start_at ? new Date(pd.q_start_at).getTime() : Date.now()
+  const advRef      = useRef(false)
+  const urgentFired = useRef(false)
+  const revealFired = useRef(false)
+  const startedAt   = pd.q_start_at ? new Date(pd.q_start_at).getTime() : Date.now()
+  const { trigger } = useJLR()
 
   const myAnswer  = myAnswers.find(a => a.phase === phase && a.q_idx === 0)
   const qAnswers  = answers.filter(a => a.phase === phase && a.q_idx === 0)
 
-  useEffect(() => { setSelected(null); setRevealed(false); advRef.current = false }, [])
+  useEffect(() => {
+    setSelected(null); setRevealed(false)
+    advRef.current = false; urgentFired.current = false; revealFired.current = false
+    trigger('idle', 'etoile_guess', 5000)
+  }, [trigger])
+
   useEffect(() => { if (expired && !revealed) setRevealed(true) }, [expired, revealed])
+
+  useEffect(() => {
+    if (secs <= 7 && secs > 0 && !revealed && !urgentFired.current) {
+      urgentFired.current = true
+      trigger('urgent', 'urgent', 3500)
+    }
+  }, [secs, revealed, trigger])
 
   useEffect(() => {
     if (!isHost || revealed) return
     if (participants.length > 0 && participants.every(p => qAnswers.some(a => a.profile_id === p.profile_id)))
       setRevealed(true)
   }, [qAnswers, participants, isHost, revealed])
+
+  useEffect(() => {
+    if (!revealed || revealFired.current) return
+    revealFired.current = true
+    if (myAnswer?.is_correct) trigger('celebrate', 'correct', 6000)
+    else if (myAnswer) trigger('sad', 'wrong', 5000)
+  }, [revealed, myAnswer, trigger])
 
   useEffect(() => {
     if (!isHost || !revealed || advRef.current) return
@@ -653,7 +816,6 @@ function EtoileGuessPhase({ pd, participants, answers, myAnswers, isHost, submit
         <div className="h-full bg-cyan-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
       </div>
 
-      {/* Full etoile card */}
       <div className="bg-cyan-950/40 border border-cyan-500/30 rounded-2xl p-6 text-center space-y-4">
         <div className={`text-6xl transition-all duration-1000 ${revealed ? '' : 'filter blur-md'}`}>
           {etoile.silhouette}
@@ -690,20 +852,41 @@ function SprintPhase({ pd, participants, answers, myAnswers, isHost, submitAnswe
   const { secs, pct, expired } = useTimer(pd.q_start_at, DURATIONS.sprint_12_coups)
   const [selected, setSelected] = useState(null)
   const [revealed, setRevealed] = useState(false)
-  const advRef    = useRef(false)
-  const startedAt = pd.q_start_at ? new Date(pd.q_start_at).getTime() : Date.now()
+  const advRef      = useRef(false)
+  const urgentFired = useRef(false)
+  const revealFired = useRef(false)
+  const startedAt   = pd.q_start_at ? new Date(pd.q_start_at).getTime() : Date.now()
+  const { trigger } = useJLR()
 
   const myAnswer  = myAnswers.find(a => a.phase === phase && a.q_idx === q_idx)
   const qAnswers  = answers.filter(a => a.phase === phase && a.q_idx === q_idx)
 
-  useEffect(() => { setSelected(null); setRevealed(false); advRef.current = false }, [q_idx])
+  useEffect(() => {
+    setSelected(null); setRevealed(false)
+    advRef.current = false; urgentFired.current = false; revealFired.current = false
+  }, [q_idx])
+
   useEffect(() => { if (expired && !revealed) setRevealed(true) }, [expired, revealed])
+
+  useEffect(() => {
+    if (secs <= 3 && secs > 0 && !revealed && !urgentFired.current) {
+      urgentFired.current = true
+      trigger('urgent', 'urgent', 2500)
+    }
+  }, [secs, revealed, trigger])
 
   useEffect(() => {
     if (!isHost || revealed) return
     if (participants.length > 0 && participants.every(p => qAnswers.some(a => a.profile_id === p.profile_id)))
       setRevealed(true)
   }, [qAnswers, participants, isHost, revealed])
+
+  useEffect(() => {
+    if (!revealed || revealFired.current) return
+    revealFired.current = true
+    if (myAnswer?.is_correct) trigger('excited', 'correct', 3000)
+    else if (myAnswer) trigger('sad', 'wrong', 3000)
+  }, [revealed, myAnswer, trigger])
 
   useEffect(() => {
     if (!isHost || !revealed || advRef.current) return
@@ -758,9 +941,14 @@ function SprintPhase({ pd, participants, answers, myAnswers, isHost, submitAnswe
 function FinishedPhase({ participants, answers }) {
   const prizePool = computePrizePool(answers)
   const [show, setShow] = useState(false)
-  useEffect(() => { const t = setTimeout(() => setShow(true), 400); return () => clearTimeout(t) }, [])
+  const { trigger } = useJLR()
 
-  // Recompute scores client-side from answers
+  useEffect(() => {
+    const t1 = setTimeout(() => setShow(true), 400)
+    const t2 = setTimeout(() => trigger('celebrate', 'finished', 0), 1200)
+    return () => { clearTimeout(t1); clearTimeout(t2) }
+  }, [trigger])
+
   const duelWinners = new Map()
   for (const a of [...answers]
     .filter(x => x.phase === 'duel' && x.is_correct)
@@ -937,7 +1125,6 @@ function PlayerBar({ participants, qAnswers, revealed, answer, duelWinnerId, com
             </div>
           )
         })}
-        {/* Fill empty slots */}
         {Array.from({ length: Math.max(0, 4 - participants.length) }).map((_, i) => (
           <div key={i} className="flex flex-col items-center gap-1 opacity-20">
             <span className="text-xl">👤</span>
