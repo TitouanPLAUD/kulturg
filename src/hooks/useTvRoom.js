@@ -3,56 +3,55 @@ import { supabase } from '../lib/supabase.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import { QUESTIONS as ALL_QUESTIONS } from '../data/questions.js'
 import { PERSONALITIES } from '../data/personalities.js'
-import { ETOILES } from '../data/etoiles.js'
 
-// ─── Phases du jeu (ordre officiel) ─────────────────────────
-export const PHASES = ['lobby','grand_oral','duel','coup_de_maitre','etoile_mysterieuse','sprint_12_coups','finished']
+// ─── Phases officielles ───────────────────────────────────────
+export const PHASES = [
+  'lobby',
+  'coup_envoi',        // 4 → 3 joueurs : questions + rouge + duel
+  'coup_par_coup',     // 3 → 2 joueurs : idem
+  'coup_fatal',        // 2 → 1 joueur  : chronomètre / coups
+  'coup_de_maitre',    // solo : 5 questions, dévoile l'étoile
+  'etoile_mysterieuse',// solo : deviner la personnalité
+  'finished',
+]
 
-// ─── Gains en € ─────────────────────────────────────────────
-export function gainForAnswer(phase, isCorrect, timeMs, qIdx = 0) {
+// Gains du Coup de Maître (cumulatif par question réussie)
+const CDM_GAINS = [500, 1000, 1500, 2000, 5000]
+
+export function gainForAnswer(phase, isCorrect, _timeMs, qIdx = 0) {
   if (!isCorrect) return 0
-  if (phase === 'grand_oral')        return 500 + (timeMs < 8000 ? 200 : 0)
-  if (phase === 'duel')              return 800   // only for the first-correct winner
-  if (phase === 'coup_de_maitre')    return Math.max(200, 1000 - qIdx * 200)
-  if (phase === 'etoile_quiz')       return 300
-  if (phase === 'etoile_guess')      return 2000
-  if (phase === 'sprint_12_coups')   return 400
+  if (phase === 'coup_de_maitre') return CDM_GAINS[qIdx] ?? 0
+  if (phase === 'etoile_mysterieuse') return 10000
   return 0
 }
 
-// Calcul du gain total de tous les joueurs (pour prize pool)
+export function computeMaitreScore(answers, maitreId) {
+  return answers
+    .filter(a => a.profile_id === maitreId && a.phase === 'coup_de_maitre' && a.is_correct)
+    .reduce((sum, a) => sum + (CDM_GAINS[a.q_idx] ?? 0), 0)
+}
+
+// computePrizePool gardé pour compatibilité TopBar
 export function computePrizePool(answers) {
-  let total = 0
-  const duelWinners = new Map() // q_idx → first correct profile_id
-  for (const a of answers) {
-    if (!a.is_correct) continue
-    if (a.phase === 'duel') {
-      if (!duelWinners.has(a.q_idx)) duelWinners.set(a.q_idx, a.profile_id)
-      if (duelWinners.get(a.q_idx) === a.profile_id) total += 800
-    } else {
-      total += gainForAnswer(a.phase, true, a.time_ms ?? 15000, a.q_idx)
-    }
-  }
-  return total
+  return answers
+    .filter(a => a.phase === 'coup_de_maitre' && a.is_correct)
+    .reduce((sum, a) => sum + (CDM_GAINS[a.q_idx] ?? 0), 0)
 }
 
 // ─── Helpers ─────────────────────────────────────────────────
-function pick(arr, n) {
+function rnd(arr, n) {
   return [...arr].sort(() => Math.random() - 0.5).slice(0, n)
 }
 
 function pickPersonality() {
   const p = PERSONALITIES[Math.floor(Math.random() * PERSONALITIES.length)]
-  const decoys = PERSONALITIES.filter(x => x.id !== p.id).sort(() => Math.random() - 0.5).slice(0, 3).map(x => x.name)
+  const decoys = PERSONALITIES
+    .filter(x => x.id !== p.id)
+    .sort(() => Math.random() - 0.5)
+    .slice(0, 3)
+    .map(x => x.name)
   const choices = [...decoys, p.name].sort(() => Math.random() - 0.5)
   return { ...p, choices, answer: choices.indexOf(p.name) }
-}
-
-function pickEtoile() {
-  const e = ETOILES[Math.floor(Math.random() * ETOILES.length)]
-  const decoys = ETOILES.filter(x => x.id !== e.id).sort(() => Math.random() - 0.5).slice(0, 3).map(x => x.name)
-  const choices = [...decoys, e.name].sort(() => Math.random() - 0.5)
-  return { ...e, choices, answer: choices.indexOf(e.name) }
 }
 
 function generateCode() {
@@ -60,15 +59,31 @@ function generateCode() {
   return Array.from({ length: 6 }, () => c[Math.floor(Math.random() * c.length)]).join('')
 }
 
-// ─── Hook ────────────────────────────────────────────────────
+// Construit la phase_data d'une manche battle (envoi / par_coup)
+function makeBattleData(activeIds, questions, duelQuestion, eliminated = []) {
+  return {
+    subphase:        'question',
+    active_players:  activeIds,
+    eliminated,
+    champion_id:     activeIds[0],
+    wrong_counts:    Object.fromEntries(activeIds.map(id => [id, 0])),
+    rouge_player_id: null,
+    duel_vs_id:      null,
+    questions,
+    duel_question:   duelQuestion,
+    q_idx:           0,
+    q_start_at:      new Date().toISOString(),
+  }
+}
+
+// ─── Hook ─────────────────────────────────────────────────────
 export function useTvRoom(code) {
   const { user } = useAuth()
-  const [room, setRoom]                 = useState(null)
+  const [room, setRoom]               = useState(null)
   const [participants, setParticipants] = useState([])
-  const [answers, setAnswers]           = useState([])
-  const [loading, setLoading]           = useState(true)
+  const [answers, setAnswers]         = useState([])
+  const [loading, setLoading]         = useState(true)
   const channelRef = useRef(null)
-  const roomIdRef  = useRef(null)
 
   const isHost = room?.host_id === user?.id
 
@@ -87,7 +102,6 @@ export function useTvRoom(code) {
       const { data: r } = await supabase.from('tv_rooms').select('*').eq('code', code).single()
       if (!mounted) return
       if (!r) { setLoading(false); return }
-      roomIdRef.current = r.id
       setRoom(r)
       const [, { data: ans }] = await Promise.all([
         loadParticipants(r.id),
@@ -126,7 +140,6 @@ export function useTvRoom(code) {
     )
   }
 
-  // ── Mettre à jour la salle (hôte uniquement) ──────────────
   async function updateRoom(patch) {
     if (!room) return
     const { data } = await supabase.from('tv_rooms').update(patch).eq('id', room.id).select().single()
@@ -136,94 +149,260 @@ export function useTvRoom(code) {
   // ── Lancer la partie ──────────────────────────────────────
   async function startGame() {
     if (!isHost) return
-    await updateRoom({
-      phase: 'grand_oral',
-      phase_data: {
-        questions_grand_oral:   pick(ALL_QUESTIONS, 6),
-        questions_duel:         pick(ALL_QUESTIONS, 6),
-        personality:            pickPersonality(),
-        etoile:                 pickEtoile(),
-        etoile_quiz:            pick(ALL_QUESTIONS, 4),
-        questions_sprint:       pick(ALL_QUESTIONS, 12),
-        q_idx:      0,
-        clue_idx:   0,
-        q_start_at: new Date().toISOString(),
-      },
+    const activeIds = participants.map(p => p.profile_id)
+    if (activeIds.length < 2) return
+
+    // 2 joueurs → coup fatal direct
+    if (activeIds.length === 2) {
+      return updateRoom({
+        phase: 'coup_fatal',
+        phase_data: {
+          active_players: activeIds,
+          eliminated:     [],
+          champion_id:    activeIds[0],
+          coups:          Object.fromEntries(activeIds.map(id => [id, 12])),
+          questions:      rnd(ALL_QUESTIONS, 15),
+          q_idx:          0,
+          q_start_at:     new Date().toISOString(),
+        },
+      })
+    }
+
+    // 3 joueurs → coup par coup (3 → 2 → coup fatal)
+    if (activeIds.length === 3) {
+      return updateRoom({
+        phase:      'coup_par_coup',
+        phase_data: makeBattleData(activeIds, rnd(ALL_QUESTIONS, 20), rnd(ALL_QUESTIONS, 1)[0]),
+      })
+    }
+
+    // 4 joueurs → jeu complet
+    return updateRoom({
+      phase:      'coup_envoi',
+      phase_data: makeBattleData(activeIds, rnd(ALL_QUESTIONS, 20), rnd(ALL_QUESTIONS, 1)[0]),
     })
   }
 
-  // ── Avancer (hôte) ────────────────────────────────────────
+  // ── Avancer (hôte uniquement) ─────────────────────────────
   async function hostAdvance() {
     if (!isHost || !room) return
-    const pd   = room.phase_data
+    const pd    = room.phase_data
     const phase = room.phase
 
-    const LIMITS = {
-      grand_oral:       pd.questions_grand_oral?.length  - 1,
-      duel:             pd.questions_duel?.length        - 1,
-      etoile_quiz:      pd.etoile_quiz?.length           - 1,
-      sprint_12_coups:  pd.questions_sprint?.length      - 1,
-    }
+    // ── MANCHES BATTLE ─────────────────────────────────────
+    if (phase === 'coup_envoi' || phase === 'coup_par_coup') {
+      const duelPhase = phase + '_duel'
 
-    function next(nextPhase, extra = {}) {
-      return updateRoom({ phase: nextPhase, phase_data: { ...pd, q_idx: 0, clue_idx: 0, q_start_at: new Date().toISOString(), ...extra } })
-    }
-    function nextQ() {
-      return updateRoom({ phase_data: { ...pd, q_idx: pd.q_idx + 1, q_start_at: new Date().toISOString() } })
-    }
+      // ── Résolution du duel ──────────────────────────────
+      if (pd.subphase === 'duel') {
+        const duelAnswers = answers.filter(a =>
+          a.phase === duelPhase &&
+          (a.profile_id === pd.rouge_player_id || a.profile_id === pd.duel_vs_id)
+        )
+        const firstCorrect = duelAnswers
+          .filter(a => a.is_correct)
+          .sort((a, b) => new Date(a.answered_at) - new Date(b.answered_at))[0]
 
-    if (phase === 'grand_oral') {
-      return pd.q_idx < LIMITS.grand_oral ? nextQ() : next('duel')
-    }
-    if (phase === 'duel') {
-      return pd.q_idx < LIMITS.duel ? nextQ() : next('coup_de_maitre')
-    }
-    if (phase === 'coup_de_maitre') {
-      const allAnswered = participants.every(p =>
-        answers.some(a => a.phase === 'coup_de_maitre' && a.profile_id === p.profile_id && a.q_idx === pd.clue_idx))
-      const nextClue = pd.clue_idx + 1
-      const maxClues = pd.personality?.clues?.length ?? 5
-      if (!allAnswered && nextClue < maxClues) {
-        return updateRoom({ phase_data: { ...pd, clue_idx: nextClue, q_start_at: new Date().toISOString() } })
+        // Le champion gagne par défaut si personne n'a bon
+        const winner_id = firstCorrect?.profile_id ?? pd.duel_vs_id
+        const loser_id  = [pd.rouge_player_id, pd.duel_vs_id].find(id => id !== winner_id)
+
+        const newActive    = (pd.active_players ?? []).filter(id => id !== loser_id)
+        const newEliminated = [...(pd.eliminated ?? []), loser_id]
+
+        // Coup envoi → coup par coup (4→3)
+        if (phase === 'coup_envoi' && newActive.length === 3) {
+          return updateRoom({
+            phase:      'coup_par_coup',
+            phase_data: makeBattleData(newActive, rnd(ALL_QUESTIONS, 20), rnd(ALL_QUESTIONS, 1)[0], newEliminated),
+          })
+        }
+        // 2 restants → coup fatal
+        if (newActive.length === 2) {
+          return updateRoom({
+            phase: 'coup_fatal',
+            phase_data: {
+              active_players: newActive,
+              eliminated:     newEliminated,
+              champion_id:    winner_id,
+              coups:          Object.fromEntries(newActive.map(id => [id, 12])),
+              questions:      rnd(ALL_QUESTIONS, 15),
+              q_idx:          0,
+              q_start_at:     new Date().toISOString(),
+            },
+          })
+        }
+        // Retour question (cas edge avec plus de joueurs)
+        const newWrong = Object.fromEntries(newActive.map(id => [id, id === winner_id ? 0 : (pd.wrong_counts?.[id] ?? 0)]))
+        return updateRoom({
+          phase_data: {
+            ...pd, subphase: 'question', champion_id: winner_id,
+            wrong_counts: newWrong, rouge_player_id: null, duel_vs_id: null,
+            active_players: newActive, eliminated: newEliminated,
+            q_start_at: new Date().toISOString(),
+          },
+        })
       }
-      return next('etoile_quiz')
-    }
-    if (phase === 'etoile_quiz') {
-      return pd.q_idx < LIMITS.etoile_quiz ? nextQ() : next('etoile_guess')
-    }
-    if (phase === 'etoile_guess') {
-      return next('sprint_12_coups')
-    }
-    if (phase === 'sprint_12_coups') {
-      if (pd.q_idx < LIMITS.sprint_12_coups) return nextQ()
-      // Tally final scores
-      await tallyAllScores()
-      return updateRoom({ phase: 'finished', phase_data: pd })
-    }
-  }
 
-  // ── Calculer et persister les scores finaux ───────────────
-  async function tallyAllScores() {
-    const duelWinners = new Map()
-    for (const a of answers.filter(x => x.phase === 'duel' && x.is_correct)) {
-      if (!duelWinners.has(a.q_idx)) duelWinners.set(a.q_idx, a.profile_id)
+      // ── Question normale ───────────────────────────────
+      const qAnswers = answers.filter(a => a.phase === phase && a.q_idx === pd.q_idx)
+      const newWrong = { ...(pd.wrong_counts ?? {}) }
+      for (const pid of (pd.active_players ?? [])) {
+        const ans = qAnswers.find(a => a.profile_id === pid)
+        if (ans && !ans.is_correct) newWrong[pid] = (newWrong[pid] ?? 0) + 1
+      }
+
+      // Quelqu'un est au rouge ?
+      const rougePlayer = (pd.active_players ?? []).find(pid => newWrong[pid] >= 2)
+      if (rougePlayer) {
+        const vs_id = pd.champion_id === rougePlayer
+          ? (pd.active_players.find(id => id !== rougePlayer) ?? null)
+          : pd.champion_id
+        return updateRoom({
+          phase_data: {
+            ...pd, wrong_counts: newWrong, subphase: 'duel',
+            rouge_player_id: rougePlayer, duel_vs_id: vs_id,
+            q_start_at: new Date().toISOString(),
+          },
+        })
+      }
+
+      // Question suivante
+      const nextIdx = pd.q_idx + 1
+      if (nextIdx < (pd.questions ?? []).length) {
+        return updateRoom({
+          phase_data: { ...pd, wrong_counts: newWrong, q_idx: nextIdx, q_start_at: new Date().toISOString() },
+        })
+      }
+
+      // Plus de questions → élimination forcée du plus mauvais
+      const sorted  = [...(pd.active_players ?? [])].sort((a, b) => (newWrong[b] ?? 0) - (newWrong[a] ?? 0))
+      const forcedLoser = sorted[0]
+      const newActive   = (pd.active_players ?? []).filter(id => id !== forcedLoser)
+      const newEliminated = [...(pd.eliminated ?? []), forcedLoser]
+
+      if (phase === 'coup_envoi' && newActive.length === 3) {
+        return updateRoom({
+          phase:      'coup_par_coup',
+          phase_data: makeBattleData(newActive, rnd(ALL_QUESTIONS, 20), rnd(ALL_QUESTIONS, 1)[0], newEliminated),
+        })
+      }
+      return updateRoom({
+        phase: 'coup_fatal',
+        phase_data: {
+          active_players: newActive,
+          eliminated:     newEliminated,
+          champion_id:    newActive[0],
+          coups:          Object.fromEntries(newActive.map(id => [id, 12])),
+          questions:      rnd(ALL_QUESTIONS, 15),
+          q_idx:          0,
+          q_start_at:     new Date().toISOString(),
+        },
+      })
     }
-    for (const p of participants) {
-      const mine = answers.filter(a => a.profile_id === p.profile_id)
-      let total = 0
-      for (const a of mine) {
-        if (!a.is_correct) continue
-        if (a.phase === 'duel') {
-          if (duelWinners.get(a.q_idx) === p.profile_id) total += 800
+
+    // ── COUP FATAL ─────────────────────────────────────────
+    if (phase === 'coup_fatal') {
+      const qAnswers = answers.filter(a => a.phase === 'coup_fatal' && a.q_idx === pd.q_idx)
+      const newCoups = { ...(pd.coups ?? {}) }
+
+      for (const pid of (pd.active_players ?? [])) {
+        const ans = qAnswers.find(a => a.profile_id === pid)
+        if (!ans) {
+          // Pas de réponse (timeout) → perd 1 coup
+          newCoups[pid] = Math.max(0, (newCoups[pid] ?? 12) - 1)
+        } else if (!ans.is_correct) {
+          // Mauvaise réponse → perd 2 coups
+          newCoups[pid] = Math.max(0, (newCoups[pid] ?? 12) - 2)
         } else {
-          total += gainForAnswer(a.phase, true, a.time_ms ?? 15000, a.q_idx)
+          // Bonne réponse → adversaire perd 1 coup
+          const opp = pd.active_players.find(id => id !== pid)
+          if (opp) newCoups[opp] = Math.max(0, (newCoups[opp] ?? 12) - 1)
         }
       }
-      if (total > 0) await supabase.from('tv_participants').update({ score: total }).eq('id', p.id)
+
+      const goToCDM = (winnerId, loserId) =>
+        updateRoom({
+          phase: 'coup_de_maitre',
+          phase_data: {
+            maitre_id:     winnerId,
+            eliminated:    [...(pd.eliminated ?? []), loserId],
+            questions:     rnd(ALL_QUESTIONS, 5),
+            personality:   pickPersonality(),
+            q_idx:         0,
+            correct_count: 0,
+            score:         0,
+            q_start_at:    new Date().toISOString(),
+          },
+        })
+
+      const eliminated = (pd.active_players ?? []).find(pid => newCoups[pid] <= 0)
+      if (eliminated) {
+        const winner = pd.active_players.find(id => id !== eliminated)
+        return goToCDM(winner, eliminated)
+      }
+
+      const nextIdx = pd.q_idx + 1
+      if (nextIdx < (pd.questions ?? []).length) {
+        return updateRoom({ phase_data: { ...pd, coups: newCoups, q_idx: nextIdx, q_start_at: new Date().toISOString() } })
+      }
+
+      // Plus de questions : le joueur avec le moins de coups perd
+      const [p1, p2] = pd.active_players ?? []
+      const loserId  = (newCoups[p1] ?? 0) <= (newCoups[p2] ?? 0) ? p1 : p2
+      const winnerId = pd.active_players.find(id => id !== loserId)
+      return goToCDM(winnerId, loserId)
+    }
+
+    // ── COUP DE MAÎTRE ─────────────────────────────────────
+    if (phase === 'coup_de_maitre') {
+      const myAns      = answers.find(a => a.phase === 'coup_de_maitre' && a.q_idx === pd.q_idx && a.profile_id === pd.maitre_id)
+      const isCorrect  = myAns?.is_correct ?? false
+      const newCorrect = (pd.correct_count ?? 0) + (isCorrect ? 1 : 0)
+      const newScore   = (pd.score ?? 0) + (isCorrect ? (CDM_GAINS[pd.q_idx] ?? 0) : 0)
+      const nextIdx    = pd.q_idx + 1
+
+      if (nextIdx < 5) {
+        return updateRoom({
+          phase_data: { ...pd, q_idx: nextIdx, correct_count: newCorrect, score: newScore, q_start_at: new Date().toISOString() },
+        })
+      }
+
+      // 5 bonnes réponses → étoile mystérieuse
+      if (newCorrect === 5) {
+        return updateRoom({
+          phase: 'etoile_mysterieuse',
+          phase_data: {
+            maitre_id:   pd.maitre_id,
+            eliminated:  pd.eliminated,
+            personality: pd.personality,   // même personnalité à deviner
+            score:       newScore,
+            q_start_at:  new Date().toISOString(),
+          },
+        })
+      }
+
+      // Pas parfait → terminé
+      await saveMaitreScore(pd.maitre_id, newScore)
+      return updateRoom({ phase: 'finished', phase_data: { ...pd, correct_count: newCorrect, score: newScore } })
+    }
+
+    // ── ÉTOILE MYSTÉRIEUSE ─────────────────────────────────
+    if (phase === 'etoile_mysterieuse') {
+      const myAns     = answers.find(a => a.phase === 'etoile_mysterieuse' && a.profile_id === pd.maitre_id)
+      const isCorrect = myAns?.is_correct ?? false
+      const final     = (pd.score ?? 0) + (isCorrect ? 10000 : 0)
+      await saveMaitreScore(pd.maitre_id, final)
+      return updateRoom({ phase: 'finished', phase_data: { ...pd, etoile_correct: isCorrect, final_score: final } })
     }
   }
 
-  // ── Créer une salle ───────────────────────────────────────
+  async function saveMaitreScore(maitreId, score) {
+    const p = participants.find(x => x.profile_id === maitreId)
+    if (p && score > 0) await supabase.from('tv_participants').update({ score }).eq('id', p.id)
+  }
+
+  // ── Créer / rejoindre ─────────────────────────────────────
   async function createRoom() {
     if (!user) return null
     const code = generateCode()
@@ -233,7 +412,6 @@ export function useTvRoom(code) {
     return data.code
   }
 
-  // ── Rejoindre une salle ───────────────────────────────────
   async function joinRoom(roomCode) {
     if (!user) return { error: 'Non connecté' }
     const { data: r } = await supabase.from('tv_rooms').select('*').eq('code', roomCode.toUpperCase()).single()

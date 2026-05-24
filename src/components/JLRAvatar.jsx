@@ -39,6 +39,26 @@ const PHRASES = {
     "Vitesse, précision, concentration ! C'est parti !",
     "On accélère ! 12 coups, 12 questions !",
   ],
+  coup_envoi: [
+    "C'est le Coup d'Envoi ! Tout le monde est prêt ?",
+    "On lance les hostilités ! Quatre candidats, une seule victoire !",
+    "Bienvenue dans Les 12 Coups de Midi ! C'est parti !",
+  ],
+  coup_par_coup: [
+    "Le Coup par Coup ! On serre les rangs !",
+    "Plus que trois candidats ! Qui va passer au rouge ?",
+    "On continue ! Le Coup par Coup commence maintenant !",
+  ],
+  coup_fatal: [
+    "LE COUP FATAL ! Deux candidats, un seul survivant ! 😤",
+    "Les chronomètres tournent ! Attention aux mauvaises réponses !",
+    "C'est le face à face ! Le Coup Fatal est lancé !",
+  ],
+  etoile_mysterieuse: [
+    "L'heure de vérité ! Qui est l'Étoile Mystérieuse ?! 🌟",
+    "10 000 euros sont en jeu ! C'est le grand moment !",
+    "Le Maître de Midi tente sa chance ! Allez, on y croit !",
+  ],
   correct: [
     "Oh c'est magnifique ! BRAVO ! 👏",
     "Chapeau l'artiste ! Très bien joué !",
