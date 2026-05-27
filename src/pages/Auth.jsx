@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase.js'
 import { useAuth } from '../context/AuthContext.jsx'
+import SchoolPicker from '../components/SchoolPicker.jsx'
 
 export default function Auth() {
   const { user } = useAuth()
@@ -12,7 +13,7 @@ export default function Auth() {
   const [nickname, setNickname] = useState('')
   const [country, setCountry] = useState('')
   const [city, setCity]       = useState('')
-  const [isIcam, setIsIcam]   = useState(false)
+  const [school, setSchool]   = useState(null)
   const [error, setError]     = useState('')
   const [info, setInfo]       = useState('')
   const [loading, setLoading] = useState(false)
@@ -54,7 +55,9 @@ export default function Auth() {
           await supabase.from('profiles').update({
             country: country.trim() || null,
             city:    city.trim()    || null,
-            is_icam: isIcam,
+            school:  school || null,
+            // Rétrocompatibilité : on garde is_icam à true si l'école choisie est l'ICAM
+            is_icam: school === 'icam',
           }).eq('id', signUpData.user.id)
         }
         setInfo('Inscription réussie ! Vérifie ta boîte mail pour confirmer ton compte.')
@@ -194,17 +197,10 @@ export default function Auth() {
                     />
                   </div>
                 </div>
-                <label className="flex items-center gap-3 cursor-pointer select-none group">
-                  <div
-                    onClick={() => setIsIcam(v => !v)}
-                    className={`w-5 h-5 rounded border-2 flex items-center justify-center transition shrink-0
-                      ${isIcam ? 'bg-midi-accent border-midi-accent' : 'border-white/20 group-hover:border-white/40'}`}>
-                    {isIcam && <span className="text-slate-900 text-xs font-bold">✓</span>}
-                  </div>
-                  <span className="text-sm text-slate-300">
-                    Je fais partie de <span className="text-midi-accent font-semibold">l'ICAM</span>
-                  </span>
-                </label>
+                <div>
+                  <label className="block text-sm text-slate-300 mb-1">École <span className="text-slate-500">(pour le classement inter-écoles 🏆)</span></label>
+                  <SchoolPicker value={school} onChange={setSchool} />
+                </div>
               </div>
             )}
 

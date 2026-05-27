@@ -9,7 +9,11 @@
       "Bash(git pull *)",
       "Bash(git stash *)",
       "Bash(git rebase *)",
-      "Bash(GIT_EDITOR=true git rebase --continue)"
+      "Bash(GIT_EDITOR=true git rebase --continue)",
+      "Bash(npx vite *)",
+      "mcp__a7f5e7ff-9f94-4780-96bc-30e867b81aad__list_projects",
+      "mcp__a7f5e7ff-9f94-4780-96bc-30e867b81aad__apply_migration",
+      "mcp__a7f5e7ff-9f94-4780-96bc-30e867b81aad__execute_sql"
     ]
   }
 }

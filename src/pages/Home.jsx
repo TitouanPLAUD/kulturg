@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext.jsx'
 import { supabase } from '../lib/supabase.js'
 import { THEME_LIST } from '../data/themes.js'
 import { useAllQuestions } from '../hooks/useQuestions.js'
+import { findEcole } from '../data/ecoles.js'
 
 const games = [
   { to: '/qcm',            title: 'QCM Culture G',      desc: 'Sessions chronométrées par thème.',     emoji: '❓', tone: 'from-amber-500 to-orange-600' },
@@ -140,7 +141,7 @@ function LeaderboardWidget({ currentUserId }) {
   useEffect(() => {
     async function load() {
       const [{ data: profiles }, { data: scores }] = await Promise.all([
-        supabase.from('profiles').select('id, nickname, avatar, city, country, is_icam'),
+        supabase.from('profiles').select('id, nickname, avatar, city, country, is_icam, school'),
         supabase.from('tv_participants').select('profile_id, score'),
       ])
       const scoreMap = {}
@@ -200,11 +201,16 @@ function LeaderboardWidget({ currentUserId }) {
                       </span>
                     )}
                   </div>
-                  {row.is_icam && (
-                    <span className="text-xs bg-midi-accent/20 text-midi-accent px-2 py-0.5 rounded-full font-semibold shrink-0">
-                      ICAM
-                    </span>
-                  )}
+                  {(() => {
+                    const schoolKey = row.school || (row.is_icam ? 'icam' : null)
+                    const ecole = schoolKey ? findEcole(schoolKey) : null
+                    return ecole ? (
+                      <span title={ecole.label}
+                        className="text-xs bg-midi-accent/20 text-midi-accent px-2 py-0.5 rounded-full font-semibold shrink-0 whitespace-nowrap">
+                        {ecole.short}
+                      </span>
+                    ) : null
+                  })()}
                   <span className="font-bold tabular-nums text-midi-accent shrink-0 min-w-[60px] text-right">
                     {row.total_score > 0
                       ? row.total_score.toLocaleString('fr-FR') + ' €'

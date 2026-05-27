@@ -4,6 +4,7 @@ import { useGame, levelFromXP, nextLevelThreshold, BADGES } from '../context/Gam
 import { useAuth } from '../context/AuthContext.jsx'
 import { supabase } from '../lib/supabase.js'
 import { THEME_LIST } from '../data/themes.js'
+import SchoolPicker from '../components/SchoolPicker.jsx'
 
 export default function Profil() {
   const { state, reset } = useGame()
@@ -172,7 +173,7 @@ export default function Profil() {
 function LocationCard({ profile }) {
   const [country, setCountry] = useState(profile.country ?? '')
   const [city,    setCity]    = useState(profile.city    ?? '')
-  const [isIcam,  setIsIcam]  = useState(profile.is_icam ?? false)
+  const [school,  setSchool]  = useState(profile.school  ?? (profile.is_icam ? 'icam' : null))
   const [saving,  setSaving]  = useState(false)
   const [saved,   setSaved]   = useState(false)
 
@@ -182,7 +183,8 @@ function LocationCard({ profile }) {
     await supabase.from('profiles').update({
       country: country.trim() || null,
       city:    city.trim()    || null,
-      is_icam: isIcam,
+      school:  school || null,
+      is_icam: school === 'icam', // rétrocompat
     }).eq('id', profile.id)
     setSaving(false)
     setSaved(true)
@@ -206,17 +208,10 @@ function LocationCard({ profile }) {
           </div>
         </div>
 
-        <label className="flex items-center gap-3 cursor-pointer select-none group">
-          <div
-            onClick={() => setIsIcam(v => !v)}
-            className={`w-5 h-5 rounded border-2 flex items-center justify-center transition shrink-0
-              ${isIcam ? 'bg-midi-accent border-midi-accent' : 'border-white/20 group-hover:border-white/40'}`}>
-            {isIcam && <span className="text-slate-900 text-xs font-bold">✓</span>}
-          </div>
-          <span className="text-sm text-slate-300">
-            Je fais partie de <span className="text-midi-accent font-semibold">l'ICAM</span>
-          </span>
-        </label>
+        <div>
+          <label className="block text-sm text-slate-400 mb-1">École 🎓 <span className="text-slate-500 text-xs">(pour la compétition inter-écoles)</span></label>
+          <SchoolPicker value={school} onChange={setSchool} />
+        </div>
 
         <div className="flex items-center gap-3">
           <button type="submit" disabled={saving}
