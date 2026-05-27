@@ -6,6 +6,7 @@ const navLinks = [
   { to: '/',           label: 'Accueil',      emoji: '🏠', end: true },
   { to: '/multi',      label: 'Multijoueur',  emoji: '🎮' },
   { to: '/classement', label: 'Classement',   emoji: '🏆' },
+  { to: '/reglages',   label: 'Réglages',     emoji: '⚙️' },
 ]
 
 function NavItem({ to, label, emoji, end = false }) {

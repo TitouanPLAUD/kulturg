@@ -16,6 +16,7 @@ import TvGame from './pages/TvGame.jsx'
 import Classement from './pages/Classement.jsx'
 import Multijoueur from './pages/Multijoueur.jsx'
 import DuelGame from './pages/DuelGame.jsx'
+import Reglages from './pages/Reglages.jsx'
 
 export default function App() {
   return (
@@ -37,6 +38,7 @@ export default function App() {
         <Route path="multi" element={<Multijoueur />} />
         <Route path="tv" element={<TvLanding />} />
         <Route path="admin" element={<Admin />} />
+        <Route path="reglages" element={<Reglages />} />
       </Route>
     </Routes>
   )
