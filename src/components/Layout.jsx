@@ -42,8 +42,8 @@ export default function Layout() {
 
           {/* Logo */}
           <NavLink to="/" className="flex items-center gap-2 font-display text-2xl shrink-0">
-            <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-midi-accent text-slate-900 font-bold shadow">K</span>
-            <span className="hidden sm:block">KulturG</span>
+            <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-midi-accent text-slate-900 font-bold shadow">🕛</span>
+            <span className="hidden sm:block">Les Douze Coups de Minuit</span>
           </NavLink>
 
           {/* Nav desktop */}
@@ -106,7 +106,7 @@ export default function Layout() {
 
       <footer className="border-t border-white/10 mt-12">
         <div className="max-w-7xl mx-auto px-4 py-6 text-center text-slate-600 text-xs">
-          KulturG — inspiré des 12 Coups de Midi
+          Les Douze Coups de Minuit — quiz de culture générale
         </div>
       </footer>
     </div>

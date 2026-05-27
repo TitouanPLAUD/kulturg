@@ -1,4 +1,5 @@
-const KEY = 'kulturg.v1'
+const KEY = 'minuit.v1'
+const LEGACY_KEY = 'kulturg.v1' // migration douce
 
 const defaultState = {
   totalXP: 0,
@@ -15,7 +16,16 @@ const defaultState = {
 
 export function loadState() {
   try {
-    const raw = localStorage.getItem(KEY)
+    let raw = localStorage.getItem(KEY)
+    if (!raw) {
+      // migration depuis l'ancienne clé
+      const legacy = localStorage.getItem(LEGACY_KEY)
+      if (legacy) {
+        localStorage.setItem(KEY, legacy)
+        localStorage.removeItem(LEGACY_KEY)
+        raw = legacy
+      }
+    }
     if (!raw) return { ...defaultState }
     return { ...defaultState, ...JSON.parse(raw) }
   } catch {

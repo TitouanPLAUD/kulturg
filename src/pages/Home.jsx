@@ -42,11 +42,11 @@ export default function Home() {
               </div>
             </div>
           ) : (
-            <span className="chip mb-3 inline-block">🏆 Entraîne-toi pour les 12 Coups de Midi</span>
+            <span className="chip mb-3 inline-block">🕛 Les Douze Coups de Minuit</span>
           )}
 
           <h1 className="heading text-4xl md:text-5xl mb-3">
-            Deviens un <span className="text-midi-accent">Maître de Midi</span>
+            Deviens un <span className="text-midi-accent">Maître de Minuit</span>
           </h1>
           <p className="text-slate-400 max-w-2xl text-sm md:text-base">
             Six mini-jeux, dix thèmes, {QUESTIONS.length} questions. Suis ta progression, débloque des badges et bats tes records.

@@ -83,8 +83,8 @@ export default function Auth() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center gap-2 font-display text-3xl mb-2">
-            <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-midi-accent text-slate-900 shadow-lg">K</span>
-            KulturG
+            <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-midi-accent text-slate-900 shadow-lg">🕛</span>
+            Les Douze Coups de Minuit
           </Link>
           <p className="text-slate-400 mt-2">
             {mode === 'login' ? 'Connecte-toi à ton compte' : 'Crée ton compte'}

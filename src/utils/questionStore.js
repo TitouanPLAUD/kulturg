@@ -1,6 +1,14 @@
 import { QUESTIONS as BUILTIN } from '../data/questions.js'
 
-const KEY = 'kulturg.customQuestions.v1'
+const KEY = 'minuit.customQuestions.v1'
+const LEGACY_KEY = 'kulturg.customQuestions.v1'
+// Migration douce
+try {
+  if (!localStorage.getItem(KEY) && localStorage.getItem(LEGACY_KEY)) {
+    localStorage.setItem(KEY, localStorage.getItem(LEGACY_KEY))
+    localStorage.removeItem(LEGACY_KEY)
+  }
+} catch {}
 
 function loadCustom() {
   try { return JSON.parse(localStorage.getItem(KEY) || '[]') } catch { return [] }

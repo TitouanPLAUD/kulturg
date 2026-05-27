@@ -63,7 +63,7 @@ export default function Admin() {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `kulturg-questions-${new Date().toISOString().slice(0,10)}.json`
+    a.download = `douze-coups-de-minuit-questions-${new Date().toISOString().slice(0,10)}.json`
     a.click()
     URL.revokeObjectURL(url)
   }

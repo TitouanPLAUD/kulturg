@@ -8,7 +8,7 @@ export default function Reglages() {
     <div className="space-y-6 max-w-3xl mx-auto">
       <div>
         <h1 className="heading text-3xl">Réglages</h1>
-        <p className="text-slate-400 text-sm mt-1">Personnalise l'affichage et le comportement de KulturG. Toutes les préférences sont sauvegardées sur ton appareil.</p>
+        <p className="text-slate-400 text-sm mt-1">Personnalise l'affichage et le comportement des Douze Coups de Minuit. Toutes les préférences sont sauvegardées sur ton appareil.</p>
       </div>
 
       {/* APPARENCE */}

@@ -1,6 +1,13 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 
-const KEY = 'kulturg.settings.v1'
+const KEY = 'minuit.settings.v1'
+const LEGACY_KEY = 'kulturg.settings.v1'
+try {
+  if (!localStorage.getItem(KEY) && localStorage.getItem(LEGACY_KEY)) {
+    localStorage.setItem(KEY, localStorage.getItem(LEGACY_KEY))
+    localStorage.removeItem(LEGACY_KEY)
+  }
+} catch {}
 
 const defaults = {
   theme: 'dark',          // 'dark' | 'light' | 'auto'
