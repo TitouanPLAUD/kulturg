@@ -12,35 +12,71 @@ export default function Classement() {
   // Filters
   const [filterCountry, setFilterCountry] = useState('')
   const [filterCity,    setFilterCity]    = useState('')
-  const [filterSchool,  setFilterSchool]  = useState('')   // '' = toutes, value d'école
+  const [filterSchool,  setFilterSchool]  = useState('')
   const [view,          setView]          = useState('joueurs') // 'joueurs' | 'ecoles'
 
   useEffect(() => {
     async function load() {
       setLoading(true)
+
+      // 1. Profils
       const { data: profiles } = await supabase
         .from('profiles')
         .select('id, nickname, avatar, country, city, is_icam, school')
 
       if (!profiles) { setLoading(false); return }
 
-      const { data: scores } = await supabase
-        .from('tv_participants')
-        .select('profile_id, score')
+      // 2. Parties TV terminées + participants
+      const [{ data: tvRooms }, { data: tvParts }, { data: duelRooms }] = await Promise.all([
+        supabase.from('tv_rooms').select('id, phase_data').eq('phase', 'finished'),
+        supabase.from('tv_participants').select('room_id, profile_id'),
+        supabase.from('duel_rooms').select('host_id, guest_id, phase_data').eq('phase', 'finished'),
+      ])
 
-      const scoreMap = {}
-      for (const s of (scores ?? [])) {
-        scoreMap[s.profile_id] = (scoreMap[s.profile_id] ?? 0) + (s.score ?? 0)
+      // 3. Calcul wins/losses par joueur
+      const stats = {} // { [id]: { wins, losses } }
+      const ensure = id => { if (!stats[id]) stats[id] = { wins: 0, losses: 0 } }
+
+      // TV : maitre_id = survivant final
+      const tvRoomMap = Object.fromEntries((tvRooms ?? []).map(r => [r.id, r]))
+      for (const p of (tvParts ?? [])) {
+        const room = tvRoomMap[p.room_id]
+        if (!room) continue
+        ensure(p.profile_id)
+        if (room.phase_data?.maitre_id === p.profile_id) stats[p.profile_id].wins++
+        else stats[p.profile_id].losses++
       }
 
+      // Duel : winner_id
+      for (const r of (duelRooms ?? [])) {
+        const { host_id, guest_id, phase_data } = r
+        if (!host_id || !guest_id) continue
+        for (const pid of [host_id, guest_id]) {
+          ensure(pid)
+          if (phase_data?.winner_id === pid) stats[pid].wins++
+          else if (phase_data?.winner_id) stats[pid].losses++ // pas un nul
+        }
+      }
+
+      // 4. Construction du classement
       const ranked = profiles
-        .map(p => ({
-          ...p,
-          // Fallback : si pas de `school` mais `is_icam` est vrai, on dérive
-          school: p.school || (p.is_icam ? 'icam' : null),
-          total_score: scoreMap[p.id] ?? 0,
-        }))
-        .sort((a, b) => b.total_score - a.total_score)
+        .map(p => {
+          const s = stats[p.id] ?? { wins: 0, losses: 0 }
+          const total = s.wins + s.losses
+          return {
+            ...p,
+            school: p.school || (p.is_icam ? 'icam' : null),
+            wins:   s.wins,
+            losses: s.losses,
+            total,
+            ratio:  total > 0 ? s.wins / total : -1, // -1 = jamais joué → classé en dernier
+          }
+        })
+        .sort((a, b) => {
+          if (b.ratio !== a.ratio) return b.ratio - a.ratio
+          if (b.wins  !== a.wins)  return b.wins  - a.wins
+          return b.total - a.total
+        })
 
       setRows(ranked)
       setLoading(false)
@@ -50,6 +86,7 @@ export default function Classement() {
 
   const countries = useMemo(() =>
     [...new Set(rows.map(r => r.country).filter(Boolean))].sort(), [rows])
+
   const cities = useMemo(() =>
     [...new Set(
       rows
@@ -58,6 +95,7 @@ export default function Classement() {
         .filter(Boolean)
     )].sort(),
     [rows, filterCountry])
+
   const schoolsInUse = useMemo(() => {
     const map = {}
     rows.forEach(r => { if (r.school) map[r.school] = (map[r.school] || 0) + 1 })
@@ -67,31 +105,32 @@ export default function Classement() {
       .sort((a, b) => a.ecole.label.localeCompare(b.ecole.label))
   }, [rows])
 
-  // Classement par école (agrégation)
+  // Classement écoles : ratio global wins / total
   const ecolesRanked = useMemo(() => {
     const m = {}
     for (const r of rows) {
-      if (!r.school) continue
+      if (!r.school || r.total === 0) continue
       const e = findEcole(r.school)
       if (!e) continue
-      if (!m[r.school]) m[r.school] = { ecole: e, total: 0, count: 0, top: null }
-      m[r.school].total += r.total_score
+      if (!m[r.school]) m[r.school] = { ecole: e, wins: 0, total: 0, count: 0, top: null }
+      m[r.school].wins  += r.wins
+      m[r.school].total += r.total
       m[r.school].count += 1
-      if (!m[r.school].top || r.total_score > m[r.school].top.total_score) m[r.school].top = r
+      if (!m[r.school].top || r.wins > m[r.school].top.wins) m[r.school].top = r
     }
     return Object.values(m)
-      .map(g => ({ ...g, avg: g.count ? Math.round(g.total / g.count) : 0 }))
-      .sort((a, b) => b.total - a.total)
+      .map(g => ({ ...g, ratio: g.total > 0 ? Math.round(g.wins / g.total * 100) : 0 }))
+      .sort((a, b) => b.ratio - a.ratio || b.wins - a.wins)
   }, [rows])
 
-  const filtered = useMemo(() => {
-    return rows.filter(r => {
+  const filtered = useMemo(() =>
+    rows.filter(r => {
       if (filterCountry && r.country !== filterCountry) return false
       if (filterCity    && r.city    !== filterCity)    return false
       if (filterSchool  && r.school  !== filterSchool)  return false
       return true
-    })
-  }, [rows, filterCountry, filterCity, filterSchool])
+    }),
+    [rows, filterCountry, filterCity, filterSchool])
 
   const medals = ['🥇', '🥈', '🥉']
 
@@ -103,12 +142,12 @@ export default function Classement() {
         <div>
           <h1 className="heading text-3xl">Classement</h1>
           <p className="text-slate-500 text-sm mt-1">
-            Scores cumulés des parties TV · {filtered.length} joueur{filtered.length !== 1 ? 's' : ''}
+            Ratio victoires / défaites · parties multijoueur · {filtered.length} joueur{filtered.length !== 1 ? 's' : ''}
           </p>
         </div>
         {user && (
           <Link to="/profil" className="btn btn-ghost text-xs px-3 py-1.5">
-            Modifier mon école →
+            Modifier mon profil →
           </Link>
         )}
       </div>
@@ -181,22 +220,30 @@ export default function Classement() {
                 text-xs text-slate-500 uppercase tracking-wider border-b border-white/10">
                 <span>#</span>
                 <span>Joueur</span>
-                <span className="hidden sm:block">Localisation</span>
                 <span className="hidden sm:block text-center">École</span>
-                <span className="text-right">Score TV</span>
+                <span className="hidden sm:block text-right">Palmarès</span>
+                <span className="text-right">Ratio</span>
               </div>
 
               {filtered.map((row, i) => {
-                const isMe = user && row.id === user.id
+                const isMe  = user && row.id === user.id
                 const ecole = row.school ? findEcole(row.school) : null
+                const ratioStr = row.total > 0
+                  ? `${Math.round(row.ratio * 100)} %`
+                  : null
+
                 return (
                   <div key={row.id}
                     className={`grid grid-cols-[2rem_1fr_auto_auto_auto] items-center gap-3 px-5 py-3.5
                       border-b border-white/5 last:border-0 transition-colors
                       ${isMe ? 'bg-midi-accent/5 border-midi-accent/20' : 'hover:bg-white/3'}`}>
+
                     <span className="text-lg text-center w-8 shrink-0">
-                      {i < 3 ? medals[i] : <span className="text-slate-500 text-sm font-mono">{i + 1}</span>}
+                      {row.total > 0 && i < 3
+                        ? medals[i]
+                        : <span className="text-slate-500 text-sm font-mono">{i + 1}</span>}
                     </span>
+
                     <div className="flex items-center gap-2.5 min-w-0">
                       <span className="text-xl shrink-0">{row.avatar ?? '🎭'}</span>
                       <div className="min-w-0">
@@ -206,9 +253,7 @@ export default function Classement() {
                         </div>
                       </div>
                     </div>
-                    <div className="hidden sm:block text-sm text-slate-500 text-right min-w-[100px]">
-                      {[row.city, row.country].filter(Boolean).join(', ') || '—'}
-                    </div>
+
                     <div className="hidden sm:flex justify-center w-20">
                       {ecole && (
                         <span className="text-xs bg-midi-accent/20 text-midi-accent px-2 py-0.5 rounded-full font-semibold whitespace-nowrap" title={ecole.label}>
@@ -216,10 +261,27 @@ export default function Classement() {
                         </span>
                       )}
                     </div>
-                    <div className="text-right tabular-nums font-bold text-midi-accent min-w-[70px]">
-                      {row.total_score > 0
-                        ? row.total_score.toLocaleString('fr-FR') + ' €'
-                        : <span className="text-slate-600 font-normal text-sm">—</span>}
+
+                    <div className="hidden sm:block text-right tabular-nums text-sm min-w-[80px]">
+                      {row.total > 0 ? (
+                        <>
+                          <span className="text-midi-good font-medium">{row.wins}V</span>
+                          <span className="text-slate-600 mx-0.5">·</span>
+                          <span className="text-midi-bad font-medium">{row.losses}D</span>
+                        </>
+                      ) : (
+                        <span className="text-slate-600 font-normal text-sm">—</span>
+                      )}
+                    </div>
+
+                    <div className="text-right tabular-nums font-bold min-w-[52px]">
+                      {ratioStr ? (
+                        <span className={row.ratio >= 0.5 ? 'text-midi-good' : 'text-midi-bad'}>
+                          {ratioStr}
+                        </span>
+                      ) : (
+                        <span className="text-slate-600 font-normal text-sm">—</span>
+                      )}
                     </div>
                   </div>
                 )
@@ -238,7 +300,7 @@ export default function Classement() {
           ) : ecolesRanked.length === 0 ? (
             <div className="card p-10 text-center text-slate-500">
               <div className="text-4xl mb-3">🎓</div>
-              <p>Aucune école n'a encore enregistré de score.</p>
+              <p>Aucune école n'a encore disputé de partie multijoueur.</p>
             </div>
           ) : (
             <div className="card overflow-hidden">
@@ -247,8 +309,8 @@ export default function Classement() {
                 <span>#</span>
                 <span>École</span>
                 <span className="hidden sm:block text-center">Joueurs</span>
-                <span className="hidden sm:block text-right">Moyenne</span>
-                <span className="text-right">Total</span>
+                <span className="hidden sm:block text-right">Palmarès</span>
+                <span className="text-right">Ratio</span>
               </div>
               {ecolesRanked.map((g, i) => (
                 <div key={g.ecole.value}
@@ -261,23 +323,29 @@ export default function Classement() {
                     <div className="font-semibold truncate text-white">{g.ecole.label}</div>
                     <div className="text-xs text-slate-500 truncate">
                       {g.ecole.category}
-                      {g.top && <> · top : <span className="text-slate-400">{g.top.nickname}</span></>}
+                      {g.top && <> · meilleur : <span className="text-slate-400">{g.top.nickname}</span></>}
                     </div>
                   </div>
                   <div className="hidden sm:block text-center text-slate-400 min-w-[60px] text-sm">
                     {g.count}
                   </div>
-                  <div className="hidden sm:block text-right text-slate-400 tabular-nums min-w-[80px] text-sm">
-                    {g.avg.toLocaleString('fr-FR')} €
+                  <div className="hidden sm:block text-right tabular-nums text-sm min-w-[80px]">
+                    <span className="text-midi-good font-medium">{g.wins}V</span>
+                    <span className="text-slate-600 mx-0.5">·</span>
+                    <span className="text-midi-bad font-medium">{g.total - g.wins}D</span>
                   </div>
-                  <div className="text-right tabular-nums font-bold text-midi-accent min-w-[90px]">
-                    {g.total.toLocaleString('fr-FR')} €
+                  <div className="text-right tabular-nums font-bold min-w-[52px]">
+                    <span className={g.ratio >= 50 ? 'text-midi-good' : 'text-midi-bad'}>
+                      {g.ratio} %
+                    </span>
                   </div>
                 </div>
               ))}
             </div>
           )}
-          <p className="text-xs text-slate-500 text-center">Total = somme des scores TV des joueurs de l'école.</p>
+          <p className="text-xs text-slate-500 text-center">
+            Ratio = victoires / parties jouées par les membres de l'école.
+          </p>
         </>
       )}
 
@@ -287,7 +355,7 @@ export default function Classement() {
           <span className="text-3xl">🏆</span>
           <div className="flex-1">
             <div className="font-semibold text-white">Apparais dans le classement</div>
-            <div className="text-sm text-slate-400 mt-0.5">Crée un compte avec ton école pour participer à la compétition.</div>
+            <div className="text-sm text-slate-400 mt-0.5">Crée un compte et joue en multijoueur pour entrer dans le top.</div>
           </div>
           <Link to="/auth" className="btn btn-primary text-sm shrink-0">Créer un compte</Link>
         </div>
