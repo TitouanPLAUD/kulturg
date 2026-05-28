@@ -77,23 +77,30 @@ html[data-contrast='high'] .card { border-width: 2px; }
 
 /* ===== LIGHT — overrides utilitaires fréquents ===== */
 html[data-theme='light'] .bg-midi-bg\/70,
+html[data-theme='light'] .bg-midi-bg\/80,
 html[data-theme='light'] .bg-midi-card\/80 {
-  background: var(--bg-card) !important;
+  background: rgba(248, 250, 252, 0.88) !important;
 }
 html[data-theme='light'] .text-slate-100,
 html[data-theme='light'] .text-slate-200,
 html[data-theme='light'] .text-slate-300 { color: #0f172a !important; }
 html[data-theme='light'] .text-slate-400 { color: #475569 !important; }
 html[data-theme='light'] .text-slate-500 { color: #64748b !important; }
+html[data-theme='light'] .text-slate-600 { color: #64748b !important; }
 html[data-theme='light'] .text-white { color: #0f172a !important; }
 
-html[data-theme='light'] .bg-white\/5  { background: var(--surface-soft) !important; }
-html[data-theme='light'] .bg-white\/10 { background: var(--surface-hover) !important; }
+html[data-theme='light'] .bg-white\/5  { background: rgba(15,23,42,0.05) !important; }
+html[data-theme='light'] .bg-white\/10 { background: rgba(15,23,42,0.08) !important; }
+html[data-theme='light'] .bg-white\/20 { background: rgba(15,23,42,0.12) !important; }
 html[data-theme='light'] .hover\:bg-white\/10:hover { background: rgba(15,23,42,0.10) !important; }
 html[data-theme='light'] .hover\:bg-white\/5:hover  { background: rgba(15,23,42,0.06) !important; }
 
 html[data-theme='light'] .border-white\/5,
 html[data-theme='light'] .border-white\/10 { border-color: rgba(15,23,42,0.12) !important; }
+
+html[data-theme='light'] header {
+  box-shadow: 0 1px 12px rgba(15,23,42,0.08);
+}
 
 html[data-theme='light'] .btn-ghost {
   background: rgba(15,23,42,0.05);
