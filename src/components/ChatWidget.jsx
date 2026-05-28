@@ -6,14 +6,19 @@ import { supabase } from '../lib/supabase.js'
 
 export default function ChatWidget() {
   const { user } = useAuth()
-  const { isOpen, setIsOpen, targetConvId, setTargetConvId } = useChatWidget()
+  const { isOpen, setIsOpen, targetConvId, setTargetConvId, registerOpenDM } = useChatWidget()
 
   const {
     conversations, activeId, messages, profiles,
     loadingConvs, loadingMsgs,
-    selectConversation, sendMessage, createGroup,
+    selectConversation, sendMessage, createGroup, openDM,
     convDisplayName, convAvatar, fmtTime,
   } = useChat()
+
+  // Enregistrer openDM dans le contexte pour que d'autres pages puissent l'appeler
+  useEffect(() => {
+    registerOpenDM(openDM)
+  }, [openDM, registerOpenDM])
 
   const [view,    setView]    = useState('list')   // 'list' | 'conv'
   const [input,   setInput]   = useState('')
