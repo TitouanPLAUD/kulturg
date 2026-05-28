@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useGame, levelFromXP, nextLevelThreshold, BADGES } from '../context/GameContext.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
@@ -6,9 +6,20 @@ import { supabase } from '../lib/supabase.js'
 import { THEME_LIST } from '../data/themes.js'
 import SchoolPicker from '../components/SchoolPicker.jsx'
 
+// ─── Suggestions d'emojis par catégorie ──────────────────────
+const EMOJI_CATEGORIES = [
+  { label: 'Visages', emojis: ['😀','😎','🤩','🥸','🧐','🤓','😈','👻','🤖','👽','🎭','🥷','🧙','🧝','🧛','🧟','🐱','🐶','🦊','🐸'] },
+  { label: 'Animaux', emojis: ['🦁','🐯','🐻','🐼','🐨','🦅','🦉','🦋','🐢','🦈','🐬','🐙','🦑','🦜','🐝','🦚','🦩','🐉','🦄','🐺'] },
+  { label: 'Sport', emojis: ['⚽','🏀','🎾','🏈','⚾','🎱','🏓','🥊','🏆','🎯','⛷️','🏄','🤸','🧗','🏇','🤺','🥋','🎿','🏋️','🚴'] },
+  { label: 'Nourriture', emojis: ['🍕','🍔','🌮','🍜','🍣','🍩','🎂','🍎','🍓','🍉','☕','🧋','🍺','🍷','🥑','🌶️','🧀','🥐','🍦','🍫'] },
+  { label: 'Objets', emojis: ['🎮','🕹️','💻','📱','🎸','🎹','🎺','🎻','🎤','🎧','📚','🔬','🔭','⚗️','💎','🏺','🗿','🎨','🖌️','✏️'] },
+  { label: 'Symboles', emojis: ['⭐','🌟','💫','✨','🔥','💥','❄️','🌈','⚡','🌙','☀️','🌊','🍀','🌸','🌺','🌻','🌙','💜','🖤','❤️'] },
+]
+
 export default function Profil() {
   const { state, reset } = useGame()
-  const { user, profile } = useAuth()
+  const { user, profile, refreshProfile } = useAuth()
+  const [showAvatarPicker, setShowAvatarPicker] = useState(false)
   const level = levelFromXP(state.totalXP)
   const next  = nextLevelThreshold(state.totalXP)
   const accuracy = state.totalAnswered
@@ -18,6 +29,14 @@ export default function Profil() {
 
   return (
     <div className="space-y-6 max-w-3xl mx-auto">
+      {showAvatarPicker && user && profile && (
+        <AvatarPickerModal
+          current={profile.avatar}
+          profileId={profile.id}
+          onClose={() => setShowAvatarPicker(false)}
+          onSaved={refreshProfile}
+        />
+      )}
 
       {/* Carte identité */}
       <section className="card p-6 md:p-8 relative overflow-hidden">
@@ -25,8 +44,17 @@ export default function Profil() {
         <div className="relative flex flex-col sm:flex-row items-start sm:items-center gap-5">
 
           {/* Avatar / niveau */}
-          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-midi-accent to-amber-600 grid place-items-center font-display text-3xl text-slate-900 shadow-xl shrink-0 select-none">
+          <div
+            className="w-20 h-20 rounded-2xl bg-gradient-to-br from-midi-accent to-amber-600 grid place-items-center font-display text-3xl text-slate-900 shadow-xl shrink-0 select-none relative group cursor-pointer"
+            onClick={() => user && profile && setShowAvatarPicker(true)}
+            title={user && profile ? 'Changer l\'avatar' : undefined}
+          >
             {user && profile ? profile.avatar : level}
+            {user && profile && (
+              <div className="absolute inset-0 rounded-2xl bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-base font-sans font-medium">
+                ✏️
+              </div>
+            )}
           </div>
 
           <div className="flex-1 min-w-0">
@@ -166,6 +194,116 @@ export default function Profil() {
           </div>
         </section>
       )}
+    </div>
+  )
+}
+
+function AvatarPickerModal({ current, profileId, onClose, onSaved }) {
+  const [selected, setSelected]   = useState(current ?? '😀')
+  const [custom,   setCustom]     = useState('')
+  const [activeTab, setActiveTab] = useState(0)
+  const [saving,   setSaving]     = useState(false)
+  const inputRef = useRef(null)
+
+  // When the user types in the custom field, preview only the first grapheme cluster (emoji)
+  function handleCustomInput(e) {
+    const val = e.target.value
+    if (!val) { setCustom(''); return }
+    // Extract first emoji / grapheme
+    const seg = [...new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(val)]
+    if (seg.length) {
+      const first = seg[0].segment
+      setCustom(first)
+      setSelected(first)
+    }
+  }
+
+  async function save() {
+    setSaving(true)
+    await supabase.from('profiles').update({ avatar: selected }).eq('id', profileId)
+    setSaving(false)
+    await onSaved()
+    onClose()
+  }
+
+  // Close on backdrop click
+  function handleBackdrop(e) {
+    if (e.target === e.currentTarget) onClose()
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+      onMouseDown={handleBackdrop}
+    >
+      <div className="bg-midi-surface border border-white/10 rounded-2xl shadow-2xl w-full max-w-md flex flex-col max-h-[90vh]">
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 pt-5 pb-3 shrink-0">
+          <h2 className="font-display text-xl tracking-wider">Choisir un avatar</h2>
+          <button onClick={onClose} className="text-slate-400 hover:text-white transition-colors text-xl leading-none">✕</button>
+        </div>
+
+        {/* Preview + custom input */}
+        <div className="px-5 pb-3 flex items-center gap-4 shrink-0">
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-midi-accent to-amber-600 grid place-items-center text-3xl text-slate-900 shadow-xl shrink-0 select-none">
+            {selected}
+          </div>
+          <div className="flex-1">
+            <label className="text-xs text-slate-400 mb-1 block">Ou colle / écris n'importe quel emoji</label>
+            <input
+              ref={inputRef}
+              className="input w-full text-center text-2xl"
+              placeholder="✨"
+              value={custom}
+              onChange={handleCustomInput}
+              maxLength={8}
+            />
+          </div>
+        </div>
+
+        {/* Category tabs */}
+        <div className="px-5 flex gap-1 overflow-x-auto scrollbar-thin shrink-0 pb-1">
+          {EMOJI_CATEGORIES.map((cat, i) => (
+            <button
+              key={cat.label}
+              onClick={() => setActiveTab(i)}
+              className={`px-3 py-1 rounded-full text-xs whitespace-nowrap transition-colors ${
+                activeTab === i
+                  ? 'bg-midi-accent text-slate-900 font-semibold'
+                  : 'bg-white/5 text-slate-400 hover:bg-white/10'
+              }`}
+            >
+              {cat.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Emoji grid */}
+        <div className="px-5 py-3 overflow-y-auto flex-1 scrollbar-thin">
+          <div className="grid grid-cols-8 gap-1">
+            {EMOJI_CATEGORIES[activeTab].emojis.map(emoji => (
+              <button
+                key={emoji}
+                onClick={() => { setSelected(emoji); setCustom('') }}
+                className={`text-2xl p-1.5 rounded-xl transition-all hover:scale-110 active:scale-95 ${
+                  selected === emoji ? 'bg-midi-accent/30 ring-2 ring-midi-accent/60' : 'hover:bg-white/10'
+                }`}
+              >
+                {emoji}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="px-5 py-4 shrink-0 border-t border-white/10 flex justify-end gap-3">
+          <button onClick={onClose} className="btn btn-ghost text-sm px-4 py-2">Annuler</button>
+          <button onClick={save} disabled={saving} className="btn btn-primary text-sm px-5 py-2 disabled:opacity-60">
+            {saving ? 'Enregistrement…' : 'Enregistrer'}
+          </button>
+        </div>
+      </div>
     </div>
   )
 }
