@@ -1,0 +1,23 @@
+// Mot Mystérieux — devine le mot à partir de la définition (et indices progressifs)
+export const MOTS = [
+  { id: 'mo1', word: 'Encyclopédie', definition: "Ouvrage de référence qui rassemble des connaissances sur tous les domaines.", clues: ["Commence par E", "12 lettres", "Souvent en plusieurs volumes"] },
+  { id: 'mo2', word: 'Astronomie', definition: "Science qui étudie les astres et l'univers.", clues: ["Commence par A", "10 lettres", "Pas l'astrologie !"] },
+  { id: 'mo3', word: 'Photosynthèse', definition: "Processus par lequel les plantes fabriquent leur énergie à partir de la lumière.", clues: ["Commence par P", "13 lettres", "Implique du CO₂ et de l'eau"] },
+  { id: 'mo4', word: 'Démocratie', definition: "Régime politique où le pouvoir vient du peuple.", clues: ["Commence par D", "10 lettres", "Du grec « dêmos »"] },
+  { id: 'mo5', word: 'Renaissance', definition: "Période historique de renouveau artistique en Europe (XIV–XVIe s.).", clues: ["Commence par R", "11 lettres", "On y trouve Léonard de Vinci"] },
+  { id: 'mo6', word: 'Métaphore', definition: "Figure de style qui établit une comparaison sans outil de comparaison.", clues: ["Commence par M", "9 lettres", "« Cet homme est un lion »"] },
+  { id: 'mo7', word: 'Volcan', definition: "Relief géologique d'où peut sortir de la lave.", clues: ["Commence par V", "6 lettres", "L'Etna en est un"] },
+  { id: 'mo8', word: 'Polyglotte', definition: "Personne qui parle plusieurs langues.", clues: ["Commence par P", "10 lettres", "Préfixe « poly »"] },
+  { id: 'mo9', word: 'Hiéroglyphe', definition: "Système d'écriture utilisé par les anciens Égyptiens.", clues: ["Commence par H", "11 lettres", "Champollion l'a déchiffré"] },
+  { id: 'mo10', word: 'Constellation', definition: "Groupe d'étoiles formant un dessin reconnaissable dans le ciel.", clues: ["Commence par C", "13 lettres", "Orion en est une"] },
+  { id: 'mo11', word: 'Aquarelle', definition: "Technique de peinture à base d'eau.", clues: ["Commence par A", "9 lettres", "Souvent sur papier"] },
+  { id: 'mo12', word: 'Vélocipède', definition: "Ancêtre de la bicyclette.", clues: ["Commence par V", "10 lettres", "XIXe siècle"] },
+  { id: 'mo13', word: 'Lexique', definition: "Ensemble des mots d'une langue ou d'un domaine.", clues: ["Commence par L", "7 lettres", "Cousin du dictionnaire"] },
+  { id: 'mo14', word: 'Onomatopée', definition: "Mot dont le son imite la chose qu'il désigne.", clues: ["Commence par O", "10 lettres", "« Boum ! » en est une"] },
+  { id: 'mo15', word: 'Archipel', definition: "Groupe d'îles.", clues: ["Commence par A", "8 lettres", "Les Canaries, par ex."] },
+  { id: 'mo16', word: 'Mosaïque', definition: "Assemblage de petits éléments colorés formant un dessin.", clues: ["Commence par M", "8 lettres", "Art antique romain"] },
+  { id: 'mo17', word: 'Symphonie', definition: "Œuvre musicale pour orchestre, en plusieurs mouvements.", clues: ["Commence par S", "9 lettres", "Beethoven en a écrit 9"] },
+  { id: 'mo18', word: 'Antiquité', definition: "Période historique avant le Moyen Âge.", clues: ["Commence par A", "9 lettres", "Égypte, Grèce, Rome"] },
+  { id: 'mo19', word: 'Calligraphie', definition: "Art de la belle écriture.", clues: ["Commence par C", "12 lettres", "Très prisée en Asie"] },
+  { id: 'mo20', word: 'Cartographie', definition: "Science et art de l'élaboration des cartes.", clues: ["Commence par C", "12 lettres", "Discipline géographique"] },
+]

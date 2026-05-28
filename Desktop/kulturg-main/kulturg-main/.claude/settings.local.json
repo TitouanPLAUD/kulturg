@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install *)",
+      "Bash(npm run *)",
+      "Bash(Start-Process \"opera\" -ArgumentList \"http://localhost:5173\")",
+      "PowerShell(Start-Process \"opera\" -ArgumentList \"http://localhost:5173\")",
+      "mcp__ca192bb9-7428-4d34-88b1-1c43b424d1d5__list_projects",
+      "mcp__ca192bb9-7428-4d34-88b1-1c43b424d1d5__get_project_url",
+      "mcp__ca192bb9-7428-4d34-88b1-1c43b424d1d5__get_publishable_keys",
+      "mcp__ca192bb9-7428-4d34-88b1-1c43b424d1d5__list_tables",
+      "mcp__ca192bb9-7428-4d34-88b1-1c43b424d1d5__apply_migration",
+      "Bash(Get-Process -Name \"node\" -ErrorAction SilentlyContinue)",
+      "Bash(Stop-Process -Force)",
+      "Bash(Write-Host \"done\")",
+      "mcp__Claude_in_Chrome__tabs_context_mcp",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(node scripts/seed-questions.js)",
+      "mcp__ca192bb9-7428-4d34-88b1-1c43b424d1d5__execute_sql"
+    ]
+  }
+}
