@@ -5,7 +5,7 @@ import { QUESTIONS as ALL_QUESTIONS } from '../data/questions.js'
 
 export const RACE_MAX_PLAYERS = 15
 export const RACE_MIN_PLAYERS = 2
-export const Q_COUNT          = 15
+export const Q_COUNT          = 10
 export const TIMER_MS         = 20000
 
 // Points par rang de réponse correcte

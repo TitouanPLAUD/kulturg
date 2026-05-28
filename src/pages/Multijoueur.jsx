@@ -63,7 +63,7 @@ export default function Multijoueur() {
 
         <ModeCard
           emoji="🏁"
-          title="Course au Points"
+          title="Course aux Points"
           subtitle="2 à 15 joueurs"
           description="Tous les joueurs voient les mêmes questions. Sois le plus rapide à répondre correctement pour scorer un maximum !"
           phases={[

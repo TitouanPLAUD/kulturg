@@ -117,7 +117,7 @@ function RaceLobby({ room, participants, isHost, code, onStart }) {
       {/* Header */}
       <div className="text-center space-y-2">
         <div className="text-6xl">🏁</div>
-        <h1 className="font-display text-4xl md:text-5xl tracking-wider">Course au Points</h1>
+        <h1 className="font-display text-4xl md:text-5xl tracking-wider">Course aux Points</h1>
         <p className="text-slate-500 text-sm">Jusqu'à {RACE_MAX_PLAYERS} joueurs · {Q_COUNT} questions · 20 secondes chacune</p>
       </div>
 
