@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useTvRoom, gainForAnswer } from '../hooks/useTvRoom.js'
 import { JLRProvider, useJLR } from '../components/JLRAvatar.jsx'
@@ -49,12 +49,14 @@ export default function TvGame() {
 function TvGameCore() {
   const { code } = useParams()
   const { user } = useAuth()
+  const navigate = useNavigate()
   const { room, participants, answers, myAnswers, isHost, loading,
           submitAnswer, hostAdvance, startGame } = useTvRoom(code)
   const { trigger } = useJLR()
 
   const [showTransition, setShowTransition] = useState(false)
   const [transPhase, setTransPhase]         = useState(null)
+  const [confirmQuit, setConfirmQuit]       = useState(false)
   const prevPhase = useRef(null)
 
   useEffect(() => {
@@ -86,6 +88,42 @@ function TvGameCore() {
   return (
     <TV grad={meta?.grad}>
       {showTransition && <PhaseTransition phase={transPhase} />}
+
+      {/* Bouton quitter — toutes les phases sauf finished */}
+      {phase !== 'finished' && (
+        <button
+          onClick={() => setConfirmQuit(true)}
+          className="fixed top-4 right-4 z-40 px-3 py-1.5 rounded-lg bg-black/60 border border-white/10 text-slate-400 hover:text-white hover:border-white/30 text-xs font-medium transition backdrop-blur-sm">
+          ✕ Quitter
+        </button>
+      )}
+
+      {/* Modal confirmation quitter */}
+      {confirmQuit && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-[#111827] border border-white/10 rounded-2xl p-6 w-full max-w-sm text-center space-y-4 animate-pop">
+            <div className="text-4xl">🚪</div>
+            <h2 className="font-display text-2xl tracking-wider text-white">Quitter la partie ?</h2>
+            <p className="text-slate-400 text-sm">
+              {isHost
+                ? 'Tu es l\'hôte. Si tu pars, la partie risque de se bloquer pour les autres.'
+                : 'Tu vas quitter la partie en cours.'}
+            </p>
+            <div className="flex gap-3 pt-1">
+              <button
+                onClick={() => setConfirmQuit(false)}
+                className="flex-1 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-white font-semibold transition">
+                Rester
+              </button>
+              <button
+                onClick={() => navigate('/multi')}
+                className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-semibold transition">
+                Quitter
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {phase !== 'lobby' && phase !== 'finished' && (
         <TopBar phase={phase} pd={pd} participants={participants} />
@@ -933,6 +971,9 @@ function FinishedPhase({ pd, participants, answers }) {
 
         <Link to="/tv" className="block w-full py-4 text-center rounded-2xl bg-yellow-500 text-black font-display text-xl tracking-wider hover:bg-yellow-400 transition">
           Nouvelle partie
+        </Link>
+        <Link to="/" className="block w-full py-3 text-center rounded-2xl bg-white/5 border border-white/10 text-slate-400 hover:text-white font-semibold transition text-sm">
+          Retour à l'accueil
         </Link>
       </div>
     </div>

@@ -87,7 +87,8 @@ export function useTvRoom(code) {
   const [participants, setParticipants] = useState([])
   const [answers, setAnswers]         = useState([])
   const [loading, setLoading]         = useState(true)
-  const channelRef = useRef(null)
+  const channelRef       = useRef(null)
+  const gameStartedAtRef = useRef(null) // Détecte le démarrage d'une nouvelle partie
 
   const isHost = room?.host_id === user?.id
 
@@ -115,9 +116,22 @@ export function useTvRoom(code) {
       setAnswers(ans ?? [])
       setLoading(false)
 
+      // Initialiser le curseur game_started_at avec l'état actuel
+      gameStartedAtRef.current = r.phase_data?.game_started_at ?? null
+
       channelRef.current = supabase.channel(`tv-${r.id}`)
         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'tv_rooms' },
-          ({ new: u }) => { if (u.id === r.id && mounted) setRoom(u) })
+          ({ new: u }) => {
+            if (u.id === r.id && mounted) {
+              // Nouvelle partie détectée → vider les réponses obsolètes
+              const newGSA = u.phase_data?.game_started_at
+              if (newGSA && newGSA !== gameStartedAtRef.current) {
+                gameStartedAtRef.current = newGSA
+                setAnswers([])
+              }
+              setRoom(u)
+            }
+          })
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'tv_participants' },
           ({ new: row }) => { if (row?.room_id === r.id && mounted) loadParticipants(r.id) })
         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'tv_participants' },
@@ -157,10 +171,20 @@ export function useTvRoom(code) {
     // On exige la salle complète (4/4)
     if (activeIds.length < TV_REQUIRED_PLAYERS) return
 
+    // Purger les réponses d'une éventuelle partie précédente dans cette salle
+    await supabase.from('tv_answers').delete().eq('room_id', room.id)
+    setAnswers([]) // Vider l'état local de l'hôte immédiatement
+
+    const game_started_at = new Date().toISOString()
+
     // 4 joueurs → jeu complet (le seul cas autorisé)
+    // game_started_at est diffusé à tous les clients → ils vident leur état local
     return updateRoom({
       phase:      'coup_envoi',
-      phase_data: makeBattleData(activeIds, rnd(ALL_QUESTIONS, 20), rnd(ALL_QUESTIONS, 1)[0]),
+      phase_data: {
+        ...makeBattleData(activeIds, rnd(ALL_QUESTIONS, 20), rnd(ALL_QUESTIONS, 1)[0]),
+        game_started_at,
+      },
     })
   }
 
