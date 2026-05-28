@@ -15,6 +15,10 @@ export const PHASES = [
   'finished',
 ]
 
+// Capacité d'une salle TV
+export const TV_MAX_PLAYERS = 4
+export const TV_REQUIRED_PLAYERS = TV_MAX_PLAYERS // requis pour démarrer
+
 // Gains du Coup de Maître (cumulatif par question réussie)
 const CDM_GAINS = [500, 1000, 1500, 2000, 5000]
 
@@ -150,33 +154,10 @@ export function useTvRoom(code) {
   async function startGame() {
     if (!isHost) return
     const activeIds = participants.map(p => p.profile_id)
-    if (activeIds.length < 2) return
+    // On exige la salle complète (4/4)
+    if (activeIds.length < TV_REQUIRED_PLAYERS) return
 
-    // 2 joueurs → coup fatal direct
-    if (activeIds.length === 2) {
-      return updateRoom({
-        phase: 'coup_fatal',
-        phase_data: {
-          active_players: activeIds,
-          eliminated:     [],
-          champion_id:    activeIds[0],
-          coups:          Object.fromEntries(activeIds.map(id => [id, 12])),
-          questions:      rnd(ALL_QUESTIONS, 15),
-          q_idx:          0,
-          q_start_at:     new Date().toISOString(),
-        },
-      })
-    }
-
-    // 3 joueurs → coup par coup (3 → 2 → coup fatal)
-    if (activeIds.length === 3) {
-      return updateRoom({
-        phase:      'coup_par_coup',
-        phase_data: makeBattleData(activeIds, rnd(ALL_QUESTIONS, 20), rnd(ALL_QUESTIONS, 1)[0]),
-      })
-    }
-
-    // 4 joueurs → jeu complet
+    // 4 joueurs → jeu complet (le seul cas autorisé)
     return updateRoom({
       phase:      'coup_envoi',
       phase_data: makeBattleData(activeIds, rnd(ALL_QUESTIONS, 20), rnd(ALL_QUESTIONS, 1)[0]),

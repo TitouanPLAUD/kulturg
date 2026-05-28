@@ -29,7 +29,7 @@ export default function Multijoueur() {
         <ModeCard
           emoji="📺"
           title="Jeu TV"
-          subtitle="2 à 4 joueurs"
+          subtitle="4 joueurs requis"
           description="Simulation fidèle des 12 Coups de Midi : Grand Oral, Duel, Coup de Maître, Étoile Mystérieuse et Sprint final."
           phases={[
             { icon: '🎤', label: 'Grand Oral', detail: '6 questions' },
@@ -47,7 +47,7 @@ export default function Multijoueur() {
         <ModeCard
           emoji="⚔️"
           title="Frappe Express"
-          subtitle="1 contre 1"
+          subtitle="2 joueurs requis"
           description="Face à face ! Premier à 5 bonnes réponses gagne. Réponds vite — la première bonne réponse rapporte le point. Balle de match à 4-4 !"
           phases={[
             { icon: '⚡', label: 'Simultané',    detail: 'Même question en même temps' },

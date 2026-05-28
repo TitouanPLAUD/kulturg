@@ -254,12 +254,18 @@ function LobbyPhase({ room, participants, isHost, onStart, code }) {
         </div>
 
         {isHost ? (
-          <button onClick={onStart} disabled={n < 2}
+          <button onClick={onStart} disabled={n < 4}
             className="w-full py-4 rounded-2xl font-display text-xl tracking-wider bg-yellow-500 text-black hover:bg-yellow-400 transition disabled:opacity-40 disabled:cursor-not-allowed">
-            {n < 2 ? '⏳ En attente d\'un joueur…' : '▶ Lancer la partie !'}
+            {n < 4
+              ? `⏳ En attente de ${4 - n} joueur${4 - n > 1 ? 's' : ''} (${n}/4)`
+              : '▶ Lancer la partie !'}
           </button>
         ) : (
-          <p className="text-center text-slate-500 text-sm py-4">⏳ En attente que l'hôte lance la partie…</p>
+          <p className="text-center text-slate-500 text-sm py-4">
+            {n < 4
+              ? `⏳ En attente de ${4 - n} joueur${4 - n > 1 ? 's' : ''} (${n}/4)…`
+              : "⏳ En attente que l'hôte lance la partie…"}
+          </p>
         )}
       </div>
     </div>

@@ -112,6 +112,8 @@ export function useDuelRoom(code) {
 
   async function startGame() {
     if (!isHost) return
+    // On exige que l'adversaire ait rejoint (salle complète 2/2)
+    if (!room?.guest_id) return
     await updateRoom({
       phase: 'playing',
       phase_data: {
