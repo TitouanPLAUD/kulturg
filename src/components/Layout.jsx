@@ -9,6 +9,11 @@ const navLinks = [
   { to: '/reglages',   label: 'Réglages',     emoji: '⚙️' },
 ]
 
+const authLinks = [
+  { to: '/amis', label: 'Amis', emoji: '👥' },
+  { to: '/chat', label: 'Chat', emoji: '💬' },
+]
+
 function NavItem({ to, label, emoji, end = false }) {
   return (
     <NavLink to={to} end={end}
@@ -49,7 +54,7 @@ export default function Layout() {
           {/* Nav desktop */}
           <nav className="ml-4 hidden md:flex items-center gap-0.5">
             {navLinks.map(l => <NavItem key={l.to} {...l} end={l.end} />)}
-            {user && <NavItem to="/amis" label="Amis" emoji="👥" />}
+            {user && authLinks.map(l => <NavItem key={l.to} {...l} />)}
           </nav>
 
           {/* Spacer */}
@@ -96,7 +101,7 @@ export default function Layout() {
         {/* Nav mobile */}
         <nav className="md:hidden flex items-center gap-0.5 overflow-x-auto scrollbar-thin px-3 py-2 border-t border-white/5">
           {navLinks.map(l => <MobileLink key={l.to} to={l.to} label={l.emoji} end={l.end} />)}
-          {user && <MobileLink to="/amis" label="👥" />}
+          {user && authLinks.map(l => <MobileLink key={l.to} to={l.to} label={l.emoji} />)}
         </nav>
       </header>
 

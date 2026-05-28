@@ -1,10 +1,13 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase.js'
 import { useAuth } from '../context/AuthContext.jsx'
+import { useChat } from '../hooks/useChat.js'
 
 export default function Amis() {
   const { user, profile } = useAuth()
+  const navigate = useNavigate()
+  const { openDM } = useChat()
   const [search, setSearch]         = useState('')
   const [results, setResults]       = useState([])
   const [friends, setFriends]       = useState([])   // accepted
@@ -264,6 +267,14 @@ export default function Amis() {
                 <li key={f.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 group">
                   <span className="text-2xl">{p?.avatar}</span>
                   <span className="flex-1 font-medium">{p?.nickname}</span>
+                  <button
+                    onClick={async () => {
+                      const convId = await openDM(p.id)
+                      if (convId) navigate(`/chat/${convId}`)
+                    }}
+                    className="opacity-0 group-hover:opacity-100 transition btn btn-ghost text-xs px-2 py-1 text-midi-accent hover:text-midi-accent/80">
+                    💬 Message
+                  </button>
                   <button
                     onClick={() => remove(f.id)}
                     className="opacity-0 group-hover:opacity-100 transition btn btn-ghost text-xs px-2 py-1 text-slate-500 hover:text-red-400">
