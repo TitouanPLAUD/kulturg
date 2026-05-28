@@ -1,6 +1,8 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useGame, levelFromXP, nextLevelThreshold } from '../context/GameContext.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
+import { ChatWidgetProvider } from '../context/ChatWidgetContext.jsx'
+import ChatWidget from './ChatWidget.jsx'
 
 const navLinks = [
   { to: '/',           label: 'Accueil',      emoji: '🏠', end: true },
@@ -11,7 +13,6 @@ const navLinks = [
 
 const authLinks = [
   { to: '/amis', label: 'Amis', emoji: '👥' },
-  { to: '/chat', label: 'Chat', emoji: '💬' },
 ]
 
 function NavItem({ to, label, emoji, end = false }) {
@@ -41,6 +42,7 @@ export default function Layout() {
   }
 
   return (
+    <ChatWidgetProvider>
     <div className="min-h-screen flex flex-col">
       <header className="sticky top-0 z-30 backdrop-blur-xl bg-midi-bg/80 border-b border-white/10">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center gap-3">
@@ -114,7 +116,10 @@ export default function Layout() {
           Les Douze Coups de Minuit — quiz de culture générale
         </div>
       </footer>
+
+      <ChatWidget />
     </div>
+    </ChatWidgetProvider>
   )
 }
 

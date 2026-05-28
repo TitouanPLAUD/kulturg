@@ -1,13 +1,14 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useChat } from '../hooks/useChat.js'
+import { useChatWidget } from '../context/ChatWidgetContext.jsx'
 
 export default function Amis() {
   const { user, profile } = useAuth()
-  const navigate = useNavigate()
   const { openDM } = useChat()
+  const { openWidget } = useChatWidget()
   const [search, setSearch]         = useState('')
   const [results, setResults]       = useState([])
   const [friends, setFriends]       = useState([])   // accepted
@@ -269,7 +270,7 @@ export default function Amis() {
                   friend={p}
                   onMessage={async () => {
                     const convId = await openDM(p.id)
-                    if (convId) navigate(`/chat/${convId}`)
+                    if (convId) openWidget(convId)
                     else showToast('Impossible d\'ouvrir la conversation.', 'err')
                   }}
                   onRemove={() => remove(f.id)}
