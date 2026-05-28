@@ -124,14 +124,86 @@ export function nextLevelThreshold(xp) {
 
 // ─── Grades par palier de niveau ──────────────────────────────────────────────
 export const GRADES = [
-  { minLevel: 1000, name: 'Maître Absolu des Douze Coups', emoji: '👑', color: 'text-yellow-300',  message: "Il n'y a plus rien à prouver. Tu règnes sur les Douze Coups." },
-  { minLevel:  500, name: 'Oracle des Temps Modernes',     emoji: '🔮', color: 'text-purple-400', message: "Les autres joueurs murmurent ton nom avec respect." },
-  { minLevel:  100, name: 'Cerveau d\'Acier Trempé',       emoji: '⚡', color: 'text-blue-300',   message: "Ton savoir est une arme redoutable. Impressionnant." },
-  { minLevel:   50, name: 'Encyclopédiste Fou',            emoji: '🧠', color: 'text-cyan-400',   message: "Tu n'es plus un joueur ordinaire — tu es une référence." },
-  { minLevel:   25, name: 'Maestro du Quiz',               emoji: '🎓', color: 'text-green-400',  message: "Tu domines la majorité des joueurs. Continue sur ta lancée !" },
-  { minLevel:   10, name: 'Érudit des Salons',             emoji: '📚', color: 'text-indigo-400', message: "Tes connaissances commencent à forcer l'admiration." },
-  { minLevel:    5, name: 'Fureteur de Savoirs',           emoji: '🔍', color: 'text-teal-400',   message: "La curiosité est ton moteur. Tu es sur la bonne voie !" },
-  { minLevel:    1, name: 'Apprenti Culturel',             emoji: '🌱', color: 'text-slate-400',  message: "Tes premiers pas dans l'arène — chaque réponse compte." },
+  {
+    minLevel: 1000, name: 'Maître Absolu des Douze Coups', emoji: '👑', color: 'text-yellow-300',
+    messages: [
+      "Il n'y a plus rien à prouver. Tu règnes sur les Douze Coups de Minuit.",
+      "Les légendes ne naissent pas, elles se construisent question après question. Tu l'as fait.",
+      "Mille niveaux. Certains cherchent encore le niveau 2. Toi, tu es au sommet.",
+      "Même Jean-Luc Reichmann s'inclinerait devant toi.",
+      "Tu n'es plus un joueur. Tu es une institution.",
+    ],
+  },
+  {
+    minLevel: 500, name: 'Oracle des Temps Modernes', emoji: '🔮', color: 'text-purple-400',
+    messages: [
+      "Les autres joueurs murmurent ton nom avec une admiration mêlée de crainte.",
+      "Tu vois les questions avant même qu'elles arrivent. C'est troublant.",
+      "À ce stade, le quiz te connaît par cœur. Et il a un peu peur de toi.",
+      "500 niveaux. Tu pourrais écrire les questions toi-même.",
+      "L'oracle a parlé — et il avait raison, comme toujours.",
+    ],
+  },
+  {
+    minLevel: 100, name: "Cerveau d'Acier Trempé", emoji: '⚡', color: 'text-blue-300',
+    messages: [
+      "Ton savoir est une arme redoutable. Le reste du monde n'est pas prêt.",
+      "100 niveaux, c'est pas un score — c'est un mode de vie.",
+      "Les questions difficiles ? Elles te font sourire. C'est inquiétant.",
+      "Tu as transformé chaque bonne réponse en blindage mental. Respect.",
+      "Cerveau d'acier, cœur de feu. L'arène t'appartient.",
+    ],
+  },
+  {
+    minLevel: 50, name: 'Encyclopédiste Fou', emoji: '🧠', color: 'text-cyan-400',
+    messages: [
+      "Tu n'es plus un joueur ordinaire — tu es une référence vivante.",
+      "Les gens commencent à te demander des choses au lieu de googler.",
+      "50 niveaux de savoir accumulé. Ton cerveau déborde, et c'est beau.",
+      "À ce stade, tu mérites ton propre thème dans le jeu.",
+      "L'encyclopédie ? Tu l'as lue. Deux fois. Par plaisir.",
+    ],
+  },
+  {
+    minLevel: 25, name: 'Maestro du Quiz', emoji: '🎓', color: 'text-green-400',
+    messages: [
+      "Tu domines la majorité des joueurs. Continue sur ta lancée !",
+      "Maestro en scène — les autres notent, toi tu joues.",
+      "25 niveaux de maîtrise. On commence à parler de toi dans les chaumières.",
+      "Tu n'apprends plus, tu confirmes ce que tu savais déjà.",
+      "Les podiums, c'est ta résidence secondaire.",
+    ],
+  },
+  {
+    minLevel: 10, name: 'Érudit des Salons', emoji: '📚', color: 'text-indigo-400',
+    messages: [
+      "Tes connaissances commencent à forcer l'admiration.",
+      "On t'invite aux dîners pour avoir de la conversation de qualité.",
+      "Tu cites tes sources et tu as raison. C'est rare. C'est toi.",
+      "L'érudit a lu, a retenu, et est revenu jouer. Logique.",
+      "Niveau 10 : tu n'es plus un hasard, tu es une intention.",
+    ],
+  },
+  {
+    minLevel: 5, name: 'Fureteur de Savoirs', emoji: '🔍', color: 'text-teal-400',
+    messages: [
+      "La curiosité est ton moteur. Tu es sur la bonne voie !",
+      "Tu poses les bonnes questions. Et tu trouves les bonnes réponses.",
+      "Fureteur dans l'âme — rien ne t'échappe pour longtemps.",
+      "5 niveaux déjà. L'appétit vient en jouant.",
+      "On ne t'arrêtera pas. Et c'est tant mieux.",
+    ],
+  },
+  {
+    minLevel: 1, name: 'Apprenti Culturel', emoji: '🌱', color: 'text-slate-400',
+    messages: [
+      "Tes premiers pas dans l'arène — chaque réponse compte.",
+      "Tout le monde commence quelque part. Le tien commence ici.",
+      "L'apprenti d'aujourd'hui est le Maître de demain. Commence fort.",
+      "Une graine de savoir plantée. Elle va pousser vite.",
+      "Bienvenue dans l'arène. Les questions n'ont qu'à bien se tenir.",
+    ],
+  },
 ]
 
 export function gradeFromLevel(level) {

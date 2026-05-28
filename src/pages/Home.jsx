@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { useGame, levelFromXP, gradeFromLevel } from '../context/GameContext.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
@@ -22,6 +22,12 @@ export default function Home() {
   const QUESTIONS = useAllQuestions()
   const level = levelFromXP(state.totalXP)
   const grade = gradeFromLevel(level)
+  // Phrase aléatoire tirée une seule fois au montage (change à chaque connexion)
+  const gradeMessage = useMemo(
+    () => grade.messages[Math.floor(Math.random() * grade.messages.length)],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
+  )
   const accuracy = state.totalAnswered
     ? Math.round((state.totalCorrect / state.totalAnswered) * 100)
     : 0
@@ -64,7 +70,7 @@ export default function Home() {
           </h1>
           <p className="text-slate-400 max-w-2xl text-sm md:text-base">
             {user && profile
-              ? grade.message + ` · ${QUESTIONS.length} questions, dix thèmes t'attendent.`
+              ? `${gradeMessage} · ${QUESTIONS.length} questions, dix thèmes t'attendent.`
               : `Six mini-jeux, dix thèmes, ${QUESTIONS.length} questions. Suis ta progression, débloque des badges et bats tes records.`
             }
           </p>
