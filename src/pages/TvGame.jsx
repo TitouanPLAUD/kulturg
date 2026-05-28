@@ -276,19 +276,81 @@ function LobbyPhase({ room, participants, isHost, onStart, code }) {
           </ul>
         </div>
 
-        <div className="bg-white/5 border border-white/10 rounded-2xl p-5 space-y-3">
-          <p className="text-xs text-slate-500 uppercase tracking-widest mb-1">Règles</p>
-          {[
-            ['🎯', 'Coup d\'Envoi / Coup par Coup', '2 mauvaises réponses = rouge = DUEL → élimination'],
-            ['💀', 'Coup Fatal',                    '12 coups chacun — mauvaise réponse = −2 coups'],
-            ['🏆', 'Coup de Maître',                '5 questions solo · jusqu\'à 10 000 €'],
-            ['⭐', 'Étoile Mystérieuse',            '5/5 ? Devinez la personnalité → bonus 10 000 €'],
-          ].map(([icon, name, detail]) => (
-            <div key={name} className="flex items-start gap-3 text-sm">
-              <span>{icon}</span>
-              <div><span className="font-semibold text-slate-200">{name}</span><span className="text-slate-600 ml-2 text-xs">{detail}</span></div>
+        {/* Déroulement */}
+        <div className="space-y-3">
+          <p className="text-xs text-slate-500 uppercase tracking-widest px-1">⚔️ Déroulement des manches</p>
+
+          {/* Phases battle */}
+          <div className="bg-white/5 border border-white/10 rounded-2xl divide-y divide-white/5 overflow-hidden text-sm">
+            <div className="flex gap-3 p-4">
+              <span className="text-xl shrink-0 mt-0.5">1️⃣</span>
+              <div>
+                <p className="font-semibold text-slate-100">Coup d'Envoi</p>
+                <p className="text-slate-500 text-xs leading-relaxed mt-0.5">
+                  Les 4 candidats répondent à des questions de culture générale. 2 mauvaises réponses = rouge = DUEL contre le champion — le perdant est éliminé.
+                </p>
+              </div>
             </div>
-          ))}
+            <div className="flex gap-3 p-4">
+              <span className="text-xl shrink-0 mt-0.5">2️⃣</span>
+              <div>
+                <p className="font-semibold text-slate-100">Coup par Coup</p>
+                <p className="text-slate-500 text-xs leading-relaxed mt-0.5">
+                  Les 3 candidats restants s'affrontent tour à tour. Élimination progressive jusqu'à ce qu'il n'en reste qu'un — le nouveau Maître de Midi.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-3 p-4">
+              <span className="text-xl shrink-0 mt-0.5">3️⃣</span>
+              <div>
+                <p className="font-semibold text-slate-100">Coup Fatal</p>
+                <p className="text-slate-500 text-xs leading-relaxed mt-0.5">
+                  Épreuve éliminatoire finale entre les 2 derniers candidats. Chacun démarre avec 12 coups — chaque mauvaise réponse en coûte 2. Le premier à 0 est éliminé.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Coup de Maître */}
+          <p className="text-xs text-slate-500 uppercase tracking-widest px-1 pt-1">🏆 La manche finale</p>
+          <div className="bg-yellow-950/40 border border-yellow-500/25 rounded-2xl p-4 text-sm space-y-2">
+            <p className="font-semibold text-yellow-300">Coup de Maître — épreuve individuelle</p>
+            <p className="text-slate-400 text-xs leading-relaxed">
+              Le Maître de Midi répond à <strong className="text-slate-200">5 questions</strong>. À chaque question, 3 propositions dont une masquée. La cagnotte du jour est en jeu : <strong className="text-yellow-400">10 000 €, 20 000 € ou 30 000 €</strong>.
+            </p>
+            <div className="grid grid-cols-3 gap-2 text-xs text-center pt-1">
+              <div className="bg-yellow-500/10 rounded-xl p-2">
+                <div className="text-yellow-400 font-bold text-base">5/5</div>
+                <div className="text-slate-400 mt-0.5">Coup de Maître 🏆<br/>Cagnotte conservée</div>
+              </div>
+              <div className="bg-orange-500/10 rounded-xl p-2">
+                <div className="text-orange-400 font-bold text-base">1–2 erreurs</div>
+                <div className="text-slate-400 mt-0.5">Cagnotte ÷ 10<br/>à chaque erreur</div>
+              </div>
+              <div className="bg-red-500/10 rounded-xl p-2">
+                <div className="text-red-400 font-bold text-base">3 erreurs</div>
+                <div className="text-slate-400 mt-0.5">Perd tout ❌<br/>Cagnotte à 0</div>
+              </div>
+            </div>
+            <p className="text-slate-500 text-xs italic">
+              La moitié des gains quotidiens est partagée avec un téléspectateur tiré au sort.
+            </p>
+          </div>
+
+          {/* Étoile Mystérieuse */}
+          <p className="text-xs text-slate-500 uppercase tracking-widest px-1 pt-1">⭐ L'Étoile Mystérieuse</p>
+          <div className="bg-cyan-950/40 border border-cyan-500/20 rounded-2xl p-4 text-sm space-y-2">
+            <p className="font-semibold text-cyan-300">L'élément iconique de l'émission</p>
+            <p className="text-slate-400 text-xs leading-relaxed">
+              Un rectangle de <strong className="text-slate-200">13 × 10 cases</strong> dissimule une célébrité. Chaque bonne réponse au Coup de Maître retire une case et révèle un indice.
+            </p>
+            <p className="text-slate-400 text-xs leading-relaxed">
+              Seul un <strong className="text-cyan-300">Coup de Maître (5/5)</strong> permet de tenter l'étoile. Il faut proposer un nom pour identifier la célébrité et remporter l'étoile — un ensemble de cadeaux dont <strong className="text-slate-200">une voiture</strong>.
+            </p>
+            <p className="text-slate-600 text-xs italic">
+              Record : Julia Roberts — identifiée après 48 jours (10 juillet 2015).
+            </p>
+          </div>
         </div>
 
         {isHost ? (
