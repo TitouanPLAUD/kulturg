@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { useGame, levelFromXP } from '../context/GameContext.jsx'
+import { useGame, levelFromXP, gradeFromLevel } from '../context/GameContext.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { supabase } from '../lib/supabase.js'
 import { THEME_LIST } from '../data/themes.js'
@@ -21,6 +21,7 @@ export default function Home() {
   const { user, profile } = useAuth()
   const QUESTIONS = useAllQuestions()
   const level = levelFromXP(state.totalXP)
+  const grade = gradeFromLevel(level)
   const accuracy = state.totalAnswered
     ? Math.round((state.totalCorrect / state.totalAnswered) * 100)
     : 0
@@ -34,23 +35,38 @@ export default function Home() {
         <div className="absolute -bottom-24 -left-10 w-72 h-72 rounded-full bg-blue-500/10 blur-3xl pointer-events-none" />
 
         <div className="relative">
+          {/* Identité + Grade */}
           {user && profile ? (
-            <div className="flex items-center gap-3 mb-4">
-              <span className="text-3xl">{profile.avatar}</span>
+            <div className="flex items-center gap-3 mb-5">
+              <span className="text-4xl">{profile.avatar}</span>
               <div>
-                <div className="text-slate-400 text-sm">Bienvenue,</div>
-                <div className="font-display text-xl text-white">{profile.nickname}</div>
+                <div className="text-slate-400 text-xs uppercase tracking-widest">Bienvenue,</div>
+                <div className="font-display text-2xl text-white leading-tight">{profile.nickname}</div>
+                <div className={`flex items-center gap-1.5 text-sm font-semibold mt-0.5 ${grade.color}`}>
+                  <span>{grade.emoji}</span>
+                  <span>{grade.name}</span>
+                  <span className="text-slate-500 font-normal text-xs">· Niv. {level}</span>
+                </div>
               </div>
             </div>
           ) : (
-            <span className="chip mb-3 inline-block">🕛 Les Douze Coups de Minuit</span>
+            <span className="chip mb-4 inline-flex items-center gap-2">
+              <img src="/logo.png" className="h-5 w-5 rounded-md object-cover" alt="" />
+              Les Douze Coups de Minuit
+            </span>
           )}
 
           <h1 className="heading text-4xl md:text-5xl mb-3">
-            Deviens un <span className="text-midi-accent">Maître de Minuit</span>
+            {user && profile
+              ? <>{grade.emoji} <span className="text-midi-accent">{grade.name}</span></>
+              : <>Deviens un <span className="text-midi-accent">Maître de Minuit</span></>
+            }
           </h1>
           <p className="text-slate-400 max-w-2xl text-sm md:text-base">
-            Six mini-jeux, dix thèmes, {QUESTIONS.length} questions. Suis ta progression, débloque des badges et bats tes records.
+            {user && profile
+              ? grade.message + ` · ${QUESTIONS.length} questions, dix thèmes t'attendent.`
+              : `Six mini-jeux, dix thèmes, ${QUESTIONS.length} questions. Suis ta progression, débloque des badges et bats tes records.`
+            }
           </p>
 
           {/* Stats */}

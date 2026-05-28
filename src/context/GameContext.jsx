@@ -122,6 +122,25 @@ export function nextLevelThreshold(xp) {
   return LEVEL_THRESHOLDS[LEVEL_THRESHOLDS.length - 1]
 }
 
+// ─── Grades par palier de niveau ──────────────────────────────────────────────
+export const GRADES = [
+  { minLevel: 1000, name: 'Maître Absolu des Douze Coups', emoji: '👑', color: 'text-yellow-300',  message: "Il n'y a plus rien à prouver. Tu règnes sur les Douze Coups." },
+  { minLevel:  500, name: 'Oracle des Temps Modernes',     emoji: '🔮', color: 'text-purple-400', message: "Les autres joueurs murmurent ton nom avec respect." },
+  { minLevel:  100, name: 'Cerveau d\'Acier Trempé',       emoji: '⚡', color: 'text-blue-300',   message: "Ton savoir est une arme redoutable. Impressionnant." },
+  { minLevel:   50, name: 'Encyclopédiste Fou',            emoji: '🧠', color: 'text-cyan-400',   message: "Tu n'es plus un joueur ordinaire — tu es une référence." },
+  { minLevel:   25, name: 'Maestro du Quiz',               emoji: '🎓', color: 'text-green-400',  message: "Tu domines la majorité des joueurs. Continue sur ta lancée !" },
+  { minLevel:   10, name: 'Érudit des Salons',             emoji: '📚', color: 'text-indigo-400', message: "Tes connaissances commencent à forcer l'admiration." },
+  { minLevel:    5, name: 'Fureteur de Savoirs',           emoji: '🔍', color: 'text-teal-400',   message: "La curiosité est ton moteur. Tu es sur la bonne voie !" },
+  { minLevel:    1, name: 'Apprenti Culturel',             emoji: '🌱', color: 'text-slate-400',  message: "Tes premiers pas dans l'arène — chaque réponse compte." },
+]
+
+export function gradeFromLevel(level) {
+  for (const g of GRADES) {
+    if (level >= g.minLevel) return g
+  }
+  return GRADES[GRADES.length - 1]
+}
+
 export const BADGES = {
   'first-blood': { label: 'Première réponse', emoji: '🌱' },
   'apprenti':    { label: 'Apprenti (25)', emoji: '📘' },

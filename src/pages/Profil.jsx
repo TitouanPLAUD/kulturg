@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { useGame, levelFromXP, nextLevelThreshold, BADGES } from '../context/GameContext.jsx'
+import { useGame, levelFromXP, nextLevelThreshold, BADGES, gradeFromLevel, GRADES } from '../context/GameContext.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { supabase } from '../lib/supabase.js'
 import { THEME_LIST } from '../data/themes.js'
@@ -21,6 +21,7 @@ export default function Profil() {
   const { user, profile, refreshProfile } = useAuth()
   const [showAvatarPicker, setShowAvatarPicker] = useState(false)
   const level = levelFromXP(state.totalXP)
+  const grade = gradeFromLevel(level)
   const next  = nextLevelThreshold(state.totalXP)
   const accuracy = state.totalAnswered
     ? Math.round((state.totalCorrect / state.totalAnswered) * 100)
@@ -63,7 +64,10 @@ export default function Profil() {
             ) : (
               <div className="text-xl font-bold text-white">Joueur local</div>
             )}
-            <div className="text-slate-400 text-sm mt-0.5">
+            <div className={`flex items-center gap-1.5 text-sm font-semibold mt-0.5 ${grade.color}`}>
+              <span>{grade.emoji}</span><span>{grade.name}</span>
+            </div>
+            <div className="text-slate-400 text-xs mt-0.5">
               Niveau {level} · {state.totalXP.toLocaleString('fr-FR')} XP
             </div>
 
@@ -147,6 +151,36 @@ export default function Profil() {
                 </div>
                 <div className="w-20 text-right text-xs text-slate-400 tabular-nums">
                   {s.answered ? `${s.correct}/${s.answered} · ${pct}%` : '—'}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </section>
+
+      {/* Grades */}
+      <section className="card p-5">
+        <h2 className="heading text-xl mb-4">Grades</h2>
+        <div className="space-y-2">
+          {[...GRADES].reverse().map((g) => {
+            const unlocked = level >= g.minLevel
+            const isCurrent = grade.minLevel === g.minLevel
+            return (
+              <div key={g.minLevel}
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-all ${
+                  isCurrent
+                    ? 'bg-midi-accent/10 border-midi-accent/40 shadow-lg shadow-midi-accent/10'
+                    : unlocked
+                    ? 'bg-white/5 border-white/10'
+                    : 'bg-white/3 border-white/5 opacity-40'
+                }`}>
+                <span className="text-2xl">{unlocked ? g.emoji : '🔒'}</span>
+                <div className="flex-1 min-w-0">
+                  <div className={`text-sm font-semibold ${isCurrent ? g.color : unlocked ? 'text-white' : 'text-slate-500'}`}>
+                    {g.name}
+                    {isCurrent && <span className="ml-2 text-xs bg-midi-accent/20 text-midi-accent px-2 py-0.5 rounded-full">Actuel</span>}
+                  </div>
+                  <div className="text-xs text-slate-500">Niveau {g.minLevel}+</div>
                 </div>
               </div>
             )
