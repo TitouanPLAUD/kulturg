@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useTvRoom } from '../hooks/useTvRoom.js'
 import { useDuelRoom } from '../hooks/useDuelRoom.js'
+import { useRaceRoom } from '../hooks/useRaceRoom.js'
 
 export default function Multijoueur() {
   const { user } = useAuth()
@@ -19,24 +20,23 @@ export default function Multijoueur() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-8">
+    <div className="max-w-5xl mx-auto space-y-8">
       <div className="text-center">
         <h1 className="heading text-4xl mb-2">Multijoueur</h1>
         <p className="text-slate-500 text-sm">Choisis ton mode de jeu</p>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="grid md:grid-cols-3 gap-6">
         <ModeCard
           emoji="📺"
           title="Jeu TV"
           subtitle="4 joueurs requis"
-          description="Simulation fidèle des 12 Coups de Midi : Grand Oral, Duel, Coup de Maître, Étoile Mystérieuse et Sprint final."
+          description="Simulation des 12 Coups de Midi : Coup d'Envoi, Coup Fatal, Coup de Maître et Étoile Mystérieuse."
           phases={[
-            { icon: '🎤', label: 'Grand Oral', detail: '6 questions' },
-            { icon: '⚔️',  label: 'Le Duel',    detail: 'Buzzer · 6 questions' },
-            { icon: '🎯', label: 'Coup de Maître', detail: 'Personnalité mystère' },
-            { icon: '⭐', label: 'Étoile',      detail: '4 indices + révélation' },
-            { icon: '⚡', label: 'Sprint',       detail: '12 questions rapides' },
+            { icon: '⚔️', label: 'Coup d\'Envoi',    detail: 'Élimination progressive' },
+            { icon: '💀', label: 'Coup Fatal',        detail: '12 coups · −2 par erreur' },
+            { icon: '🏆', label: 'Coup de Maître',    detail: 'Solo · cagnotte en jeu' },
+            { icon: '⭐', label: 'Étoile Mystérieuse', detail: '5/5 requis · voiture !' },
           ]}
           accentClass="border-amber-500/30 hover:border-amber-500/60"
           btnClass="bg-amber-500 hover:bg-amber-400 text-black"
@@ -48,17 +48,34 @@ export default function Multijoueur() {
           emoji="⚔️"
           title="Frappe Express"
           subtitle="2 joueurs requis"
-          description="Face à face ! Premier à 5 bonnes réponses gagne. Réponds vite — la première bonne réponse rapporte le point. Balle de match à 4-4 !"
+          description="Face à face ! Premier à 5 bonnes réponses gagne. Réponds vite — la première bonne réponse rapporte le point."
           phases={[
-            { icon: '⚡', label: 'Simultané',    detail: 'Même question en même temps' },
-            { icon: '🎯', label: '1er correct',  detail: 'Remporte le point' },
-            { icon: '🔒', label: 'Mauvaise réponse', detail: 'Tu es bloqué pour ce tour' },
-            { icon: '🏆', label: 'Premier à 5',  detail: 'Gagne le duel' },
+            { icon: '⚡', label: 'Simultané',         detail: 'Même question en même temps' },
+            { icon: '🎯', label: '1er correct',        detail: 'Remporte le point' },
+            { icon: '🔒', label: 'Mauvaise réponse',   detail: 'Bloqué pour ce tour' },
+            { icon: '🏆', label: 'Premier à 5',        detail: 'Gagne le duel' },
           ]}
           accentClass="border-blue-500/30 hover:border-blue-500/60"
           btnClass="bg-blue-500 hover:bg-blue-400 text-white"
           useHook={() => useDuelRoom(null)}
           route="pvp"
+        />
+
+        <ModeCard
+          emoji="🏁"
+          title="Course au Points"
+          subtitle="2 à 15 joueurs"
+          description="Tous les joueurs voient les mêmes questions. Sois le plus rapide à répondre correctement pour scorer un maximum !"
+          phases={[
+            { icon: '🥇', label: '1er correct',  detail: '+5 points' },
+            { icon: '🥈', label: '2e correct',   detail: '+3 points' },
+            { icon: '🥉', label: '3e correct',   detail: '+2 points' },
+            { icon: '✅', label: 'Autres',        detail: '+1 point · Incorrect = 0' },
+          ]}
+          accentClass="border-green-500/30 hover:border-green-500/60"
+          btnClass="bg-green-500 hover:bg-green-400 text-black"
+          useHook={() => useRaceRoom(null)}
+          route="race"
         />
       </div>
     </div>

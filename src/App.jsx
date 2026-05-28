@@ -16,6 +16,7 @@ import TvGame from './pages/TvGame.jsx'
 import Classement from './pages/Classement.jsx'
 import Multijoueur from './pages/Multijoueur.jsx'
 import DuelGame from './pages/DuelGame.jsx'
+import RaceGame from './pages/RaceGame.jsx'
 import Reglages from './pages/Reglages.jsx'
 import Chat from './pages/Chat.jsx'
 
@@ -25,6 +26,7 @@ export default function App() {
       <Route path="auth" element={<Auth />} />
       <Route path="tv/:code" element={<TvGame />} />
       <Route path="pvp/:code" element={<DuelGame />} />
+      <Route path="race/:code" element={<RaceGame />} />
       <Route element={<Layout />}>
         <Route index element={<Home />} />
         <Route path="qcm" element={<QCM />} />
