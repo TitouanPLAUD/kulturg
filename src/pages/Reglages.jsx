@@ -161,7 +161,7 @@ function SegmentedControl({ value, onChange, options, sizes }) {
         <button
           key={opt.value}
           onClick={() => onChange(opt.value)}
-          className={`px-3 py-1.5 rounded-lg text-sm transition ${value === opt.value ? 'bg-midi-accent text-slate-900 font-semibold' : 'text-slate-300 hover:bg-white/5'} ${sizes ? sizes[i] : ''}`}
+          className={`px-3 py-1.5 rounded-lg text-sm transition ${value === opt.value ? 'bg-midi-accent text-white font-semibold' : 'text-slate-300 hover:bg-white/5'} ${sizes ? sizes[i] : ''}`}
         >
           {opt.label}
         </button>

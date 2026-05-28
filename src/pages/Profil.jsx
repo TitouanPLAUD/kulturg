@@ -45,7 +45,7 @@ export default function Profil() {
 
           {/* Avatar / niveau */}
           <div
-            className="w-20 h-20 rounded-2xl bg-gradient-to-br from-midi-accent to-amber-600 grid place-items-center font-display text-3xl text-slate-900 shadow-xl shrink-0 select-none relative group cursor-pointer"
+            className="w-20 h-20 rounded-2xl bg-gradient-to-br from-midi-accent to-blue-700 grid place-items-center font-display text-3xl text-white shadow-xl shrink-0 select-none relative group cursor-pointer"
             onClick={() => user && profile && setShowAvatarPicker(true)}
             title={user && profile ? 'Changer l\'avatar' : undefined}
           >
@@ -70,7 +70,7 @@ export default function Profil() {
             {/* Barre XP */}
             <div className="mt-3 h-2 rounded-full bg-white/10 overflow-hidden">
               <div
-                className="h-full bg-gradient-to-r from-midi-accent to-amber-400 transition-all duration-700"
+                className="h-full bg-gradient-to-r from-midi-accent to-blue-500 transition-all duration-700"
                 style={{ width: `${xpPct}%` }}
               />
             </div>
@@ -246,7 +246,7 @@ function AvatarPickerModal({ current, profileId, onClose, onSaved }) {
 
         {/* Preview + custom input */}
         <div className="px-5 pb-3 flex items-center gap-4 shrink-0">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-midi-accent to-amber-600 grid place-items-center text-3xl text-slate-900 shadow-xl shrink-0 select-none">
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-midi-accent to-blue-700 grid place-items-center text-3xl text-slate-900 shadow-xl shrink-0 select-none">
             {selected}
           </div>
           <div className="flex-1">
@@ -270,7 +270,7 @@ function AvatarPickerModal({ current, profileId, onClose, onSaved }) {
               onClick={() => setActiveTab(i)}
               className={`px-3 py-1 rounded-full text-xs whitespace-nowrap transition-colors ${
                 activeTab === i
-                  ? 'bg-midi-accent text-slate-900 font-semibold'
+                  ? 'bg-midi-accent text-white font-semibold'
                   : 'bg-white/5 text-slate-400 hover:bg-white/10'
               }`}
             >

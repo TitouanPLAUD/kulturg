@@ -188,7 +188,7 @@ export default function ChatWidget() {
         className={`fixed bottom-4 right-4 sm:right-6 z-50 w-14 h-14 rounded-full shadow-xl shadow-black/40 flex items-center justify-center text-2xl transition-all duration-200
           ${isOpen
             ? 'bg-slate-700 hover:bg-slate-600 scale-95'
-            : 'bg-midi-accent hover:bg-amber-400 scale-100 hover:scale-105'
+            : 'bg-midi-accent hover:bg-blue-400 scale-100 hover:scale-105'
           }`}
         title={isOpen ? 'Fermer le chat' : 'Ouvrir le chat'}>
         {isOpen ? '✕' : '💬'}

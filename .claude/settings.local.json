@@ -13,7 +13,13 @@
       "Bash(npx vite *)",
       "mcp__a7f5e7ff-9f94-4780-96bc-30e867b81aad__list_projects",
       "mcp__a7f5e7ff-9f94-4780-96bc-30e867b81aad__apply_migration",
-      "mcp__a7f5e7ff-9f94-4780-96bc-30e867b81aad__execute_sql"
+      "mcp__a7f5e7ff-9f94-4780-96bc-30e867b81aad__execute_sql",
+      "Bash(npx --yes vite build)",
+      "Bash(node_modules/.bin/vite build *)",
+      "Bash(node -e ' *)",
+      "Bash(node --input-type=module)",
+      "Bash(ls -t ~/Downloads/*.png ~/Downloads/*.jpg ~/Desktop/*.png ~/Desktop/*.jpg 2>/dev/null | head -10)",
+      "Bash(cp ~/Downloads/Gemini_Generated_Image_18zsj118zsj118zs.png /Users/titouanplaud/Documents/KULTURG/public/logo.png)"
     ]
   }
 }

@@ -86,7 +86,7 @@ export default function Auth() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center gap-2 font-display text-3xl mb-2">
-            <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-midi-accent text-slate-900 shadow-lg">🕛</span>
+            <img src="/logo.png" alt="Logo" className="h-10 w-10 rounded-xl object-cover shadow-lg" />
             Les Douze Coups de Minuit
           </Link>
           <p className="text-slate-400 mt-2">
@@ -98,13 +98,13 @@ export default function Auth() {
           <div className="flex rounded-lg overflow-hidden border border-white/10 mb-6">
             <button
               onClick={() => { setMode('login'); reset() }}
-              className={`flex-1 py-2 text-sm font-medium transition ${mode === 'login' ? 'bg-midi-accent text-slate-900' : 'text-slate-300 hover:bg-white/5'}`}
+              className={`flex-1 py-2 text-sm font-medium transition ${mode === 'login' ? 'bg-midi-accent text-white' : 'text-slate-300 hover:bg-white/5'}`}
             >
               Connexion
             </button>
             <button
               onClick={() => { setMode('signup'); reset() }}
-              className={`flex-1 py-2 text-sm font-medium transition ${mode === 'signup' ? 'bg-midi-accent text-slate-900' : 'text-slate-300 hover:bg-white/5'}`}
+              className={`flex-1 py-2 text-sm font-medium transition ${mode === 'signup' ? 'bg-midi-accent text-white' : 'text-slate-300 hover:bg-white/5'}`}
             >
               Inscription
             </button>

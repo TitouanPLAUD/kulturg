@@ -103,7 +103,7 @@ function LobbyPhase({ room, profiles, isHost, onStart, user }) {
       <div className="bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-center">
         <p className="text-xs text-slate-500 uppercase tracking-widest mb-1">Code de la partie</p>
         <div className="flex items-center gap-3">
-          <span className="font-mono text-2xl tracking-[0.3em] font-black text-yellow-400">{room.code}</span>
+          <span className="font-mono text-2xl tracking-[0.3em] font-black text-midi-accent">{room.code}</span>
           <button onClick={copy} className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition text-sm">
             {copied ? '✓' : '📋'}
           </button>
@@ -130,7 +130,7 @@ function LobbyPhase({ room, profiles, isHost, onStart, user }) {
         <button onClick={onStart} disabled={!ready}
           className={`px-10 py-4 rounded-2xl font-display text-xl tracking-wider transition
             ${ready
-              ? 'bg-yellow-500 text-black hover:bg-yellow-400'
+              ? 'bg-midi-accent text-white hover:bg-blue-400'
               : 'bg-white/10 text-slate-500 cursor-not-allowed'}`}>
           {ready ? '▶ Lancer le duel !' : '⏳ En attente de l\'adversaire…'}
         </button>
@@ -304,7 +304,7 @@ function PlayingPhase({ room, profiles, answers, myAnswers, isHost, submitAnswer
               else if (isSelected) cls += 'border-red-500 bg-red-500/10 text-red-400 opacity-70'
               else                 cls += 'border-white/5 text-slate-600 opacity-40'
             } else if (isSelected) {
-              cls += 'border-yellow-500 bg-yellow-500/15 text-yellow-300'
+              cls += 'border-midi-accent bg-midi-accent/15 text-midi-accent'
             } else if (locked) {
               cls += 'border-white/10 bg-white/5 text-slate-500 opacity-60 cursor-default'
             } else {
@@ -338,11 +338,11 @@ function PlayingPhase({ room, profiles, answers, myAnswers, isHost, submitAnswer
                 {ans
                   ? revealed
                     ? won
-                      ? <span className="text-yellow-400 text-sm">⚡+1</span>
+                      ? <span className="text-midi-accent text-sm">⚡+1</span>
                       : ans.is_correct
                         ? <span className="text-green-400 text-xs">✓</span>
                         : <span className="text-red-400 text-xs">✗</span>
-                    : <span className="text-yellow-400 text-sm">✓</span>
+                    : <span className="text-midi-accent text-sm">✓</span>
                   : <span className="text-slate-700 text-xs">…</span>
                 }
               </div>
@@ -384,7 +384,7 @@ function FinishedPhase({ room, profiles, answers, user }) {
           </div>
           <p className={`font-display text-4xl tracking-wider ${
             winnerId === null ? 'text-slate-300'
-            : isWinner ? 'text-yellow-400'
+            : isWinner ? 'text-midi-accent'
             : 'text-red-400'
           }`}>
             {winnerId === null ? 'ÉGALITÉ' : isWinner ? 'VICTOIRE !' : 'DÉFAITE'}
@@ -412,7 +412,7 @@ function FinishedPhase({ room, profiles, answers, user }) {
                   {id === user.id && <span className="text-xs text-slate-500 ml-1">(moi)</span>}
                 </span>
                 <div className="text-right">
-                  <span className={`font-display text-2xl ${won ? 'text-yellow-400' : 'text-slate-400'}`}>
+                  <span className={`font-display text-2xl ${won ? 'text-midi-accent' : 'text-slate-400'}`}>
                     {score} pts
                   </span>
                 </div>

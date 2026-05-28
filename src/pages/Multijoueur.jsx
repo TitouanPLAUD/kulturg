@@ -38,8 +38,8 @@ export default function Multijoueur() {
             { icon: '🏆', label: 'Coup de Maître',    detail: 'Solo · cagnotte en jeu' },
             { icon: '⭐', label: 'Étoile Mystérieuse', detail: '5/5 requis · voiture !' },
           ]}
-          accentClass="border-amber-500/30 hover:border-amber-500/60"
-          btnClass="bg-amber-500 hover:bg-amber-400 text-black"
+          accentClass="border-midi-accent/30 hover:border-midi-accent/60"
+          btnClass="bg-midi-accent hover:bg-blue-400 text-white"
           useHook={() => useTvRoom(null)}
           route="tv"
         />

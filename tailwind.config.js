@@ -5,12 +5,12 @@ export default {
     extend: {
       colors: {
         midi: {
-          bg: '#0b1020',
-          card: '#141a30',
-          accent: '#f5c518',
-          accent2: '#3b82f6',
-          good: '#22c55e',
-          bad: '#ef4444',
+          bg:      '#0a0f1e',
+          card:    '#101828',
+          accent:  '#4b8ef8',
+          accent2: '#1d4ed8',
+          good:    '#22c55e',
+          bad:     '#ef4444',
         },
       },
       fontFamily: {
@@ -20,7 +20,7 @@ export default {
       keyframes: {
         pop: { '0%': { transform: 'scale(0.9)', opacity: 0 }, '100%': { transform: 'scale(1)', opacity: 1 } },
         shake: { '0%,100%': { transform: 'translateX(0)' }, '25%': { transform: 'translateX(-6px)' }, '75%': { transform: 'translateX(6px)' } },
-        glow: { '0%,100%': { boxShadow: '0 0 0 0 rgba(245,197,24,0.5)' }, '50%': { boxShadow: '0 0 24px 4px rgba(245,197,24,0.6)' } },
+        glow: { '0%,100%': { boxShadow: '0 0 0 0 rgba(75,142,248,0.5)' }, '50%': { boxShadow: '0 0 28px 6px rgba(75,142,248,0.55)' } },
       },
       animation: {
         pop: 'pop 0.25s ease-out',

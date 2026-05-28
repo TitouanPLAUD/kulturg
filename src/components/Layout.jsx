@@ -49,7 +49,7 @@ export default function Layout() {
 
           {/* Logo */}
           <NavLink to="/" className="flex items-center gap-2 font-display text-2xl shrink-0">
-            <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-midi-accent text-slate-900 font-bold shadow">🕛</span>
+            <img src="/logo.png" alt="Logo" className="h-9 w-9 rounded-xl object-cover shadow-lg shadow-midi-accent/20" />
             <span className="hidden sm:block">Les Douze Coups de Minuit</span>
           </NavLink>
 
@@ -87,7 +87,7 @@ export default function Layout() {
                 <div className="text-xs font-semibold text-midi-accent">{state.totalXP} XP</div>
               </div>
               <NavLink to="/auth"
-                className="px-4 py-2 rounded-lg text-sm font-semibold bg-midi-accent text-slate-900 hover:bg-amber-400 transition">
+                className="px-4 py-2 rounded-lg text-sm font-semibold bg-midi-accent text-white hover:bg-blue-400 transition">
                 Connexion
               </NavLink>
             </div>
@@ -96,7 +96,7 @@ export default function Layout() {
 
         {/* Barre XP */}
         <div className="h-0.5 bg-white/5">
-          <div className="h-full bg-gradient-to-r from-midi-accent to-amber-500 transition-all duration-700"
+          <div className="h-full bg-gradient-to-r from-midi-accent to-blue-600 transition-all duration-700"
             style={{ width: `${progress}%` }} />
         </div>
 
