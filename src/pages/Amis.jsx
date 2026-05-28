@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase.js'
 import { useAuth } from '../context/AuthContext.jsx'
@@ -264,28 +264,49 @@ export default function Amis() {
             {friends.map(f => {
               const p = otherProfile(f)
               return (
-                <li key={f.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 group">
-                  <span className="text-2xl">{p?.avatar}</span>
-                  <span className="flex-1 font-medium">{p?.nickname}</span>
-                  <button
-                    onClick={async () => {
-                      const convId = await openDM(p.id)
-                      if (convId) navigate(`/chat/${convId}`)
-                    }}
-                    className="opacity-0 group-hover:opacity-100 transition btn btn-ghost text-xs px-2 py-1 text-midi-accent hover:text-midi-accent/80">
-                    💬 Message
-                  </button>
-                  <button
-                    onClick={() => remove(f.id)}
-                    className="opacity-0 group-hover:opacity-100 transition btn btn-ghost text-xs px-2 py-1 text-slate-500 hover:text-red-400">
-                    Retirer
-                  </button>
-                </li>
+                <FriendRow
+                  key={f.id}
+                  friend={p}
+                  onMessage={async () => {
+                    const convId = await openDM(p.id)
+                    if (convId) navigate(`/chat/${convId}`)
+                    else showToast('Impossible d\'ouvrir la conversation.', 'err')
+                  }}
+                  onRemove={() => remove(f.id)}
+                />
               )
             })}
           </ul>
         )}
       </section>
     </div>
+  )
+}
+
+function FriendRow({ friend: p, onMessage, onRemove }) {
+  const [dmLoading, setDmLoading] = useState(false)
+
+  async function handleMessage() {
+    setDmLoading(true)
+    await onMessage()
+    setDmLoading(false)
+  }
+
+  return (
+    <li className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 group">
+      <span className="text-2xl">{p?.avatar}</span>
+      <span className="flex-1 font-medium">{p?.nickname}</span>
+      <button
+        onClick={handleMessage}
+        disabled={dmLoading}
+        className="opacity-0 group-hover:opacity-100 transition btn btn-ghost text-xs px-2 py-1 text-midi-accent hover:text-midi-accent/80 disabled:opacity-60">
+        {dmLoading ? '⏳' : '💬 Message'}
+      </button>
+      <button
+        onClick={onRemove}
+        className="opacity-0 group-hover:opacity-100 transition btn btn-ghost text-xs px-2 py-1 text-slate-500 hover:text-red-400">
+        Retirer
+      </button>
+    </li>
   )
 }
