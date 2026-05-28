@@ -169,19 +169,24 @@ export function useChat() {
   // ── Créer ou ouvrir un DM avec un ami ───────────────────────────
   const openDM = useCallback(async (friendId) => {
     if (!user) return null
-    // Chercher un DM existant entre les deux
-    const { data: myIds } = await supabase
-      .from('conversation_members').select('conversation_id').eq('profile_id', user.id)
-    const { data: hisIds } = await supabase
-      .from('conversation_members').select('conversation_id').eq('profile_id', friendId)
 
-    if (myIds && hisIds) {
-      const mine = new Set(myIds.map(x => x.conversation_id))
-      const shared = hisIds.filter(x => mine.has(x.conversation_id)).map(x => x.conversation_id)
-      if (shared.length) {
-        // Vérifier que c'est bien un DM (pas un groupe)
+    // Chercher un DM existant partagé (on ne voit que les convs où on est déjà membre)
+    const { data: myMemberships } = await supabase
+      .from('conversation_members').select('conversation_id').eq('profile_id', user.id)
+
+    if (myMemberships?.length) {
+      const myConvIds = myMemberships.map(x => x.conversation_id)
+      // Parmi mes convs, chercher une DM où l'ami est aussi membre
+      const { data: shared } = await supabase
+        .from('conversation_members')
+        .select('conversation_id')
+        .eq('profile_id', friendId)
+        .in('conversation_id', myConvIds)
+
+      if (shared?.length) {
+        const sharedIds = shared.map(x => x.conversation_id)
         const { data: existing } = await supabase
-          .from('conversations').select('id, type').in('id', shared).eq('type', 'dm').limit(1)
+          .from('conversations').select('id').in('id', sharedIds).eq('type', 'dm').limit(1)
         if (existing?.length) {
           await loadConversations()
           return existing[0].id
@@ -189,30 +194,33 @@ export function useChat() {
       }
     }
 
-    // Créer un nouveau DM
-    const { data: conv } = await supabase
-      .from('conversations').insert({ type: 'dm', created_by: user.id }).select().single()
-    if (!conv) return null
+    // Créer un nouveau DM — UUID généré côté client pour éviter le SELECT bloqué par RLS
+    const convId = crypto.randomUUID()
+    const { error } = await supabase
+      .from('conversations').insert({ id: convId, type: 'dm', created_by: user.id })
+    if (error) return null
     await supabase.from('conversation_members').insert([
-      { conversation_id: conv.id, profile_id: user.id },
-      { conversation_id: conv.id, profile_id: friendId },
+      { conversation_id: convId, profile_id: user.id },
+      { conversation_id: convId, profile_id: friendId },
     ])
     await loadConversations()
-    return conv.id
+    return convId
   }, [user, loadConversations])
 
   // ── Créer un groupe ──────────────────────────────────────────────
   const createGroup = useCallback(async (name, memberIds) => {
     if (!user || !name.trim() || !memberIds.length) return null
-    const { data: conv } = await supabase
-      .from('conversations').insert({ type: 'group', name: name.trim(), created_by: user.id }).select().single()
-    if (!conv) return null
+    // UUID généré côté client pour éviter le SELECT bloqué par RLS
+    const convId = crypto.randomUUID()
+    const { error } = await supabase
+      .from('conversations').insert({ id: convId, type: 'group', name: name.trim(), created_by: user.id })
+    if (error) return null
     const allMembers = [...new Set([user.id, ...memberIds])]
     await supabase.from('conversation_members').insert(
-      allMembers.map(pid => ({ conversation_id: conv.id, profile_id: pid }))
+      allMembers.map(pid => ({ conversation_id: convId, profile_id: pid }))
     )
     await loadConversations()
-    return conv.id
+    return convId
   }, [user, loadConversations])
 
   // ── Nom affiché d'une conversation ───────────────────────────────
