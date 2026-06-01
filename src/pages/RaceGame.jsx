@@ -222,39 +222,29 @@ function RacePlaying({ pd, participants, answers, myAnswers, isHost, submitAnswe
   const q          = questions[q_idx]
   const { secs, pct, expired } = useTimer(pd.q_start_at)
 
-  const [selected,  setSelected]  = useState(null)
-  const [revealed,  setRevealed]  = useState(false)
-  const advRef      = useRef(false)
-  const startedAt   = pd.q_start_at ? new Date(pd.q_start_at).getTime() : Date.now()
+  const [selected, setSelected] = useState(null)
+  const startedAt = pd.q_start_at ? new Date(pd.q_start_at).getTime() : Date.now()
 
-  // Reset à chaque nouvelle question
-  useEffect(() => {
-    setSelected(null)
-    setRevealed(false)
-    advRef.current = false
-  }, [q_idx])
+  // ── Révélation : dérivée (identique pour TOUS les clients) ─────
+  const qAnswers = answers.filter(a => a.q_idx === q_idx)
+  const allAnswered = participants.length > 0 &&
+    participants.every(p => qAnswers.some(a => a.profile_id === p.profile_id))
+  const revealed = expired || allAnswered
 
-  // Timer expiré → révéler
-  useEffect(() => {
-    if (expired && !revealed) setRevealed(true)
-  }, [expired, revealed])
+  // Reset sélection à chaque nouvelle question
+  useEffect(() => { setSelected(null) }, [q_idx])
 
-  // Tous les joueurs ont répondu → révéler (host only trigger)
-  useEffect(() => {
-    if (!isHost || revealed) return
-    const qAnswers = answers.filter(a => a.q_idx === q_idx)
-    const allAnswered = participants.length > 0 &&
-      participants.every(p => qAnswers.some(a => a.profile_id === p.profile_id))
-    if (allAnswered) setRevealed(true)
-  }, [answers, participants, q_idx, isHost, revealed])
+  // ── Auto-avance après révélation (host only) ───────────────────
+  // hostAdvance n'est pas memoized → on garde la dernière ref dans un ref
+  // pour éviter que le useEffect ne se rejoue à chaque nouvel answer.
+  const hostAdvanceRef = useRef(hostAdvance)
+  useEffect(() => { hostAdvanceRef.current = hostAdvance })
 
-  // Auto-avance après révélation
   useEffect(() => {
-    if (!isHost || !revealed || advRef.current) return
-    advRef.current = true
-    const t = setTimeout(() => hostAdvance(), 4000)
+    if (!isHost || !revealed) return
+    const t = setTimeout(() => hostAdvanceRef.current?.(), 4000)
     return () => clearTimeout(t)
-  }, [revealed, isHost, hostAdvance])
+  }, [revealed, isHost, q_idx])
 
   async function pick(idx) {
     if (revealed || selected !== null || !q) return
@@ -266,7 +256,6 @@ function RacePlaying({ pd, participants, answers, myAnswers, isHost, submitAnswe
 
   if (!q) return <Centered><Spinner /></Centered>
 
-  const qAnswers     = answers.filter(a => a.q_idx === q_idx)
   const myAnswer     = myAnswers.find(a => a.q_idx === q_idx)
   const qPoints      = revealed ? computeQuestionPoints(answers, q_idx) : {}
   const totalScores  = computeScores(answers, q_idx + (revealed ? 1 : 0))
