@@ -140,14 +140,58 @@ export function useRaceRoom(code) {
     })
   }
 
-  async function createRoom() {
+  async function createRoom({ isPublic = false } = {}) {
     if (!user) return null
     const code = generateCode()
     const { data, error } = await supabase
-      .from('race_rooms').insert({ code, host_id: user.id }).select().single()
+      .from('race_rooms').insert({ code, host_id: user.id, is_public: isPublic }).select().single()
     if (error || !data) return null
     await supabase.from('race_participants').insert({ room_id: data.id, profile_id: user.id })
     return data.code
+  }
+
+  // Matchmaking : rejoint un salon public ouvert, ou en crée un si aucun n'est dispo.
+  // Aucun code n'est requis — n'importe quel joueur connecté peut entrer.
+  async function joinPublicRoom() {
+    if (!user) return { error: 'Non connecté' }
+
+    // Salons publics encore en lobby, créés il y a moins de 30 min (on évite les salles mortes)
+    const since = new Date(Date.now() - 30 * 60 * 1000).toISOString()
+    const { data: rooms } = await supabase
+      .from('race_rooms')
+      .select('*')
+      .eq('is_public', true)
+      .eq('phase', 'lobby')
+      .gte('created_at', since)
+      .order('created_at', { ascending: true })
+
+    if (rooms?.length) {
+      const ids = rooms.map(r => r.id)
+      const { data: parts } = await supabase
+        .from('race_participants')
+        .select('room_id, profile_id')
+        .in('room_id', ids)
+
+      const byRoom = {}
+      for (const p of (parts ?? [])) (byRoom[p.room_id] ??= []).push(p.profile_id)
+
+      for (const r of rooms) {
+        const members = byRoom[r.id] ?? []
+        if (members.includes(user.id)) return { code: r.code }        // déjà dedans
+        // L'hôte doit toujours être présent (seul lui peut lancer/avancer via RLS)
+        const hostPresent = members.includes(r.host_id)
+        if (hostPresent && members.length < RACE_MAX_PLAYERS) {
+          const { error } = await supabase
+            .from('race_participants').insert({ room_id: r.id, profile_id: user.id })
+          if (!error) return { code: r.code }
+        }
+      }
+    }
+
+    // Aucun salon dispo → on en crée un (le joueur en devient l'hôte)
+    const code = await createRoom({ isPublic: true })
+    if (!code) return { error: 'Erreur lors de la création du salon.' }
+    return { code }
   }
 
   async function joinRoom(roomCode) {
@@ -176,6 +220,6 @@ export function useRaceRoom(code) {
   return {
     room, participants, answers, myAnswers, loading,
     isHost,
-    submitAnswer, hostAdvance, startGame, createRoom, joinRoom,
+    submitAnswer, hostAdvance, startGame, createRoom, joinRoom, joinPublicRoom,
   }
 }

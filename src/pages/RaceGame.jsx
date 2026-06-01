@@ -105,6 +105,23 @@ function RaceLobby({ room, participants, isHost, code, onStart }) {
   const [copied, setCopied] = useState(false)
   const n = participants.length
   const canStart = n >= RACE_MIN_PLAYERS
+  const isPublic = room.is_public
+
+  // Salon public : l'hôte lance automatiquement après un court décompte dès qu'on a assez de joueurs
+  const onStartRef = useRef(onStart)
+  onStartRef.current = onStart
+  const [countdown, setCountdown] = useState(null)
+  useEffect(() => {
+    if (!isPublic || !isHost || !canStart) { setCountdown(null); return }
+    setCountdown(5)
+    const tick = setInterval(() => {
+      setCountdown(c => {
+        if (c <= 1) { clearInterval(tick); onStartRef.current(); return 0 }
+        return c - 1
+      })
+    }, 1000)
+    return () => clearInterval(tick)
+  }, [isPublic, isHost, canStart])
 
   function copyCode() {
     navigator.clipboard.writeText(code)
@@ -118,20 +135,27 @@ function RaceLobby({ room, participants, isHost, code, onStart }) {
       <div className="text-center space-y-2">
         <div className="text-6xl">🏁</div>
         <h1 className="font-display text-4xl md:text-5xl tracking-wider">Course aux Points</h1>
+        {isPublic && (
+          <span className="inline-flex items-center gap-1.5 text-xs font-semibold bg-green-500/15 text-green-400 px-3 py-1 rounded-full">
+            🌍 Salon public · tout le monde peut rejoindre
+          </span>
+        )}
         <p className="text-slate-500 text-sm">Jusqu'à {RACE_MAX_PLAYERS} joueurs · {Q_COUNT} questions · 20 secondes chacune</p>
       </div>
 
-      {/* Code */}
-      <div className="bg-white/5 border border-white/10 rounded-2xl p-5 text-center">
-        <p className="text-xs text-slate-500 uppercase tracking-widest mb-2">Code de la partie</p>
-        <div className="flex items-center justify-center gap-3">
-          <span className="font-mono text-3xl tracking-[0.3em] font-black text-green-400">{code}</span>
-          <button onClick={copyCode} className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition">
-            {copied ? '✓' : '📋'}
-          </button>
+      {/* Code (salon privé uniquement) */}
+      {!isPublic && (
+        <div className="bg-white/5 border border-white/10 rounded-2xl p-5 text-center">
+          <p className="text-xs text-slate-500 uppercase tracking-widest mb-2">Code de la partie</p>
+          <div className="flex items-center justify-center gap-3">
+            <span className="font-mono text-3xl tracking-[0.3em] font-black text-green-400">{code}</span>
+            <button onClick={copyCode} className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition">
+              {copied ? '✓' : '📋'}
+            </button>
+          </div>
+          <p className="text-xs text-slate-600 mt-2">Partage ce code à tes amis</p>
         </div>
-        <p className="text-xs text-slate-600 mt-2">Partage ce code à tes amis</p>
-      </div>
+      )}
 
       {/* Joueurs */}
       <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
@@ -174,11 +198,17 @@ function RaceLobby({ room, participants, isHost, code, onStart }) {
       {isHost ? (
         <button onClick={onStart} disabled={!canStart}
           className="w-full py-4 rounded-2xl font-display text-xl tracking-wider bg-green-500 text-black hover:bg-green-400 transition disabled:opacity-40 disabled:cursor-not-allowed">
-          {canStart ? '▶ Lancer la course !' : `⏳ En attente de joueurs (${n}/${RACE_MIN_PLAYERS} min)`}
+          {!canStart
+            ? `⏳ En attente de joueurs (${n}/${RACE_MIN_PLAYERS} min)`
+            : isPublic && countdown !== null
+              ? `🚀 Lancement dans ${countdown}s — clique pour démarrer maintenant`
+              : '▶ Lancer la course !'}
         </button>
       ) : (
         <p className="text-center text-slate-500 text-sm py-4">
-          ⏳ En attente que l'hôte lance la course…
+          {isPublic
+            ? '⏳ La course démarre dès qu\'il y a assez de joueurs…'
+            : '⏳ En attente que l\'hôte lance la course…'}
         </p>
       )}
     </div>

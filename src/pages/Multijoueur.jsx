@@ -26,6 +26,8 @@ export default function Multijoueur() {
         <p className="text-slate-500 text-sm">Choisis ton mode de jeu</p>
       </div>
 
+      <PublicSalonBanner />
+
       <div className="grid md:grid-cols-3 gap-6">
         <ModeCard
           emoji="📺"
@@ -78,6 +80,37 @@ export default function Multijoueur() {
           route="race"
         />
       </div>
+    </div>
+  )
+}
+
+function PublicSalonBanner() {
+  const navigate = useNavigate()
+  const { joinPublicRoom } = useRaceRoom(null)
+  const [loading, setLoading] = useState(false)
+  const [error,   setError]   = useState('')
+
+  async function handleJoin() {
+    setLoading(true); setError('')
+    const { code, error: err } = await joinPublicRoom()
+    if (err) { setError(err); setLoading(false); return }
+    navigate(`/race/${code}`)
+  }
+
+  return (
+    <div className="card p-6 border border-green-500/30 bg-green-500/5 flex flex-col sm:flex-row items-center gap-5">
+      <div className="text-5xl">🌍</div>
+      <div className="flex-1 text-center sm:text-left">
+        <h2 className="font-display text-2xl tracking-wider">Salon public · Course aux Points</h2>
+        <p className="text-sm text-slate-400 mt-1">
+          Aucun code requis — rejoins instantanément une partie et affronte des joueurs du monde entier.
+        </p>
+        {error && <p className="text-red-400 text-sm mt-2">{error}</p>}
+      </div>
+      <button onClick={handleJoin} disabled={loading}
+        className="shrink-0 px-6 py-3 rounded-xl font-bold bg-green-500 hover:bg-green-400 text-black transition disabled:opacity-60">
+        {loading ? 'Recherche…' : '🏁 Rejoindre'}
+      </button>
     </div>
   )
 }

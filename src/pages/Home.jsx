@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useGame, levelFromXP, gradeFromLevel } from '../context/GameContext.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
+import { useRaceRoom } from '../hooks/useRaceRoom.js'
 import { supabase } from '../lib/supabase.js'
 import { THEME_LIST } from '../data/themes.js'
 import { useAllQuestions } from '../hooks/useQuestions.js'
@@ -86,6 +87,7 @@ export default function Home() {
           {/* CTA */}
           <div className="mt-6 flex flex-wrap gap-3">
             <Link to="/qcm" className="btn btn-primary">▶ Commencer un QCM</Link>
+            <PublicSalonButton user={user} />
             <Link to="/duel" className="btn btn-secondary">⚔️ Lancer un duel</Link>
             {user
               ? <Link to="/profil" className="btn btn-ghost">Mon profil</Link>
@@ -152,6 +154,27 @@ export default function Home() {
         </section>
       )}
     </div>
+  )
+}
+
+function PublicSalonButton({ user }) {
+  const navigate = useNavigate()
+  const { joinPublicRoom } = useRaceRoom(null)
+  const [loading, setLoading] = useState(false)
+
+  async function handleClick() {
+    if (!user) { navigate('/auth'); return }
+    setLoading(true)
+    const { code, error } = await joinPublicRoom()
+    if (code) navigate(`/race/${code}`)
+    else { setLoading(false); alert(error ?? 'Impossible de rejoindre le salon public.') }
+  }
+
+  return (
+    <button onClick={handleClick} disabled={loading}
+      className="btn bg-green-500 hover:bg-green-400 text-black disabled:opacity-60">
+      {loading ? 'Recherche…' : '🌍 Salon public'}
+    </button>
   )
 }
 
