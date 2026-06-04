@@ -28,6 +28,38 @@ export const DEFAULT_RACE_SETTINGS = {
 // Points par rang de réponse correcte
 export const POINTS = [5, 3, 2, 1] // 1er, 2e, 3e, reste
 
+// ── Bonus de série ────────────────────────────────────────────
+// À partir de STREAK_THRESHOLD bonnes réponses d'affilée, chaque bonne
+// réponse rapporte un bonus croissant, plafonné à STREAK_MAX_BONUS.
+//   série 1-2 → +0 · série 3 → +1 · série 4 → +2 · série 5+ → +3
+// Une mauvaise réponse (ou une question ratée) remet la série à zéro.
+export const STREAK_THRESHOLD = 3
+export const STREAK_MAX_BONUS = 3
+
+export function streakBonus(streak) {
+  if (streak < STREAK_THRESHOLD) return 0
+  return Math.min(streak - (STREAK_THRESHOLD - 1), STREAK_MAX_BONUS)
+}
+
+// Longueur de la série de bonnes réponses d'affilée d'un joueur,
+// après avoir traité les questions 0..upToQIdx (incluse).
+export function computePlayerStreak(answers, profile_id, upToQIdx) {
+  let streak = 0
+  for (let q = 0; q <= upToQIdx; q++) {
+    const correct = answers.some(a => a.profile_id === profile_id && a.q_idx === q && a.is_correct)
+    streak = correct ? streak + 1 : 0
+  }
+  return streak
+}
+
+// Série courante de chaque joueur : { [profile_id]: streak }
+export function computeStreaks(answers, q_count) {
+  const players = [...new Set(answers.map(a => a.profile_id))]
+  const map = {}
+  for (const pid of players) map[pid] = computePlayerStreak(answers, pid, q_count - 1)
+  return map
+}
+
 function pick(arr, n) {
   return [...arr].sort(() => Math.random() - 0.5).slice(0, n)
 }
@@ -71,14 +103,32 @@ export function computeQuestionPoints(answers, q_idx) {
   return map
 }
 
-// Scores totaux { [profile_id]: total }
+// Scores totaux { [profile_id]: total }, bonus de série inclus.
 export function computeScores(answers, q_count) {
+  const players = [...new Set(answers.map(a => a.profile_id))]
+
+  // Points de base (par rang de rapidité) pour chaque question
+  const baseByQ = []
+  for (let q = 0; q < q_count; q++) baseByQ[q] = computeQuestionPoints(answers, q)
+
+  // Lookup rapide des bonnes réponses : "pid:q_idx"
+  const correct = new Set(
+    answers.filter(a => a.is_correct).map(a => `${a.profile_id}:${a.q_idx}`)
+  )
+
   const scores = {}
-  for (let q = 0; q < q_count; q++) {
-    const pts = computeQuestionPoints(answers, q)
-    for (const [pid, p] of Object.entries(pts)) {
-      scores[pid] = (scores[pid] ?? 0) + p
+  for (const pid of players) {
+    let streak = 0
+    let total  = 0
+    for (let q = 0; q < q_count; q++) {
+      if (correct.has(`${pid}:${q}`)) {
+        streak += 1
+        total += (baseByQ[q][pid] ?? 0) + streakBonus(streak)
+      } else {
+        streak = 0
+      }
     }
+    if (total) scores[pid] = total
   }
   return scores
 }

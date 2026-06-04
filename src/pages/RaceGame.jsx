@@ -6,6 +6,11 @@ import {
   useRaceRoom,
   computeQuestionPoints,
   computeScores,
+  computePlayerStreak,
+  computeStreaks,
+  streakBonus,
+  STREAK_THRESHOLD,
+  STREAK_MAX_BONUS,
   RACE_MAX_PLAYERS,
   RACE_MIN_PLAYERS,
   Q_COUNT,
@@ -227,6 +232,17 @@ function RaceLobby({ room, participants, isHost, code, onStart }) {
           ))}
         </div>
         <p className="text-xs text-slate-600 mt-3 text-center">Mauvaise réponse = 0 point</p>
+
+        {/* Bonus de série */}
+        <div className="mt-4 pt-4 border-t border-white/10">
+          <p className="text-xs text-orange-400 font-semibold text-center mb-1">🔥 Bonus de série</p>
+          <p className="text-xs text-slate-400 text-center leading-relaxed">
+            À partir de <strong className="text-slate-200">{STREAK_THRESHOLD} bonnes réponses d'affilée</strong>,
+            chaque bonne réponse rapporte un bonus croissant
+            (+1, +2, puis <strong className="text-slate-200">+{STREAK_MAX_BONUS} max</strong>).
+            Une erreur remet la série à zéro.
+          </p>
+        </div>
       </div>
 
       {isHost ? (
@@ -296,7 +312,13 @@ function RacePlaying({ pd, participants, answers, myAnswers, isHost, submitAnswe
   const myAnswer     = myAnswers.find(a => a.q_idx === q_idx)
   const qPoints      = revealed ? computeQuestionPoints(answers, q_idx) : {}
   const totalScores  = computeScores(answers, q_idx + (revealed ? 1 : 0))
-  const myPts        = qPoints[userId]
+  const myBase       = qPoints[userId] ?? 0
+  // Série de bonnes réponses du joueur après cette question (si correcte)
+  const myStreak     = revealed && myAnswer?.is_correct
+    ? computePlayerStreak(answers, userId, q_idx)
+    : 0
+  const myBonus      = streakBonus(myStreak)
+  const myPts        = myBase + myBonus      // total gagné sur cette question
   const myRank       = revealed
     ? [...answers.filter(a => a.q_idx === q_idx && a.is_correct)]
         .sort((a, b) => new Date(a.answered_at) - new Date(b.answered_at))
@@ -369,7 +391,19 @@ function RacePlaying({ pd, participants, answers, myAnswers, isHost, submitAnswe
                   <p className="text-green-400 font-bold text-lg">
                     {myRank === 1 ? '🥇 1er !' : myRank === 2 ? '🥈 2e !' : myRank === 3 ? '🥉 3e !' : '✓ Correct !'}
                   </p>
-                  <p className="text-2xl font-display text-green-300 mt-1">+{myPts ?? 1} point{(myPts ?? 1) > 1 ? 's' : ''}</p>
+                  <p className="text-2xl font-display text-green-300 mt-1">
+                    +{myPts} point{myPts > 1 ? 's' : ''}
+                    {myBonus > 0 && <span className="text-base text-orange-400"> ({myBase} + {myBonus})</span>}
+                  </p>
+                  {myBonus > 0 ? (
+                    <p className="text-sm text-orange-400 font-semibold mt-1">
+                      🔥 Série de {myStreak} · +{myBonus} bonus
+                    </p>
+                  ) : myStreak >= 1 && myStreak < STREAK_THRESHOLD ? (
+                    <p className="text-xs text-slate-400 mt-1">
+                      🔥 Série de {myStreak} — encore {STREAK_THRESHOLD - myStreak} pour le bonus
+                    </p>
+                  ) : null}
                 </div>
               ) : (
                 <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 text-center">
@@ -450,7 +484,8 @@ function QuestionPodium({ answers, participants, q_idx }) {
 
 // ─── Scoreboard sidebar ────────────────────────────────────────
 function Scoreboard({ participants, answers, q_count, currentUserId }) {
-  const scores = computeScores(answers, q_count)
+  const scores  = computeScores(answers, q_count)
+  const streaks = computeStreaks(answers, q_count)
   const ranked = [...participants]
     .map(p => ({ ...p, score: scores[p.profile_id] ?? 0 }))
     .sort((a, b) => b.score - a.score)
@@ -459,6 +494,7 @@ function Scoreboard({ participants, answers, q_count, currentUserId }) {
     <div className="space-y-1.5">
       {ranked.map((p, i) => {
         const isMe = p.profile_id === currentUserId
+        const streak = streaks[p.profile_id] ?? 0
         return (
           <div key={p.id}
             className={`flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm transition
@@ -469,6 +505,11 @@ function Scoreboard({ participants, answers, q_count, currentUserId }) {
               {p.profile?.nickname ?? '?'}
               {isMe && <span className="ml-1 opacity-60 text-xs">(moi)</span>}
             </span>
+            {streak >= STREAK_THRESHOLD && (
+              <span className="text-xs font-bold text-orange-400 tabular-nums" title={`Série de ${streak} · +${streakBonus(streak)}/réponse`}>
+                🔥{streak}
+              </span>
+            )}
             <span className="tabular-nums font-bold text-white text-sm">{p.score}</span>
           </div>
         )
