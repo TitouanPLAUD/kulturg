@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext.jsx'
 import { useChat } from '../hooks/useChat.js'
 import { useChatWidget } from '../context/ChatWidgetContext.jsx'
 import { supabase } from '../lib/supabase.js'
+import Avatar from './Avatar.jsx'
 
 export default function ChatWidget() {
   const { user } = useAuth()
@@ -92,7 +93,7 @@ export default function ChatWidget() {
                 className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition text-sm">
                 ←
               </button>
-              <span className="text-xl">{convAvatar(activeConv)}</span>
+              <Avatar value={convAvatar(activeConv)} size={26} className="text-xl" />
               <div className="flex-1 min-w-0">
                 <div className="font-semibold text-sm text-white truncate">{convDisplayName(activeConv)}</div>
                 {activeConv?.type === 'group' && (
@@ -132,7 +133,7 @@ export default function ChatWidget() {
                         onClick={() => handleSelectConv(conv.id)}
                         className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition border-b border-white/5
                           ${isActive ? 'bg-midi-accent/10 border-l-2 border-l-midi-accent' : 'hover:bg-white/5'}`}>
-                        <span className="text-xl shrink-0">{convAvatar(conv)}</span>
+                        <Avatar value={convAvatar(conv)} size={26} className="text-xl shrink-0" />
                         <div className="flex-1 min-w-0">
                           <div className="flex justify-between items-baseline gap-1">
                             <span className={`font-semibold text-xs truncate ${isActive ? 'text-midi-accent' : 'text-white'}`}>
@@ -232,7 +233,7 @@ function MessageList({ messages, profiles, userId, fmtTime }) {
       <div key={msg.id} className={`flex gap-1.5 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
         <div className="w-6 shrink-0">
           {showMeta && !isMe && (
-            <span className="text-base leading-none">{sender?.avatar ?? '🎭'}</span>
+            <Avatar value={sender?.avatar} size={22} className="text-base leading-none" />
           )}
         </div>
         <div className={`flex flex-col max-w-[75%] ${isMe ? 'items-end' : 'items-start'}`}>
@@ -312,7 +313,7 @@ function NewGroupModal({ userId, onClose, onCreate }) {
                 <button key={f.id} onClick={() => toggle(f.id)}
                   className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl text-left text-sm transition
                     ${sel ? 'bg-midi-accent/15 border border-midi-accent/40' : 'bg-white/5 border border-transparent hover:bg-white/10'}`}>
-                  <span className="text-lg">{f.avatar ?? '🎭'}</span>
+                  <Avatar value={f.avatar} size={24} className="text-lg" />
                   <span className="flex-1 font-medium">{f.nickname}</span>
                   <span className={`w-4 h-4 rounded-full flex items-center justify-center text-xs font-bold ${sel ? 'bg-midi-accent text-slate-900' : 'bg-white/10 text-transparent'}`}>✓</span>
                 </button>

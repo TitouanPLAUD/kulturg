@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext.jsx'
 import { useGame } from '../context/GameContext.jsx'
 import { useTvRoom, gainForAnswer, TV_REQUIRED_PLAYERS } from '../hooks/useTvRoom.js'
 import { JLRProvider, useJLR } from '../components/JLRAvatar.jsx'
+import Avatar from '../components/Avatar.jsx'
 
 // ─── Métadonnées des phases ───────────────────────────────────
 const PHASE_META = {
@@ -194,7 +195,7 @@ function TopBar({ phase, pd, participants }) {
               const p = participants.find(x => x.profile_id === pid)
               return (
                 <span key={pid} className="text-base opacity-30 line-through" title={p?.profile?.nickname ?? '?'}>
-                  {p?.profile?.avatar ?? '👤'}
+                  <Avatar value={p?.profile?.avatar} size={20} className="text-base" fallback="👤" />
                 </span>
               )
             })}
@@ -286,7 +287,7 @@ function LobbyPhase({ room, participants, isHost, onStart, code }) {
           <ul className="space-y-3">
             {participants.map(p => (
               <li key={p.id} className="flex items-center gap-3">
-                <span className="text-3xl">{p.profile?.avatar ?? '🎭'}</span>
+                <Avatar value={p.profile?.avatar} size={36} className="text-3xl" />
                 <span className="font-semibold flex-1">{p.profile?.nickname ?? '…'}</span>
                 {p.profile_id === room.host_id && <span className="text-xs bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded-full">Hôte</span>}
               </li>
@@ -593,7 +594,7 @@ function EnvoiDuel({ phase, pd, participants, answers, myAnswers, isHost, submit
                 ${isRouge ? 'border-red-500/40 bg-red-950/30' : 'border-yellow-500/40 bg-yellow-950/20'}
                 ${isWinner ? 'ring-2 ring-green-400 scale-105' : ''}
               `}>
-              <span className="text-4xl block">{player.profile?.avatar ?? '🎭'}</span>
+              <span className="text-4xl block"><Avatar value={player.profile?.avatar} size={44} className="text-4xl" /></span>
               <p className="font-semibold mt-1 text-sm">{player.profile?.nickname ?? '?'}</p>
               <span className={`text-xs font-black tracking-widest mt-1 block ${isRouge ? 'text-red-400' : 'text-yellow-400'}`}>{label}</span>
               {hasAns && !revealed && <span className="text-yellow-400 text-lg mt-1 block">⚡ Buzzé</span>}
@@ -722,7 +723,7 @@ function CoupFatalPhase({ pd, participants, answers, myAnswers, isHost, submitAn
           return (
             <div key={pid} className={`rounded-2xl p-4 border-2 ${danger ? 'border-red-500/60 bg-red-950/30' : 'border-white/10 bg-white/5'}`}>
               <div className="flex items-center gap-2 mb-2">
-                <span className="text-2xl">{p?.profile?.avatar ?? '🎭'}</span>
+                <Avatar value={p?.profile?.avatar} size={30} className="text-2xl" />
                 <span className="font-semibold text-sm truncate">{p?.profile?.nickname ?? '?'}</span>
               </div>
               {/* Barre coups */}
@@ -1046,7 +1047,7 @@ function FinishedPhase({ pd, participants, answers }) {
 
         {maitrePart && (
           <div className="bg-yellow-500/10 border-2 border-yellow-500/40 rounded-2xl p-6 text-center space-y-2">
-            <div className="text-6xl">{maitrePart.profile?.avatar ?? '🎭'}</div>
+            <div className="text-6xl"><Avatar value={maitrePart.profile?.avatar} size={64} className="text-6xl" /></div>
             <div className="font-display text-3xl text-yellow-400 tracking-wider">{maitrePart.profile?.nickname ?? 'Joueur'}</div>
             <div className="font-black text-4xl text-white">{finalScore.toLocaleString('fr-FR')} €</div>
             <div className="text-xs text-yellow-500 uppercase tracking-widest font-bold">Maître de Midi</div>
@@ -1060,7 +1061,7 @@ function FinishedPhase({ pd, participants, answers }) {
             return (
               <div key={pid} className={`flex items-center gap-4 px-5 py-3 ${rank < rankings.length ? 'border-b border-white/5' : ''}`}>
                 <span className="text-xl w-7 text-center">{medals[rank - 1] ?? `${rank}`}</span>
-                <span className="text-2xl">{p?.profile?.avatar ?? '🎭'}</span>
+                <Avatar value={p?.profile?.avatar} size={30} className="text-2xl" />
                 <span className="flex-1 font-semibold truncate">{p?.profile?.nickname ?? '?'}</span>
                 {rank === 1 && <span className="text-yellow-400 font-black text-sm">{finalScore.toLocaleString('fr-FR')} €</span>}
                 {rank > 1 && <span className="text-slate-500 text-xs">Éliminé</span>}
@@ -1169,7 +1170,7 @@ function EnvoiPlayerBar({ participants, activePlayers, qAnswers, revealed, answe
           return (
             <div key={p.id} className={`flex flex-col items-center gap-1 text-center ${isEliminated ? 'opacity-25' : ''}`}>
               <span className={`text-2xl ${isDuelP ? 'ring-2 ring-orange-400 rounded-full' : ''}`}>
-                {p.profile?.avatar ?? '🎭'}
+                <Avatar value={p.profile?.avatar} size={30} className="text-2xl" />
               </span>
               <span className="text-xs text-slate-500 truncate w-full text-center leading-none">{p.profile?.nickname ?? '?'}</span>
 

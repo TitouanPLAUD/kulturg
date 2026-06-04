@@ -13,6 +13,7 @@ import {
   POINTS,
 } from '../hooks/useRaceRoom.js'
 import { THEMES } from '../data/themes.js'
+import Avatar from '../components/Avatar.jsx'
 
 const DIFF_LABELS = { all: 'Toutes', 1: 'Facile', 2: 'Moyen', 3: 'Difficile' }
 
@@ -199,7 +200,7 @@ function RaceLobby({ room, participants, isHost, code, onStart }) {
         <ul className="space-y-2 max-h-64 overflow-y-auto">
           {participants.map(p => (
             <li key={p.id} className="flex items-center gap-3">
-              <span className="text-2xl">{p.profile?.avatar ?? '🎭'}</span>
+              <Avatar value={p.profile?.avatar} size={30} className="text-2xl" />
               <span className="font-medium flex-1 text-sm">{p.profile?.nickname ?? '…'}</span>
               {p.profile_id === room.host_id && (
                 <span className="text-xs bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full">Hôte</span>
@@ -398,8 +399,8 @@ function RacePlaying({ pd, participants, answers, myAnswers, isHost, submitAnswe
               {participants.map(p => {
                 const has = qAnswers.some(a => a.profile_id === p.profile_id)
                 return (
-                  <span key={p.id} className={`w-6 h-6 rounded-full flex items-center justify-center text-sm transition-all ${has ? 'opacity-100 scale-100' : 'opacity-20 scale-90'}`}>
-                    {p.profile?.avatar ?? '🎭'}
+                  <span key={p.id} className={`w-6 h-6 rounded-full overflow-hidden flex items-center justify-center text-sm transition-all ${has ? 'opacity-100 scale-100' : 'opacity-20 scale-90'}`}>
+                    <Avatar value={p.profile?.avatar} fill className="text-sm" />
                   </span>
                 )
               })}
@@ -437,7 +438,7 @@ function QuestionPodium({ answers, participants, q_idx }) {
         return (
           <div key={a.id} className="flex items-center gap-1.5 bg-white/5 rounded-lg px-2 py-1 text-xs">
             <span>{ranks[i]}</span>
-            <span>{p?.profile?.avatar ?? '🎭'}</span>
+            <Avatar value={p?.profile?.avatar} size={20} className="text-sm" />
             <span className="font-medium text-slate-300">{p?.profile?.nickname ?? '?'}</span>
             <span className="text-green-400 font-bold">+{pts[i]}</span>
           </div>
@@ -463,7 +464,7 @@ function Scoreboard({ participants, answers, q_count, currentUserId }) {
             className={`flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm transition
               ${isMe ? 'bg-green-500/10 border border-green-500/20' : 'bg-white/3 hover:bg-white/5'}`}>
             <span className="w-5 text-center text-xs font-mono text-slate-500">{i + 1}</span>
-            <span className="text-base">{p.profile?.avatar ?? '🎭'}</span>
+            <Avatar value={p.profile?.avatar} size={22} className="text-base" />
             <span className={`flex-1 truncate text-xs font-medium ${isMe ? 'text-green-400' : 'text-slate-300'}`}>
               {p.profile?.nickname ?? '?'}
               {isMe && <span className="ml-1 opacity-60 text-xs">(moi)</span>}
@@ -507,7 +508,7 @@ function RaceFinished({ participants, answers, q_count, questions, myAnswers, us
             className={`rounded-2xl p-4 text-center border
               ${i === 0 ? 'bg-yellow-500/10 border-yellow-500/30' : i === 1 ? 'bg-slate-500/10 border-slate-500/20' : 'bg-amber-800/10 border-amber-800/20'}`}>
             <div className="text-3xl mb-1">{medals[i]}</div>
-            <div className="text-2xl">{p.profile?.avatar ?? '🎭'}</div>
+            <div className="text-2xl"><Avatar value={p.profile?.avatar} size={30} className="text-2xl" /></div>
             <div className="font-semibold text-xs mt-1 truncate">{p.profile?.nickname ?? '?'}</div>
             <div className={`font-display text-2xl mt-1 ${i === 0 ? 'text-yellow-400' : i === 1 ? 'text-slate-300' : 'text-amber-600'}`}>
               {p.score}
@@ -523,7 +524,7 @@ function RaceFinished({ participants, answers, q_count, questions, myAnswers, us
           {rest.map((p, i) => (
             <div key={p.id} className="flex items-center gap-3 px-5 py-3 border-b border-white/5 last:border-0">
               <span className="text-slate-500 font-mono text-sm w-5">{i + 4}</span>
-              <span className="text-xl">{p.profile?.avatar ?? '🎭'}</span>
+              <Avatar value={p.profile?.avatar} size={26} className="text-xl" />
               <span className="flex-1 font-medium text-sm">{p.profile?.nickname ?? '?'}</span>
               <span className="font-bold tabular-nums text-slate-300">{p.score} pts</span>
             </div>

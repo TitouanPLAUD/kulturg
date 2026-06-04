@@ -3,6 +3,7 @@ import { useGame, levelFromXP, nextLevelThreshold } from '../context/GameContext
 import { useAuth } from '../context/AuthContext.jsx'
 import { ChatWidgetProvider } from '../context/ChatWidgetContext.jsx'
 import ChatWidget from './ChatWidget.jsx'
+import Avatar from './Avatar.jsx'
 
 const navLinks = [
   { to: '/',           label: 'Accueil',      emoji: '🏠', end: true },
@@ -68,7 +69,7 @@ export default function Layout() {
               <NavLink to="/profil"
                 className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-white/5 transition">
                 <span className="text-slate-400 text-xs">{profile?.nickname ?? ''}</span>
-                <span className="text-xl leading-none">{profile?.avatar ?? '🎭'}</span>
+                <Avatar value={profile?.avatar} size={26} className="text-xl leading-none" />
               </NavLink>
               <div className="hidden sm:block text-right">
                 <div className="text-xs text-slate-500">Niv. {level}</div>

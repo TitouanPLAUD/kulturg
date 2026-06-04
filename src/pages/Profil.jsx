@@ -1,20 +1,12 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useGame, levelFromXP, nextLevelThreshold, BADGES, gradeFromLevel, GRADES } from '../context/GameContext.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { supabase } from '../lib/supabase.js'
 import { THEME_LIST } from '../data/themes.js'
 import SchoolPicker from '../components/SchoolPicker.jsx'
-
-// ─── Suggestions d'emojis par catégorie ──────────────────────
-const EMOJI_CATEGORIES = [
-  { label: 'Visages', emojis: ['😀','😎','🤩','🥸','🧐','🤓','😈','👻','🤖','👽','🎭','🥷','🧙','🧝','🧛','🧟','🐱','🐶','🦊','🐸'] },
-  { label: 'Animaux', emojis: ['🦁','🐯','🐻','🐼','🐨','🦅','🦉','🦋','🐢','🦈','🐬','🐙','🦑','🦜','🐝','🦚','🦩','🐉','🦄','🐺'] },
-  { label: 'Sport', emojis: ['⚽','🏀','🎾','🏈','⚾','🎱','🏓','🥊','🏆','🎯','⛷️','🏄','🤸','🧗','🏇','🤺','🥋','🎿','🏋️','🚴'] },
-  { label: 'Nourriture', emojis: ['🍕','🍔','🌮','🍜','🍣','🍩','🎂','🍎','🍓','🍉','☕','🧋','🍺','🍷','🥑','🌶️','🧀','🥐','🍦','🍫'] },
-  { label: 'Objets', emojis: ['🎮','🕹️','💻','📱','🎸','🎹','🎺','🎻','🎤','🎧','📚','🔬','🔭','⚗️','💎','🏺','🗿','🎨','🖌️','✏️'] },
-  { label: 'Symboles', emojis: ['⭐','🌟','💫','✨','🔥','💥','❄️','🌈','⚡','🌙','☀️','🌊','🍀','🌸','🌺','🌻','🌙','💜','🖤','❤️'] },
-]
+import Avatar from '../components/Avatar.jsx'
+import { AVATARS } from '../data/avatars.js'
 
 export default function Profil() {
   const { state, reset } = useGame()
@@ -46,13 +38,13 @@ export default function Profil() {
 
           {/* Avatar / niveau */}
           <div
-            className="w-20 h-20 rounded-2xl bg-gradient-to-br from-midi-accent to-blue-700 grid place-items-center font-display text-3xl text-white shadow-xl shrink-0 select-none relative group cursor-pointer"
+            className="w-20 h-20 rounded-full bg-gradient-to-br from-midi-accent to-blue-700 grid place-items-center font-display text-3xl text-white shadow-xl shrink-0 select-none relative group cursor-pointer overflow-hidden ring-2 ring-white/10"
             onClick={() => user && profile && setShowAvatarPicker(true)}
-            title={user && profile ? 'Changer l\'avatar' : undefined}
+            title={user && profile ? 'Changer la photo de profil' : undefined}
           >
-            {user && profile ? profile.avatar : level}
+            {user && profile ? <Avatar value={profile.avatar} fill className="text-3xl" /> : level}
             {user && profile && (
-              <div className="absolute inset-0 rounded-2xl bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-base font-sans font-medium">
+              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-base font-sans font-medium">
                 ✏️
               </div>
             )}
@@ -255,24 +247,8 @@ export default function Profil() {
 }
 
 function AvatarPickerModal({ current, profileId, onClose, onSaved }) {
-  const [selected, setSelected]   = useState(current ?? '😀')
-  const [custom,   setCustom]     = useState('')
-  const [activeTab, setActiveTab] = useState(0)
-  const [saving,   setSaving]     = useState(false)
-  const inputRef = useRef(null)
-
-  // When the user types in the custom field, preview only the first grapheme cluster (emoji)
-  function handleCustomInput(e) {
-    const val = e.target.value
-    if (!val) { setCustom(''); return }
-    // Extract first emoji / grapheme
-    const seg = [...new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(val)]
-    if (seg.length) {
-      const first = seg[0].segment
-      setCustom(first)
-      setSelected(first)
-    }
-  }
+  const [selected, setSelected] = useState(current ?? AVATARS[0].src)
+  const [saving,   setSaving]   = useState(false)
 
   async function save() {
     setSaving(true)
@@ -296,59 +272,38 @@ function AvatarPickerModal({ current, profileId, onClose, onSaved }) {
 
         {/* Header */}
         <div className="flex items-center justify-between px-5 pt-5 pb-3 shrink-0">
-          <h2 className="font-display text-xl tracking-wider">Choisir un avatar</h2>
+          <h2 className="font-display text-xl tracking-wider">Choisir une photo de profil</h2>
           <button onClick={onClose} className="text-slate-400 hover:text-white transition-colors text-xl leading-none">✕</button>
         </div>
 
-        {/* Preview + custom input */}
-        <div className="px-5 pb-3 flex items-center gap-4 shrink-0">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-midi-accent to-blue-700 grid place-items-center text-3xl text-slate-900 shadow-xl shrink-0 select-none">
-            {selected}
+        {/* Aperçu */}
+        <div className="px-5 pb-4 flex items-center gap-4 shrink-0">
+          <div className="w-20 h-20 rounded-full overflow-hidden ring-2 ring-midi-accent/40 shadow-xl shrink-0 grid place-items-center bg-white/5">
+            <Avatar value={selected} fill />
           </div>
-          <div className="flex-1">
-            <label className="text-xs text-slate-400 mb-1 block">Ou colle / écris n'importe quel emoji</label>
-            <input
-              ref={inputRef}
-              className="input w-full text-center text-2xl"
-              placeholder="✨"
-              value={custom}
-              onChange={handleCustomInput}
-              maxLength={8}
-            />
-          </div>
+          <p className="text-sm text-slate-400">
+            Sélectionne ta photo de profil ci-dessous. D'autres seront ajoutées prochainement.
+          </p>
         </div>
 
-        {/* Category tabs */}
-        <div className="px-5 flex gap-1 overflow-x-auto scrollbar-thin shrink-0 pb-1">
-          {EMOJI_CATEGORIES.map((cat, i) => (
-            <button
-              key={cat.label}
-              onClick={() => setActiveTab(i)}
-              className={`px-3 py-1 rounded-full text-xs whitespace-nowrap transition-colors ${
-                activeTab === i
-                  ? 'bg-midi-accent text-white font-semibold'
-                  : 'bg-white/5 text-slate-400 hover:bg-white/10'
-              }`}
-            >
-              {cat.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Emoji grid */}
+        {/* Grille des photos disponibles */}
         <div className="px-5 py-3 overflow-y-auto flex-1 scrollbar-thin">
-          <div className="grid grid-cols-8 gap-1">
-            {EMOJI_CATEGORIES[activeTab].emojis.map(emoji => (
-              <button
-                key={emoji}
-                onClick={() => { setSelected(emoji); setCustom('') }}
-                className={`text-2xl p-1.5 rounded-xl transition-all hover:scale-110 active:scale-95 ${
-                  selected === emoji ? 'bg-midi-accent/30 ring-2 ring-midi-accent/60' : 'hover:bg-white/10'
-                }`}
-              >
-                {emoji}
-              </button>
-            ))}
+          <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+            {AVATARS.map(a => {
+              const isSel = selected === a.src
+              return (
+                <button
+                  key={a.id}
+                  onClick={() => setSelected(a.src)}
+                  title={a.label}
+                  className={`aspect-square rounded-full overflow-hidden transition-all hover:scale-105 active:scale-95 ${
+                    isSel ? 'ring-4 ring-midi-accent' : 'ring-2 ring-white/10 hover:ring-white/30'
+                  }`}
+                >
+                  <img src={a.src} alt={a.label} draggable={false} className="w-full h-full object-cover" />
+                </button>
+              )
+            })}
           </div>
         </div>
 

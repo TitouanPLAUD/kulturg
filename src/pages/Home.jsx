@@ -6,6 +6,7 @@ import { useRaceRoom } from '../hooks/useRaceRoom.js'
 import { useTvRoom } from '../hooks/useTvRoom.js'
 import { supabase } from '../lib/supabase.js'
 import { findEcole } from '../data/ecoles.js'
+import Avatar from '../components/Avatar.jsx'
 
 export default function Home() {
   const { state } = useGame()
@@ -27,7 +28,7 @@ export default function Home() {
           <div className="flex-1 min-w-0">
             {user && profile ? (
               <div className="flex items-center gap-3">
-                <span className="text-4xl shrink-0">{profile.avatar}</span>
+                <span className="shrink-0"><Avatar value={profile.avatar} size={48} className="text-4xl" /></span>
                 <div className="min-w-0">
                   <div className="text-slate-400 text-xs uppercase tracking-widest">Bienvenue,</div>
                   <div className="font-display text-2xl text-white leading-tight truncate">{profile.nickname}</div>
@@ -230,8 +231,8 @@ function Podium({ currentUserId }) {
           return (
             <div key={p.id} className="flex flex-col items-center gap-2 text-center">
               <div className="text-2xl">{m.medal}</div>
-              <div className={`w-14 h-14 rounded-2xl grid place-items-center text-3xl bg-white/5 ring-2 ${m.ring}`}>
-                {p.avatar ?? '🎭'}
+              <div className={`w-14 h-14 rounded-full overflow-hidden grid place-items-center text-3xl bg-white/5 ring-2 ${m.ring}`}>
+                <Avatar value={p.avatar} fill className="text-3xl" />
               </div>
               <div className="flex flex-col items-center gap-0.5 max-w-full">
                 <div className={`text-sm font-semibold truncate max-w-full ${isMe ? 'text-midi-accent' : 'text-white'}`}>

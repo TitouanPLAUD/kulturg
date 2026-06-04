@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import { levelFromXP } from '../context/GameContext.jsx'
 import { findEcole } from '../data/ecoles.js'
+import Avatar from '../components/Avatar.jsx'
 
 export default function Classement() {
   const { user } = useAuth()
@@ -202,7 +203,7 @@ export default function Classement() {
                     </span>
 
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <span className="text-xl shrink-0">{row.avatar ?? '🎭'}</span>
+                      <Avatar value={row.avatar} size={28} className="text-xl shrink-0" />
                       <div className="min-w-0">
                         <div className={`font-semibold truncate ${isMe ? 'text-midi-accent' : 'text-white'}`}>
                           {row.nickname}

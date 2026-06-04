@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import SchoolPicker from '../components/SchoolPicker.jsx'
+import { DEFAULT_AVATAR } from '../data/avatars.js'
 
 export default function Auth() {
   const { user } = useAuth()
@@ -53,6 +54,7 @@ export default function Auth() {
         // Persist extra profile fields (trigger already created the row)
         if (signUpData?.user) {
           await supabase.from('profiles').update({
+            avatar:  DEFAULT_AVATAR,
             country: country.trim() || null,
             city:    city.trim()    || null,
             school:  school || null,

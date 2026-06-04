@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useGame } from '../context/GameContext.jsx'
 import { useDuelRoom, computeDuelScores, TARGET_SCORE } from '../hooks/useDuelRoom.js'
+import Avatar from '../components/Avatar.jsx'
 
 const QUESTION_DURATION = 12000
 
@@ -243,7 +244,7 @@ function PlayingPhase({ room, profiles, answers, myAnswers, isHost, submitAnswer
           {/* Host */}
           <div className="flex-1 flex flex-col items-start gap-1">
             <div className="flex items-center gap-2">
-              <span className="text-xl">{host?.avatar ?? '🎭'}</span>
+              <Avatar value={host?.avatar} size={26} className="text-xl" />
               <span className="text-sm font-semibold truncate max-w-[80px]">{host?.nickname ?? 'Hôte'}</span>
             </div>
             <ScoreDots score={hostScore} color="blue" />
@@ -263,7 +264,7 @@ function PlayingPhase({ room, profiles, answers, myAnswers, isHost, submitAnswer
           <div className="flex-1 flex flex-col items-end gap-1">
             <div className="flex items-center gap-2">
               <span className="text-sm font-semibold truncate max-w-[80px] text-right">{guest?.nickname ?? 'Adversaire'}</span>
-              <span className="text-xl">{guest?.avatar ?? '🎭'}</span>
+              <Avatar value={guest?.avatar} size={26} className="text-xl" />
             </div>
             <ScoreDots score={guestScore} color="red" reverse />
           </div>
@@ -336,7 +337,7 @@ function PlayingPhase({ room, profiles, answers, myAnswers, isHost, submitAnswer
             return (
               <div key={id ?? color}
                 className={`flex items-center gap-2 p-3 rounded-xl border ${border} ${bg}`}>
-                <span className="text-lg">{profile?.avatar ?? '🎭'}</span>
+                <Avatar value={profile?.avatar} size={24} className="text-lg" />
                 <span className="text-sm truncate flex-1">{profile?.nickname ?? '?'}</span>
                 {ans
                   ? revealed
@@ -409,7 +410,7 @@ function FinishedPhase({ room, profiles, answers, user }) {
             return (
               <div key={id ?? label} className={`flex items-center gap-4 px-5 py-4 border-b border-white/5 last:border-0 ${won ? 'bg-yellow-500/5' : ''}`}>
                 <span className="text-2xl">{won ? '🏆' : '  '}</span>
-                <span className="text-xl">{prof?.avatar ?? '🎭'}</span>
+                <Avatar value={prof?.avatar} size={26} className="text-xl" />
                 <span className="flex-1 font-semibold">
                   {prof?.nickname ?? label}
                   {id === user.id && <span className="text-xs text-slate-500 ml-1">(moi)</span>}
@@ -458,7 +459,7 @@ function PlayerCard({ profile, label, color, isYou }) {
   const bg   = color === 'blue' ? 'from-blue-900/40 to-slate-900/60' : 'from-red-900/40 to-slate-900/60'
   return (
     <div className={`flex flex-col items-center gap-3 p-4 rounded-2xl bg-gradient-to-b ${bg} border border-white/10 ${isYou ? `ring-2 ${ring}` : ''} w-32 md:w-36`}>
-      <div className="text-5xl">{profile?.avatar ?? '🎭'}</div>
+      <div className="text-5xl"><Avatar value={profile?.avatar} size={56} className="text-5xl" /></div>
       <div className="text-center">
         <div className="font-semibold text-sm truncate max-w-[100px]">
           {profile?.nickname ?? '…'}

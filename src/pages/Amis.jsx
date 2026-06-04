@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useChatWidget } from '../context/ChatWidgetContext.jsx'
+import Avatar from '../components/Avatar.jsx'
 
 export default function Amis() {
   const { user, profile } = useAuth()
@@ -160,7 +161,7 @@ export default function Amis() {
               const alreadyRecv   = received.some(f => f.requester?.id === p.id)
               return (
                 <li key={p.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/5">
-                  <span className="text-2xl">{p.avatar}</span>
+                  <Avatar value={p.avatar} size={30} className="text-2xl" />
                   <span className="flex-1 font-medium">{p.nickname}</span>
                   {alreadyFriend
                     ? <span className="chip text-xs">✓ Ami</span>
@@ -197,7 +198,7 @@ export default function Amis() {
               const p = otherProfile(f)
               return (
                 <li key={f.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/5">
-                  <span className="text-2xl">{p?.avatar}</span>
+                  <Avatar value={p?.avatar} size={30} className="text-2xl" />
                   <span className="flex-1 font-medium">{p?.nickname}</span>
                   <button
                     onClick={() => respond(f.id, 'accepted')}
@@ -227,7 +228,7 @@ export default function Amis() {
               const p = otherProfile(f)
               return (
                 <li key={f.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/5">
-                  <span className="text-2xl">{p?.avatar}</span>
+                  <Avatar value={p?.avatar} size={30} className="text-2xl" />
                   <span className="flex-1 font-medium text-slate-300">{p?.nickname}</span>
                   <span className="text-xs text-slate-500">En attente…</span>
                   <button
@@ -292,7 +293,7 @@ function FriendRow({ friend: p, onMessage, onRemove }) {
 
   return (
     <li className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 group">
-      <span className="text-2xl">{p?.avatar}</span>
+      <Avatar value={p?.avatar} size={30} className="text-2xl" />
       <span className="flex-1 font-medium">{p?.nickname}</span>
       <button
         onClick={handleMessage}
