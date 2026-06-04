@@ -259,7 +259,7 @@ function LobbyPhase({ room, participants, isHost, onStart, code }) {
     <div className="min-h-screen flex flex-col items-center justify-center py-8">
       <div className="w-full space-y-6">
         <div className="text-center space-y-2">
-          <div className="text-6xl">📺</div>
+          <img src="/logos/jeu-tv.png" alt="Jeu TV" className="w-20 h-20 rounded-2xl object-cover mx-auto shadow-lg" draggable={false} />
           <h1 className="font-display text-4xl md:text-5xl tracking-wider">Les 12 Coups de Midi</h1>
           {isPublic
             ? <span className="inline-flex items-center gap-1.5 text-xs font-semibold bg-yellow-500/15 text-yellow-400 px-3 py-1 rounded-full">🌍 Salon public · tout le monde peut rejoindre</span>

@@ -141,7 +141,7 @@ function RaceLobby({ room, participants, isHost, code, onStart }) {
     <div className="max-w-xl mx-auto px-4 py-10 space-y-6">
       {/* Header */}
       <div className="text-center space-y-2">
-        <div className="text-6xl">🏁</div>
+        <img src="/logos/course-points.png" alt="Course aux Points" className="w-20 h-20 rounded-2xl object-cover mx-auto shadow-lg" draggable={false} />
         <h1 className="font-display text-4xl md:text-5xl tracking-wider">Course aux Points</h1>
         {isPublic && (
           <span className="inline-flex items-center gap-1.5 text-xs font-semibold bg-green-500/15 text-green-400 px-3 py-1 rounded-full">

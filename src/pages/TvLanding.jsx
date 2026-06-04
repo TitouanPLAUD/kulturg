@@ -35,7 +35,7 @@ export default function TvLanding() {
   if (!user) {
     return (
       <div className="max-w-md mx-auto mt-20 text-center space-y-5">
-        <div className="text-6xl">📺</div>
+        <img src="/logos/jeu-tv.png" alt="Jeu TV" className="w-20 h-20 rounded-2xl object-cover mx-auto shadow-lg" draggable={false} />
         <h1 className="heading text-3xl">Jeu TV</h1>
         <p className="text-slate-400">Connecte-toi pour rejoindre ou créer une partie multijoueur.</p>
         <Link to="/auth" className="btn btn-primary">Se connecter</Link>
@@ -48,7 +48,7 @@ export default function TvLanding() {
 
       {/* Header */}
       <div className="text-center">
-        <div className="text-6xl mb-3">📺</div>
+        <img src="/logos/jeu-tv.png" alt="Jeu TV" className="w-20 h-20 rounded-2xl object-cover mx-auto mb-3 shadow-lg" draggable={false} />
         <h1 className="heading text-4xl">Jeu TV</h1>
         <p className="text-slate-400 mt-2 text-sm">
           Simulation des 12 Coups de Midi — jusqu'à 4 joueurs

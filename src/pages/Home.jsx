@@ -77,14 +77,14 @@ export default function Home() {
           <SectionTitle>🎮 Jeux</SectionTitle>
           <div className="space-y-4">
             <SplitGameCard
-              user={user} emoji="📺" title="Jeu TV"
+              user={user} emoji="📺" logo="/logos/jeu-tv.png" title="Jeu TV"
               desc="À 4 joueurs : reproduction de la mécanique télé en 4 phases."
               tone="from-amber-500 to-orange-600"
               useHook={() => useTvRoom(null)} route="tv"
               publicClass="bg-yellow-500 hover:bg-yellow-400 text-black"
             />
             <SplitGameCard
-              user={user} emoji="🏁" title="Course aux Points"
+              user={user} emoji="🏁" logo="/logos/course-points.png" title="Course aux Points"
               desc="2 à 15 joueurs : le plus rapide pour scorer un max."
               tone="from-green-500 to-emerald-600"
               useHook={() => useRaceRoom(null)} route="race"
@@ -119,13 +119,15 @@ export default function Home() {
 }
 
 // ─── Carte de jeu divisée : salon public · partie privée ──────
-function SplitGameCard({ user, emoji, title, desc, tone, useHook, route, publicClass }) {
+function SplitGameCard({ user, emoji, logo, title, desc, tone, useHook, route, publicClass }) {
   return (
     <div className="card p-5">
       <div className="flex items-center gap-3 mb-4">
-        <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${tone} grid place-items-center text-2xl shadow-lg shrink-0`}>
-          {emoji}
-        </div>
+        {logo
+          ? <img src={logo} alt={title} className="w-12 h-12 rounded-xl object-cover shadow-lg shrink-0" draggable={false} />
+          : <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${tone} grid place-items-center text-2xl shadow-lg shrink-0`}>
+              {emoji}
+            </div>}
         <div className="min-w-0">
           <div className="font-semibold text-base">{title}</div>
           <div className="text-sm text-slate-400 leading-relaxed">{desc}</div>

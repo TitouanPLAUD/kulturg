@@ -35,6 +35,7 @@ export default function Multijoueur() {
       <div className="grid md:grid-cols-2 gap-6">
         <ModeCard
           emoji="📺"
+          logo="/logos/jeu-tv.png"
           title="Jeu TV"
           subtitle="4 joueurs requis"
           description="Simulation des 12 Coups de Midi : Coup d'Envoi, Coup Fatal, Coup de Maître et Étoile Mystérieuse."
@@ -52,6 +53,7 @@ export default function Multijoueur() {
 
         <ModeCard
           emoji="🏁"
+          logo="/logos/course-points.png"
           title="Course aux Points"
           subtitle="2 à 15 joueurs"
           description="Tous les joueurs voient les mêmes questions. Sois le plus rapide à répondre correctement pour scorer un maximum !"
@@ -72,7 +74,7 @@ export default function Multijoueur() {
   )
 }
 
-function ModeCard({ emoji, title, subtitle, description, phases, accentClass, btnClass, useHook, route, customizable }) {
+function ModeCard({ emoji, logo, title, subtitle, description, phases, accentClass, btnClass, useHook, route, customizable }) {
   const navigate = useNavigate()
   const [joinCode, setJoinCode] = useState('')
   const [error,    setError]    = useState('')
@@ -102,7 +104,9 @@ function ModeCard({ emoji, title, subtitle, description, phases, accentClass, bt
       {/* Header */}
       <div>
         <div className="flex items-center gap-3 mb-2">
-          <span className="text-4xl">{emoji}</span>
+          {logo
+            ? <img src={logo} alt={title} className="w-12 h-12 rounded-xl object-cover shadow-lg" draggable={false} />
+            : <span className="text-4xl">{emoji}</span>}
           <div>
             <h2 className="font-display text-2xl tracking-wider">{title}</h2>
             <p className="text-xs text-slate-500">{subtitle}</p>
