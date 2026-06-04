@@ -98,6 +98,20 @@ export function useRaceRoom(code) {
     }
   }, [code, loadParticipants])
 
+  // Re-fetch les answers à chaque transition de phase pour garantir un état
+  // complet sur tous les clients (Supabase realtime peut rater des events
+  // pendant des micro-coupures réseau).
+  useEffect(() => {
+    if (!room?.id) return
+    let cancelled = false
+    ;(async () => {
+      const { data } = await supabase
+        .from('race_answers').select('*').eq('room_id', room.id)
+      if (!cancelled) setAnswers(data ?? [])
+    })()
+    return () => { cancelled = true }
+  }, [room?.id, room?.phase])
+
   async function updateRoom(patch) {
     if (!room) return
     const { data } = await supabase
@@ -155,13 +169,13 @@ export function useRaceRoom(code) {
   async function joinPublicRoom() {
     if (!user) return { error: 'Non connecté' }
 
-    // Salons publics encore en lobby, créés il y a moins de 30 min (on évite les salles mortes)
+    // Salons publics en lobby OU en cours, créés il y a moins de 30 min
     const since = new Date(Date.now() - 30 * 60 * 1000).toISOString()
     const { data: rooms } = await supabase
       .from('race_rooms')
       .select('*')
       .eq('is_public', true)
-      .eq('phase', 'lobby')
+      .in('phase', ['lobby', 'playing'])
       .gte('created_at', since)
       .order('created_at', { ascending: true })
 
@@ -199,7 +213,8 @@ export function useRaceRoom(code) {
     const { data: r } = await supabase
       .from('race_rooms').select('*').eq('code', roomCode.toUpperCase()).single()
     if (!r) return { error: 'Salle introuvable' }
-    if (r.phase !== 'lobby') return { error: 'Partie déjà commencée' }
+    // Les retardataires peuvent rejoindre tant que la partie n'est pas terminée
+    if (r.phase === 'finished') return { error: 'Partie terminée' }
 
     const { count } = await supabase
       .from('race_participants').select('id', { count: 'exact', head: true }).eq('room_id', r.id)

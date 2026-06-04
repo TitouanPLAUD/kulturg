@@ -107,22 +107,6 @@ function RaceLobby({ room, participants, isHost, code, onStart }) {
   const canStart = n >= RACE_MIN_PLAYERS
   const isPublic = room.is_public
 
-  // Salon public : l'hôte lance automatiquement après un court décompte dès qu'on a assez de joueurs
-  const onStartRef = useRef(onStart)
-  onStartRef.current = onStart
-  const [countdown, setCountdown] = useState(null)
-  useEffect(() => {
-    if (!isPublic || !isHost || !canStart) { setCountdown(null); return }
-    setCountdown(5)
-    const tick = setInterval(() => {
-      setCountdown(c => {
-        if (c <= 1) { clearInterval(tick); onStartRef.current(); return 0 }
-        return c - 1
-      })
-    }, 1000)
-    return () => clearInterval(tick)
-  }, [isPublic, isHost, canStart])
-
   function copyCode() {
     navigator.clipboard.writeText(code)
     setCopied(true)
@@ -198,17 +182,13 @@ function RaceLobby({ room, participants, isHost, code, onStart }) {
       {isHost ? (
         <button onClick={onStart} disabled={!canStart}
           className="w-full py-4 rounded-2xl font-display text-xl tracking-wider bg-green-500 text-black hover:bg-green-400 transition disabled:opacity-40 disabled:cursor-not-allowed">
-          {!canStart
-            ? `⏳ En attente de joueurs (${n}/${RACE_MIN_PLAYERS} min)`
-            : isPublic && countdown !== null
-              ? `🚀 Lancement dans ${countdown}s — clique pour démarrer maintenant`
-              : '▶ Lancer la course !'}
+          {canStart
+            ? '▶ Lancer la course !'
+            : `⏳ En attente de joueurs (${n}/${RACE_MIN_PLAYERS} min)`}
         </button>
       ) : (
         <p className="text-center text-slate-500 text-sm py-4">
-          {isPublic
-            ? '⏳ La course démarre dès qu\'il y a assez de joueurs…'
-            : '⏳ En attente que l\'hôte lance la course…'}
+          ⏳ En attente que l'hôte lance la course…
         </p>
       )}
     </div>
