@@ -169,13 +169,13 @@ export function useRaceRoom(code) {
   async function joinPublicRoom() {
     if (!user) return { error: 'Non connecté' }
 
-    // Salons publics en lobby OU en cours, créés il y a moins de 30 min
+    // Salons publics encore en lobby, créés il y a moins de 30 min
     const since = new Date(Date.now() - 30 * 60 * 1000).toISOString()
     const { data: rooms } = await supabase
       .from('race_rooms')
       .select('*')
       .eq('is_public', true)
-      .in('phase', ['lobby', 'playing'])
+      .eq('phase', 'lobby')
       .gte('created_at', since)
       .order('created_at', { ascending: true })
 
@@ -213,8 +213,7 @@ export function useRaceRoom(code) {
     const { data: r } = await supabase
       .from('race_rooms').select('*').eq('code', roomCode.toUpperCase()).single()
     if (!r) return { error: 'Salle introuvable' }
-    // Les retardataires peuvent rejoindre tant que la partie n'est pas terminée
-    if (r.phase === 'finished') return { error: 'Partie terminée' }
+    if (r.phase !== 'lobby') return { error: 'Partie déjà commencée' }
 
     const { count } = await supabase
       .from('race_participants').select('id', { count: 'exact', head: true }).eq('room_id', r.id)
