@@ -12,6 +12,21 @@ export const AVATARS = [
     src:   '/avatars/chat-genieur.png',
     label: 'Chat-génieur',
   },
+  {
+    id:    'chat-pdg',
+    src:   '/avatars/chat-pdg.png',
+    label: 'Chat PDG',
+  },
+  {
+    id:    'chien-ingenieur',
+    src:   '/avatars/chien-ingenieur.png',
+    label: 'Chien ingénieur',
+  },
+  {
+    id:    'etudiant-lunettes',
+    src:   '/avatars/etudiant-lunettes.png',
+    label: 'Étudiant à lunettes',
+  },
 ]
 
 // Photo de profil par défaut des nouveaux comptes (et fallback d'affichage).
