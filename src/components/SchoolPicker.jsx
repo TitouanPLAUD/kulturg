@@ -62,7 +62,8 @@ export default function SchoolPicker({ value, onChange, placeholder = "Choisis t
       </button>
 
       {open && (
-        <div className="absolute z-50 mt-1 w-full rounded-xl border border-white/10 bg-midi-card/95 backdrop-blur-xl shadow-2xl overflow-hidden">
+        <div className="absolute z-50 mt-1 w-full rounded-xl border border-white/10 backdrop-blur-xl shadow-2xl overflow-hidden"
+          style={{ background: 'var(--bg-card)' }}>
           <div className="p-2 border-b border-white/10">
             <input
               autoFocus
@@ -78,7 +79,7 @@ export default function SchoolPicker({ value, onChange, placeholder = "Choisis t
               <button
                 type="button"
                 onClick={() => pick(null)}
-                className="w-full text-left px-3 py-2 text-xs text-rose-300 hover:bg-white/5 border-b border-white/5"
+                className="w-full text-left px-3 py-2 text-xs text-rose-500 hover:bg-white/5 border-b border-white/5"
               >
                 ✕ Effacer la sélection
               </button>
@@ -88,7 +89,7 @@ export default function SchoolPicker({ value, onChange, placeholder = "Choisis t
             ) : (
               grouped.map(g => (
                 <div key={g.category}>
-                  <div className="px-3 py-1.5 text-xs uppercase tracking-widest text-slate-500 bg-white/5 sticky top-0">
+                  <div className="px-3 py-1.5 text-xs uppercase tracking-widest text-slate-500 sticky top-0" style={{ background: 'var(--bg-card)' }}>
                     {g.category}
                   </div>
                   {g.items.map(e => (
