@@ -9,12 +9,9 @@ import { useAllQuestions } from '../hooks/useQuestions.js'
 import { findEcole } from '../data/ecoles.js'
 
 const games = [
-  { to: '/qcm',            title: 'QCM Culture G',      desc: 'Sessions chronométrées par thème.',     emoji: '❓', tone: 'from-amber-500 to-orange-600' },
-  { to: '/duel',           title: 'Duel rapide',         desc: '60 s pour enchaîner un max de bonnes.', emoji: '⚔️', tone: 'from-rose-500 to-red-600' },
-  { to: '/coup-de-maitre', title: 'Coup de Maître',      desc: 'Devine la personnalité avec des indices.', emoji: '🎯', tone: 'from-indigo-500 to-violet-600' },
-  { to: '/mot',            title: 'Mot Mystérieux',      desc: 'Trouve le mot à partir de sa définition.', emoji: '🔤', tone: 'from-emerald-500 to-teal-600' },
-  { to: '/etoile',         title: 'Étoile Mystérieuse',  desc: 'Une silhouette se révèle au fil des indices.', emoji: '⭐', tone: 'from-yellow-400 to-amber-600' },
-  { to: '/revision',       title: 'Mode Révision',       desc: 'Flashcards et répétition espacée.',     emoji: '🃏', tone: 'from-sky-500 to-blue-600' },
+  { to: '/multi', title: 'Jeu TV',           desc: 'À 4 joueurs : reproduction de la mécanique télé en 4 phases.', emoji: '📺', tone: 'from-amber-500 to-orange-600' },
+  { to: '/multi', title: 'Frappe Express',   desc: '2 joueurs : premier à 5 bonnes réponses gagne le duel.',       emoji: '⚔️', tone: 'from-blue-500 to-cyan-600' },
+  { to: '/multi', title: 'Course aux Points', desc: '2 à 15 joueurs : sois le plus rapide pour scorer un max.',    emoji: '🏁', tone: 'from-green-500 to-emerald-600' },
 ]
 
 export default function Home() {
@@ -97,9 +94,9 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Mini-jeux */}
+      {/* Multijoueur */}
       <section>
-        <SectionTitle>Mini-jeux</SectionTitle>
+        <SectionTitle>🎮 Multijoueur</SectionTitle>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {games.map(g => (
             <Link key={g.to} to={g.to}

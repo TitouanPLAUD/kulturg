@@ -390,8 +390,6 @@ function EnvoiQuestion({ phase, pd, participants, answers, myAnswers, isHost, su
   const activePlayers = pd.active_players ?? []
   const { secs, pct, expired } = useTimer(pd.q_start_at, DURATIONS[phase])
   const [selected, setSelected] = useState(null)
-  const [revealed, setRevealed] = useState(false)
-  const advRef      = useRef(false)
   const urgentFired = useRef(false)
   const revealFired = useRef(false)
   const startedAt   = pd.q_start_at ? new Date(pd.q_start_at).getTime() : Date.now()
@@ -401,13 +399,16 @@ function EnvoiQuestion({ phase, pd, participants, answers, myAnswers, isHost, su
   const qAnswers  = answers.filter(a => a.phase === phase && a.q_idx === q_idx)
   const isActive  = activePlayers.includes(myProfileId)
 
+  // ── Révélation dérivée : identique pour TOUS les clients (actifs + éliminés)
+  const allDone  = activePlayers.length > 0 &&
+    activePlayers.every(pid => qAnswers.some(a => a.profile_id === pid))
+  const revealed = expired || allDone
+
   useEffect(() => {
-    setSelected(null); setRevealed(false)
-    advRef.current = false; urgentFired.current = false; revealFired.current = false
+    setSelected(null)
+    urgentFired.current = false; revealFired.current = false
     trigger('thinking', 'thinking', 3500)
   }, [q_idx, trigger])
-
-  useEffect(() => { if (expired && !revealed) setRevealed(true) }, [expired, revealed])
 
   useEffect(() => {
     if (secs <= 5 && secs > 0 && !revealed && !urgentFired.current) {
@@ -415,14 +416,7 @@ function EnvoiQuestion({ phase, pd, participants, answers, myAnswers, isHost, su
     }
   }, [secs, revealed, trigger])
 
-  // Tous les joueurs actifs ont répondu ?
-  useEffect(() => {
-    if (!isHost || revealed) return
-    if (activePlayers.length > 0 && activePlayers.every(pid => qAnswers.some(a => a.profile_id === pid)))
-      setRevealed(true)
-  }, [qAnswers, activePlayers, isHost, revealed])
-
-  // Réaction JLR et auto-advance
+  // Réaction JLR
   useEffect(() => {
     if (!revealed || revealFired.current) return
     revealFired.current = true
@@ -430,12 +424,16 @@ function EnvoiQuestion({ phase, pd, participants, answers, myAnswers, isHost, su
     else if (myAnswer) trigger('sad', 'wrong', 4000)
   }, [revealed, myAnswer, trigger])
 
+  // Auto-advance — host only — pas de gardes inutiles : la pause varie selon
+  // qu'on enchaîne (tout le monde a répondu) ou qu'on a attendu le timer
+  const hostAdvanceRef = useRef(hostAdvance)
+  useEffect(() => { hostAdvanceRef.current = hostAdvance })
   useEffect(() => {
-    if (!isHost || !revealed || advRef.current) return
-    const allDone = activePlayers.every(pid => qAnswers.some(a => a.profile_id === pid))
-    const t = setTimeout(() => { if (!advRef.current) { advRef.current = true; hostAdvance() } }, allDone ? 2500 : 3500)
+    if (!isHost || !revealed) return
+    const delay = allDone ? 1500 : 3000
+    const t = setTimeout(() => hostAdvanceRef.current?.(), delay)
     return () => clearTimeout(t)
-  }, [revealed, isHost, activePlayers, qAnswers, hostAdvance])
+  }, [revealed, isHost, allDone, q_idx])
 
   async function pick(idx) {
     if (!isActive || myAnswer || revealed || selected !== null || !q) return
@@ -453,12 +451,12 @@ function EnvoiQuestion({ phase, pd, participants, answers, myAnswers, isHost, su
 
       <QuestionCard text={q.q} theme={q.theme} />
 
-      {isActive ? (
-        <ChoicesGrid choices={q.choices} answer={q.answer} revealed={revealed}
-          selected={myAnswer?.answer_idx ?? selected} onPick={pick} />
-      ) : (
-        <SpectatorBanner />
-      )}
+      <ChoicesGrid choices={q.choices} answer={q.answer} revealed={revealed}
+        selected={isActive ? (myAnswer?.answer_idx ?? selected) : null}
+        onPick={isActive ? pick : () => {}}
+        disableAll={!isActive} />
+
+      {!isActive && <SpectatorBanner />}
 
       {revealed && myAnswer?.is_correct && <GainBadge gain={0} label="Survie !" />}
 
@@ -608,9 +606,7 @@ function CoupFatalPhase({ pd, participants, answers, myAnswers, isHost, submitAn
   const activePlayers = pd.active_players ?? []
   const { secs, pct, expired } = useTimer(pd.q_start_at, DURATIONS.coup_fatal)
   const [selected, setSelected]   = useState(null)
-  const [revealed, setRevealed]   = useState(false)
   const [localCoups, setLocalCoups] = useState(pd.coups ?? {})
-  const advRef      = useRef(false)
   const urgentFired = useRef(false)
   const revealFired = useRef(false)
   const startedAt   = pd.q_start_at ? new Date(pd.q_start_at).getTime() : Date.now()
@@ -620,14 +616,17 @@ function CoupFatalPhase({ pd, participants, answers, myAnswers, isHost, submitAn
   const qAnswers  = answers.filter(a => a.phase === 'coup_fatal' && a.q_idx === q_idx)
   const isActive  = activePlayers.includes(myProfileId)
 
+  // Révélation dérivée — synchrone pour tous les clients
+  const allDone  = activePlayers.length > 0 &&
+    activePlayers.every(pid => qAnswers.some(a => a.profile_id === pid))
+  const revealed = expired || allDone
+
   useEffect(() => {
-    setSelected(null); setRevealed(false)
-    advRef.current = false; urgentFired.current = false; revealFired.current = false
+    setSelected(null)
+    urgentFired.current = false; revealFired.current = false
     setLocalCoups(pd.coups ?? {})
     trigger('thinking', 'coup_fatal', 3000)
   }, [q_idx, pd.coups, trigger])
-
-  useEffect(() => { if (expired && !revealed) setRevealed(true) }, [expired, revealed])
 
   useEffect(() => {
     if (secs <= 3 && secs > 0 && !revealed && !urgentFired.current) {
@@ -636,24 +635,20 @@ function CoupFatalPhase({ pd, participants, answers, myAnswers, isHost, submitAn
   }, [secs, revealed, trigger])
 
   useEffect(() => {
-    if (!isHost || revealed) return
-    if (activePlayers.length > 0 && activePlayers.every(pid => qAnswers.some(a => a.profile_id === pid)))
-      setRevealed(true)
-  }, [qAnswers, activePlayers, isHost, revealed])
-
-  useEffect(() => {
     if (!revealed || revealFired.current) return
     revealFired.current = true
     if (myAnswer?.is_correct) trigger('excited', 'correct', 3500)
     else if (myAnswer) trigger('sad', 'wrong', 3500)
   }, [revealed, myAnswer, trigger])
 
+  const hostAdvanceRef = useRef(hostAdvance)
+  useEffect(() => { hostAdvanceRef.current = hostAdvance })
   useEffect(() => {
-    if (!isHost || !revealed || advRef.current) return
-    const allDone = activePlayers.every(pid => qAnswers.some(a => a.profile_id === pid))
-    const t = setTimeout(() => { if (!advRef.current) { advRef.current = true; hostAdvance() } }, allDone ? 2000 : 3000)
+    if (!isHost || !revealed) return
+    const delay = allDone ? 1500 : 3000
+    const t = setTimeout(() => hostAdvanceRef.current?.(), delay)
     return () => clearTimeout(t)
-  }, [revealed, isHost, activePlayers, qAnswers, hostAdvance])
+  }, [revealed, isHost, allDone, q_idx])
 
   async function pick(idx) {
     if (!isActive || myAnswer || revealed || selected !== null || !q) return
@@ -715,12 +710,13 @@ function CoupFatalPhase({ pd, participants, answers, myAnswers, isHost, submitAn
 
       <QuestionCard text={q.q} theme={q.theme} />
 
-      {isActive ? (
-        <ChoicesGrid choices={q.choices} answer={q.answer} revealed={revealed}
-          selected={myAnswer?.answer_idx ?? selected} onPick={pick} accent="border-red-500 bg-red-500/15 text-red-300" />
-      ) : (
-        <SpectatorBanner />
-      )}
+      <ChoicesGrid choices={q.choices} answer={q.answer} revealed={revealed}
+        selected={isActive ? (myAnswer?.answer_idx ?? selected) : null}
+        onPick={isActive ? pick : () => {}}
+        disableAll={!isActive}
+        accent="border-red-500 bg-red-500/15 text-red-300" />
+
+      {!isActive && <SpectatorBanner />}
     </div>
   )
 }
