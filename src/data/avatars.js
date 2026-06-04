@@ -7,6 +7,11 @@ export const AVATARS = [
     src:   '/avatars/etudiant-ingenieur.png',
     label: 'Étudiant ingénieur',
   },
+  {
+    id:    'chat-genieur',
+    src:   '/avatars/chat-genieur.png',
+    label: 'Chat-génieur',
+  },
 ]
 
 // Photo de profil par défaut des nouveaux comptes (et fallback d'affichage).
