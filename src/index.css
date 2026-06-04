@@ -255,6 +255,19 @@ html[data-theme='light'] .btn-ghost:hover { background: rgba(15,23,42,0.10); }
 @keyframes shimmer        { to { rotate: 360deg; } }
 @keyframes breathe        { from, to { scale: 1; } 50% { scale: 1.2; } }
 
+/* ===== BADGE ICAM (reflet holographique) ===== */
+.icam-holo {
+  position: absolute;
+  inset: -60%;
+  background: conic-gradient(from 0deg,
+    #ff5f6d, #ffc371, #fff95b, #5fff9f, #5fa8ff, #c66bff, #ff5f6d);
+  mix-blend-mode: overlay;
+  opacity: 0.45;
+  pointer-events: none;
+  animation: icam-holo-spin 8s linear infinite;
+}
+@keyframes icam-holo-spin { to { transform: rotate(360deg); } }
+
 @layer components {
   .btn { @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 font-semibold transition active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed; }
   .btn-primary { @apply btn bg-midi-accent text-white hover:bg-blue-400; }

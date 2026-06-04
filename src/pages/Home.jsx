@@ -8,6 +8,9 @@ import { supabase } from '../lib/supabase.js'
 import { findEcole } from '../data/ecoles.js'
 import Avatar from '../components/Avatar.jsx'
 import ShinyButton from '../components/ShinyButton.jsx'
+import IcamBadge from '../components/IcamBadge.jsx'
+
+const isIcam = (p) => p?.school === 'icam' || p?.is_icam
 
 export default function Home() {
   const { state } = useGame()
@@ -68,6 +71,13 @@ export default function Home() {
           <StatCard label="Réussite" value={`${accuracy} %`} />
           <StatCard label="Série 🔥" value={`${state.streak.current} j`} />
         </div>
+
+        {/* Badge ICAM (membres ICAM uniquement) */}
+        {user && isIcam(profile) && (
+          <div className="relative mt-4 flex justify-center sm:justify-start">
+            <IcamBadge />
+          </div>
+        )}
       </section>
 
       {/* ── Bas : jeux à gauche · podium à droite ── */}
@@ -234,8 +244,13 @@ function Podium({ currentUserId }) {
           return (
             <div key={p.id} className="flex flex-col items-center gap-2 text-center">
               <div className="text-2xl">{m.medal}</div>
-              <div className={`w-14 h-14 rounded-full overflow-hidden grid place-items-center text-3xl bg-white/5 ring-2 ${m.ring}`}>
-                <Avatar value={p.avatar} fill className="text-3xl" />
+              <div className="relative">
+                <div className={`w-14 h-14 rounded-full overflow-hidden grid place-items-center text-3xl bg-white/5 ring-2 ${m.ring}`}>
+                  <Avatar value={p.avatar} fill className="text-3xl" />
+                </div>
+                {isIcam(p) && (
+                  <IcamBadge compact size={22} className="absolute -bottom-1 -right-1 shadow-[0_0_0_2px_var(--bg-card)]" />
+                )}
               </div>
               <div className="flex flex-col items-center gap-0.5 max-w-full">
                 <div className={`text-sm font-semibold truncate max-w-full ${isMe ? 'text-midi-accent' : 'text-white'}`}>
