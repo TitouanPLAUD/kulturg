@@ -3,8 +3,8 @@
 
 export const ECOLES = [
   // === ÉCOLES D'INGÉNIEURS - GROUPES & RÉSEAUX ===
-  { value: 'icam',          label: 'ICAM',                                                  short: 'ICAM',     category: 'Ingénieurs' },
-  { value: 'centrale_paris',label: 'CentraleSupélec',                                       short: 'CS',       category: 'Ingénieurs' },
+  { value: 'icam',          label: 'ICAM',                                                  short: 'ICAM',     category: 'Ingénieurs', logo: '/logos/icam.png' },
+  { value: 'centrale_paris',label: 'CentraleSupélec',                                       short: 'CS',       category: 'Ingénieurs', logo: '/logos/centralesupelec.png' },
   { value: 'centrale_lyon', label: 'Centrale Lyon',                                         short: 'ECL',      category: 'Ingénieurs' },
   { value: 'centrale_nantes',label:'Centrale Nantes',                                       short: 'ECN',      category: 'Ingénieurs' },
   { value: 'centrale_lille',label: 'Centrale Lille',                                        short: 'CL',       category: 'Ingénieurs' },

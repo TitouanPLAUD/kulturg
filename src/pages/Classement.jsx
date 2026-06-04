@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext.jsx'
 import { levelFromXP } from '../context/GameContext.jsx'
 import { findEcole } from '../data/ecoles.js'
 import Avatar from '../components/Avatar.jsx'
-import IcamBadge from '../components/IcamBadge.jsx'
+import SchoolBadge from '../components/SchoolBadge.jsx'
 
 export default function Classement() {
   const { user } = useAuth()
@@ -215,8 +215,8 @@ export default function Classement() {
                     </div>
 
                     <div className="hidden sm:flex justify-center w-20">
-                      {row.school === 'icam' ? (
-                        <IcamBadge compact size={24} />
+                      {ecole?.logo ? (
+                        <SchoolBadge compact size={24} logo={ecole.logo} label={ecole.label} title={ecole.label} />
                       ) : ecole && (
                         <span className="text-xs bg-midi-accent/20 text-midi-accent px-2 py-0.5 rounded-full font-semibold whitespace-nowrap" title={ecole.label}>
                           {ecole.short}

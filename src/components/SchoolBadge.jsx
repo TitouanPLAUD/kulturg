@@ -1,13 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 
-// Badge ICAM holographique — adapté en JSX (projet JS/Vite/Tailwind, pas TS/shadcn)
+// Badge d'école holographique — adapté en JSX (projet JS/Vite/Tailwind, pas TS/shadcn)
 // à partir du composant « award-badge » (effet Product Hunt) :
 //   • inclinaison 3D (matrix3d) qui suit la souris
 //   • reflet holographique : polygones colorés en rotation, masqués au badge,
 //     en mix-blend-mode "overlay"
+// Générique : on lui passe le logo + le libellé de l'école.
 // Variante `compact` : pastille ronde avec le logo (utilisée dans le classement).
-
-const LOGO = '/logos/icam.png'
 
 const identityMatrix =
   '1, 0, 0, 0, ' +
@@ -20,23 +19,31 @@ const minRotate = -0.25
 const maxScale = 1
 const minScale = 0.97
 
-export default function IcamBadge({ compact = false, size = 26, className = '' }) {
+export default function SchoolBadge({
+  logo,
+  label = '',
+  subtitle = 'Membre',
+  title,
+  compact = false,
+  size = 26,
+  className = '',
+}) {
   if (compact) {
     return (
       <span
-        title="Membre ICAM"
+        title={title || label}
         className={`relative inline-grid place-items-center rounded-full overflow-hidden bg-white ring-2 ring-amber-300/70 shadow-sm shrink-0 ${className}`}
         style={{ width: size, height: size }}
       >
-        <img src={LOGO} alt="ICAM" draggable={false} className="w-[78%] h-auto relative z-10" />
+        <img src={logo} alt={label} draggable={false} className="w-[80%] h-auto relative z-10" />
         <span className="icam-holo" />
       </span>
     )
   }
-  return <IcamBar className={className} />
+  return <SchoolBar logo={logo} label={label} subtitle={subtitle} className={className} />
 }
 
-function IcamBar({ className = '' }) {
+function SchoolBar({ logo, label, subtitle, className = '' }) {
   const ref = useRef(null)
   const [firstOverlayPosition, setFirstOverlayPosition] = useState(0)
   const [matrix, setMatrix] = useState(identityMatrix)
@@ -157,7 +164,7 @@ function IcamBar({ className = '' }) {
   }, [currentMatrix, isTimeoutFinished])
 
   const overlayAnimations = [...Array(10).keys()].map((e) => (
-    `@keyframes icamOverlay${e + 1} {
+    `@keyframes schoolOverlay${e + 1} {
       0%   { transform: rotate(${e * 10}deg); }
       50%  { transform: rotate(${(e + 1) * 10}deg); }
       100% { transform: rotate(${e * 10}deg); }
@@ -168,6 +175,9 @@ function IcamBar({ className = '' }) {
     'hsl(358, 100%, 62%)', 'hsl(30, 100%, 50%)', 'hsl(60, 100%, 50%)', 'hsl(96, 100%, 50%)',
     'hsl(233, 85%, 47%)', 'hsl(271, 85%, 47%)', 'hsl(300, 20%, 35%)', 'transparent', 'transparent', 'white',
   ]
+
+  // Taille de police adaptée à la longueur du nom (évite le débordement du SVG)
+  const labelSize = label.length > 13 ? 11 : label.length > 9 ? 13 : 16
 
   return (
     <div
@@ -181,35 +191,35 @@ function IcamBar({ className = '' }) {
       <div style={{ transform: `perspective(700px) matrix3d(${matrix})`, transformOrigin: 'center center', transition: 'transform 200ms ease-out' }}>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 54" className="w-full h-auto block">
           <defs>
-            <filter id="icamBlur"><feGaussianBlur in="SourceGraphic" stdDeviation="3" /></filter>
-            <mask id="icamMask"><rect width="260" height="54" fill="white" rx="10" /></mask>
+            <filter id="schoolBlur"><feGaussianBlur in="SourceGraphic" stdDeviation="3" /></filter>
+            <mask id="schoolMask"><rect width="260" height="54" fill="white" rx="10" /></mask>
           </defs>
 
           <rect width="260" height="54" rx="10" fill="#fafaf8" />
           <rect x="4" y="4" width="252" height="46" rx="8" fill="transparent" stroke="#dcd9d2" strokeWidth="1" />
 
-          {/* Logo ICAM */}
-          <image href={LOGO} x="12" y="14" width="50" height="26" preserveAspectRatio="xMidYMid meet" />
+          {/* Logo de l'école */}
+          <image href={logo} x="12" y="14" width="50" height="26" preserveAspectRatio="xMidYMid meet" />
 
           {/* Textes */}
           <text fontFamily="Helvetica-Bold, Helvetica, Arial" fontSize="8.5" fontWeight="bold" fill="#9a948a" x="74" y="22" letterSpacing="1">
-            ÉCOLE D'INGÉNIEURS
+            {subtitle?.toUpperCase()}
           </text>
-          <text fontFamily="Helvetica-Bold, Helvetica, Arial" fontSize="16" fontWeight="bold" fill="#5b5b5b" x="73" y="41">
-            Membre ICAM
+          <text fontFamily="Helvetica-Bold, Helvetica, Arial" fontSize={labelSize} fontWeight="bold" fill="#5b5b5b" x="73" y="41">
+            {label}
           </text>
 
           {/* Reflet holographique */}
-          <g style={{ mixBlendMode: 'overlay' }} mask="url(#icamMask)">
+          <g style={{ mixBlendMode: 'overlay' }} mask="url(#schoolMask)">
             {polygons.map((fill, i) => (
               <g key={i} style={{
                 transform: `rotate(${firstOverlayPosition + i * 10}deg)`,
                 transformOrigin: 'center center',
                 transition: !disableInOutOverlayAnimation ? 'transform 200ms ease-out' : 'none',
-                animation: disableOverlayAnimation ? 'none' : `icamOverlay${i + 1} 5s infinite`,
+                animation: disableOverlayAnimation ? 'none' : `schoolOverlay${i + 1} 5s infinite`,
                 willChange: 'transform',
               }}>
-                <polygon points="0,0 260,54 260,0 0,54" fill={fill} filter="url(#icamBlur)" opacity="0.5" />
+                <polygon points="0,0 260,54 260,0 0,54" fill={fill} filter="url(#schoolBlur)" opacity="0.5" />
               </g>
             ))}
           </g>

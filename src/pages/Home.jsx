@@ -8,13 +8,12 @@ import { supabase } from '../lib/supabase.js'
 import { findEcole } from '../data/ecoles.js'
 import Avatar from '../components/Avatar.jsx'
 import ShinyButton from '../components/ShinyButton.jsx'
-import IcamBadge from '../components/IcamBadge.jsx'
-
-const isIcam = (p) => p?.school === 'icam' || p?.is_icam
+import SchoolBadge from '../components/SchoolBadge.jsx'
 
 export default function Home() {
   const { state } = useGame()
   const { user, profile } = useAuth()
+  const myEcole = profile?.school ? findEcole(profile.school) : null
   const level = levelFromXP(state.totalXP)
   const grade = gradeFromLevel(level)
   const accuracy = state.totalAnswered
@@ -72,10 +71,10 @@ export default function Home() {
           <StatCard label="Série 🔥" value={`${state.streak.current} j`} />
         </div>
 
-        {/* Badge ICAM (membres ICAM uniquement) */}
-        {user && isIcam(profile) && (
+        {/* Badge d'école (si l'école a un logo) */}
+        {user && myEcole?.logo && (
           <div className="relative mt-4 flex justify-center sm:justify-start">
-            <IcamBadge />
+            <SchoolBadge logo={myEcole.logo} label={myEcole.label} />
           </div>
         )}
       </section>
@@ -252,9 +251,9 @@ function Podium({ currentUserId }) {
                   {p.nickname}{isMe && <span className="text-xs opacity-70"> (moi)</span>}
                 </div>
                 {ecole && ecole.value !== 'aucune' && (
-                  isIcam(p) ? (
+                  ecole.logo ? (
                     <span className="inline-flex items-center bg-white rounded-md px-1.5 py-0.5 border border-black/5 shadow-sm" title={ecole.label}>
-                      <img src="/logos/icam.png" alt="ICAM" title={ecole.label} draggable={false} className="h-3.5 w-auto" />
+                      <img src={ecole.logo} alt={ecole.label} title={ecole.label} draggable={false} className="h-3.5 w-auto" />
                     </span>
                   ) : (
                     <div className="text-[11px] text-slate-500 truncate max-w-full" title={ecole.label}>
