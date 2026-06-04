@@ -86,7 +86,7 @@ export default function RaceGame() {
 
       {phase === 'lobby'    && <RaceLobby room={room} participants={participants} isHost={isHost} code={code} onStart={startGame} />}
       {phase === 'playing'  && <RacePlaying pd={pd} participants={participants} answers={answers} myAnswers={myAnswers} isHost={isHost} submitAnswer={submitAnswer} hostAdvance={hostAdvance} userId={user.id} />}
-      {phase === 'finished' && <RaceFinished participants={participants} answers={answers} q_count={pd.q_count ?? Q_COUNT} />}
+      {phase === 'finished' && <RaceFinished participants={participants} answers={answers} q_count={pd.q_count ?? Q_COUNT} questions={pd.questions ?? []} myAnswers={myAnswers} userId={user.id} />}
     </Shell>
   )
 }
@@ -441,7 +441,7 @@ function Scoreboard({ participants, answers, q_count, currentUserId }) {
 }
 
 // ─── Écran final ───────────────────────────────────────────────
-function RaceFinished({ participants, answers, q_count }) {
+function RaceFinished({ participants, answers, q_count, questions, myAnswers, userId }) {
   const scores = computeScores(answers, q_count)
   const ranked = [...participants]
     .map(p => ({ ...p, score: scores[p.profile_id] ?? 0 }))
@@ -495,6 +495,9 @@ function RaceFinished({ participants, answers, q_count }) {
         </div>
       )}
 
+      {/* Récapitulatif des questions */}
+      <RaceRecap questions={questions} myAnswers={myAnswers} q_count={q_count} />
+
       <div className="flex gap-3">
         <Link to="/multi"
           className="flex-1 py-3 text-center rounded-xl bg-green-500 text-black font-display text-lg tracking-wider hover:bg-green-400 transition">
@@ -504,6 +507,108 @@ function RaceFinished({ participants, answers, q_count }) {
           className="flex-1 py-3 text-center rounded-xl bg-white/5 border border-white/10 text-slate-400 hover:text-white font-semibold transition text-sm">
           Accueil
         </Link>
+      </div>
+    </div>
+  )
+}
+
+// ─── Récapitulatif des questions ───────────────────────────────
+function RaceRecap({ questions, myAnswers, q_count }) {
+  const [showAll, setShowAll] = useState(false)
+
+  const total = questions.length || q_count || 0
+  if (!total) return null
+
+  // Map q_idx → réponse du joueur
+  const byIdx = {}
+  for (const a of (myAnswers ?? [])) byIdx[a.q_idx] = a
+
+  // Statut par question : 'correct' | 'wrong' | 'missed'
+  const items = questions.map((q, i) => {
+    const ans = byIdx[i]
+    const status = ans?.is_correct ? 'correct' : ans ? 'wrong' : 'missed'
+    return { q, i, ans, status }
+  })
+
+  const correctCount = items.filter(it => it.status === 'correct').length
+  const toReview = items.filter(it => it.status !== 'correct')
+
+  // Par défaut : on met en avant les questions ratées. Bouton pour tout voir.
+  const visible = showAll ? items : toReview
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="font-display text-2xl tracking-wider">📋 Récapitulatif</h2>
+        <span className="text-sm text-slate-400">
+          <strong className="text-green-400">{correctCount}</strong>/{total} bonnes réponses
+        </span>
+      </div>
+
+      {toReview.length === 0 ? (
+        <div className="bg-green-500/10 border border-green-500/30 rounded-2xl p-5 text-center">
+          <p className="text-green-400 font-bold text-lg">🎉 Sans-faute !</p>
+          <p className="text-slate-400 text-sm mt-1">Tu as répondu correctement à toutes les questions.</p>
+        </div>
+      ) : (
+        <p className="text-sm text-slate-400">
+          <span className="text-red-400 font-semibold">{toReview.length}</span> question{toReview.length > 1 ? 's' : ''} à revoir
+          {' '}— surlignée{toReview.length > 1 ? 's' : ''} en rouge ci-dessous.
+        </p>
+      )}
+
+      <div className="space-y-3">
+        {visible.map(({ q, i, ans, status }) => (
+          <RecapCard key={i} q={q} idx={i} ans={ans} status={status} />
+        ))}
+      </div>
+
+      {toReview.length !== total && (
+        <button onClick={() => setShowAll(s => !s)}
+          className="w-full py-2.5 rounded-xl bg-white/5 border border-white/10 text-slate-300 hover:text-white hover:bg-white/10 text-sm font-medium transition">
+          {showAll ? 'Masquer les bonnes réponses' : `Voir toutes les questions (${total})`}
+        </button>
+      )}
+    </div>
+  )
+}
+
+function RecapCard({ q, idx, ans, status }) {
+  const letters = ['A', 'B', 'C', 'D']
+  const styles = {
+    correct: { border: 'border-green-500/30', bg: 'bg-green-500/5',  badge: 'bg-green-500/20 text-green-400', label: '✓ Correct' },
+    wrong:   { border: 'border-red-500/40',   bg: 'bg-red-500/10',   badge: 'bg-red-500/20 text-red-400',     label: '✗ Mauvaise réponse' },
+    missed:  { border: 'border-amber-500/30', bg: 'bg-amber-500/5',  badge: 'bg-amber-500/20 text-amber-400', label: '⏱ Sans réponse' },
+  }[status]
+
+  return (
+    <div className={`rounded-2xl border ${status === 'correct' ? styles.border : 'border-l-4 ' + styles.border} ${styles.bg} p-4`}>
+      <div className="flex items-center justify-between gap-2 mb-2">
+        <span className="text-xs text-slate-500 font-medium">
+          Q{idx + 1}{q.theme && <span className="ml-2 uppercase tracking-wider">· {q.theme}</span>}
+        </span>
+        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full whitespace-nowrap ${styles.badge}`}>{styles.label}</span>
+      </div>
+
+      <p className="font-semibold text-sm md:text-base mb-3">{q.q}</p>
+
+      <div className="space-y-1.5">
+        {(q.choices ?? []).map((choice, ci) => {
+          const isCorrect = ci === q.answer
+          const isMine    = ans && ci === ans.answer_idx
+          let cls = 'flex items-center gap-2 text-sm rounded-lg px-3 py-1.5 '
+          if (isCorrect)      cls += 'bg-green-500/15 text-green-300 font-medium'
+          else if (isMine)    cls += 'bg-red-500/15 text-red-300 line-through'
+          else                cls += 'text-slate-500'
+          return (
+            <div key={ci} className={cls}>
+              <span className="text-xs opacity-50">{letters[ci]}</span>
+              <span className="flex-1">{choice}</span>
+              {isCorrect && <span className="text-green-400 text-xs font-semibold">Bonne réponse</span>}
+              {isMine && !isCorrect && <span className="text-red-400 text-xs font-semibold">Ta réponse</span>}
+            </div>
+          )
+        })}
       </div>
     </div>
   )
