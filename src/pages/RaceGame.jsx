@@ -236,15 +236,9 @@ function RaceLobby({ room, participants, isHost, code, onStart }) {
         <p className="text-xs text-slate-600 mt-3 text-center">Mauvaise réponse = 0 point</p>
 
         {/* Bonus de série */}
-        <div className="mt-4 pt-4 border-t border-white/10">
-          <p className="text-xs text-orange-400 font-semibold text-center mb-1">🔥 Bonus de série</p>
-          <p className="text-xs text-slate-400 text-center leading-relaxed">
-            À partir de <strong className="text-slate-200">{STREAK_THRESHOLD} bonnes réponses d'affilée</strong>,
-            chaque bonne réponse rapporte un bonus croissant
-            (+1, +2, puis <strong className="text-slate-200">+{STREAK_MAX_BONUS} max</strong>).
-            Une erreur remet la série à zéro.
-          </p>
-        </div>
+        <p className="text-xs text-slate-500 mt-3 text-center">
+          🔥 Bonus de série dès {STREAK_THRESHOLD} bonnes réponses d'affilée (jusqu'à +{STREAK_MAX_BONUS})
+        </p>
       </div>
 
       {isHost ? (
@@ -397,17 +391,10 @@ function RacePlaying({ pd, participants, answers, myAnswers, isHost, submitAnswe
                   </p>
                   <p className="text-2xl font-display text-green-300 mt-1">
                     +{myPts} point{myPts > 1 ? 's' : ''}
-                    {myBonus > 0 && <span className="text-base text-orange-400"> ({myBase} + {myBonus})</span>}
                   </p>
-                  {myBonus > 0 ? (
-                    <p className="text-sm text-orange-400 font-semibold mt-1">
-                      🔥 Série de {myStreak} · +{myBonus} bonus
-                    </p>
-                  ) : myStreak >= 1 && myStreak < STREAK_THRESHOLD ? (
-                    <p className="text-xs text-slate-400 mt-1">
-                      🔥 Série de {myStreak} — encore {STREAK_THRESHOLD - myStreak} pour le bonus
-                    </p>
-                  ) : null}
+                  {myBonus > 0 && (
+                    <p className="text-sm text-orange-400 font-semibold mt-1">🔥 +{myBonus} bonus série</p>
+                  )}
                 </div>
               ) : (
                 <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 text-center">
