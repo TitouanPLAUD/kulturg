@@ -7,6 +7,7 @@ import { useTvRoom } from '../hooks/useTvRoom.js'
 import { supabase } from '../lib/supabase.js'
 import { findEcole } from '../data/ecoles.js'
 import Avatar from '../components/Avatar.jsx'
+import ShinyButton from '../components/ShinyButton.jsx'
 
 export default function Home() {
   const { state } = useGame()
@@ -81,14 +82,14 @@ export default function Home() {
               desc="À 4 joueurs : reproduction de la mécanique télé en 4 phases."
               tone="from-amber-500 to-orange-600"
               useHook={() => useTvRoom(null)} route="tv"
-              publicClass="bg-yellow-500 hover:bg-yellow-400 text-black"
+              highlight="#4b8ef8" highlightSubtle="#a7c4ff"
             />
             <SplitGameCard
               user={user} emoji="🏁" logo="/logos/course-points.png" title="Course aux Points"
               desc="2 à 15 joueurs : le plus rapide pour scorer un max."
               tone="from-green-500 to-emerald-600"
               useHook={() => useRaceRoom(null)} route="race"
-              publicClass="bg-green-500 hover:bg-green-400 text-black"
+              highlight="#22c55e" highlightSubtle="#86efac"
             />
           </div>
         </section>
@@ -119,7 +120,7 @@ export default function Home() {
 }
 
 // ─── Carte de jeu divisée : salon public · partie privée ──────
-function SplitGameCard({ user, emoji, logo, title, desc, tone, useHook, route, publicClass }) {
+function SplitGameCard({ user, emoji, logo, title, desc, tone, useHook, route, highlight, highlightSubtle }) {
   return (
     <div className="card p-5">
       <div className="flex items-center gap-3 mb-4">
@@ -135,10 +136,10 @@ function SplitGameCard({ user, emoji, logo, title, desc, tone, useHook, route, p
       </div>
       <div className="grid grid-cols-2 gap-2">
         <PublicSalonButton user={user} useHook={useHook} route={route}
-          className={`w-full py-2.5 rounded-xl font-semibold text-sm transition disabled:opacity-60 ${publicClass}`}
+          highlight={highlight} highlightSubtle={highlightSubtle}
           label="🌍 Salon public" />
         <Link to="/multi"
-          className="w-full py-2.5 rounded-xl font-semibold text-sm text-center bg-white/5 border border-white/10 text-slate-200 hover:bg-white/10 transition">
+          className="w-full py-2.5 rounded-xl font-semibold text-sm text-center grid place-items-center bg-white/5 border border-white/10 text-slate-200 hover:bg-white/10 transition">
           🔒 Partie privée
         </Link>
       </div>
@@ -147,7 +148,7 @@ function SplitGameCard({ user, emoji, logo, title, desc, tone, useHook, route, p
 }
 
 // ─── Bouton « Salon public » (matchmaking sans code) ──────────
-function PublicSalonButton({ user, useHook, route, className, label }) {
+function PublicSalonButton({ user, useHook, route, highlight, highlightSubtle, label }) {
   const navigate = useNavigate()
   const { joinPublicRoom } = useHook()
   const [loading, setLoading] = useState(false)
@@ -161,10 +162,10 @@ function PublicSalonButton({ user, useHook, route, className, label }) {
   }
 
   return (
-    <button onClick={handleClick} disabled={loading}
-      className={className ?? 'btn bg-green-500 hover:bg-green-400 text-black disabled:opacity-60'}>
+    <ShinyButton onClick={handleClick} disabled={loading}
+      className="w-full" highlight={highlight} highlightSubtle={highlightSubtle}>
       {loading ? 'Recherche…' : (label ?? '🌍 Salon public')}
-    </button>
+    </ShinyButton>
   )
 }
 
