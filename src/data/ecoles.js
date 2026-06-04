@@ -9,7 +9,7 @@ export const ECOLES = [
   { value: 'centrale_nantes',label:'Centrale Nantes',                                       short: 'ECN',      category: 'Ingénieurs' },
   { value: 'centrale_lille',label: 'Centrale Lille',                                        short: 'CL',       category: 'Ingénieurs' },
   { value: 'centrale_marseille',label:'Centrale Méditerranée (Marseille)',                  short: 'CM',       category: 'Ingénieurs' },
-  { value: 'polytechnique', label: 'École polytechnique',                                   short: 'X',        category: 'Ingénieurs' },
+  { value: 'polytechnique', label: 'École polytechnique',                                   short: 'X',        category: 'Ingénieurs', logo: '/logos/polytechnique.png' },
   { value: 'ens_ulm',       label: 'ENS Ulm',                                               short: 'ENS',      category: 'Ingénieurs' },
   { value: 'ens_lyon',      label: 'ENS Lyon',                                              short: 'ENS Lyon', category: 'Ingénieurs' },
   { value: 'ens_paris_saclay',label:'ENS Paris-Saclay',                                     short: 'ENS PS',   category: 'Ingénieurs' },

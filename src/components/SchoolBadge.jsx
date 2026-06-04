@@ -35,7 +35,7 @@ export default function SchoolBadge({
         className={`relative inline-grid place-items-center rounded-full overflow-hidden bg-white ring-2 ring-amber-300/70 shadow-sm shrink-0 ${className}`}
         style={{ width: size, height: size }}
       >
-        <img src={logo} alt={label} draggable={false} className="w-[80%] h-auto relative z-10" />
+        <img src={logo} alt={label} draggable={false} className="max-w-[80%] max-h-[80%] w-auto h-auto object-contain relative z-10" />
         <span className="icam-holo" />
       </span>
     )
