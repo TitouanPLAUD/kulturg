@@ -244,22 +244,23 @@ function Podium({ currentUserId }) {
           return (
             <div key={p.id} className="flex flex-col items-center gap-2 text-center">
               <div className="text-2xl">{m.medal}</div>
-              <div className="relative">
-                <div className={`w-14 h-14 rounded-full overflow-hidden grid place-items-center text-3xl bg-white/5 ring-2 ${m.ring}`}>
-                  <Avatar value={p.avatar} fill className="text-3xl" />
-                </div>
-                {isIcam(p) && (
-                  <IcamBadge compact size={22} className="absolute -bottom-1 -right-1 shadow-[0_0_0_2px_var(--bg-card)]" />
-                )}
+              <div className={`w-14 h-14 rounded-full overflow-hidden grid place-items-center text-3xl bg-white/5 ring-2 ${m.ring}`}>
+                <Avatar value={p.avatar} fill className="text-3xl" />
               </div>
-              <div className="flex flex-col items-center gap-0.5 max-w-full">
+              <div className="flex flex-col items-center gap-1 max-w-full">
                 <div className={`text-sm font-semibold truncate max-w-full ${isMe ? 'text-midi-accent' : 'text-white'}`}>
                   {p.nickname}{isMe && <span className="text-xs opacity-70"> (moi)</span>}
                 </div>
                 {ecole && ecole.value !== 'aucune' && (
-                  <div className="text-[11px] text-slate-500 truncate max-w-full" title={ecole.label}>
-                    🎓 {ecole.short}
-                  </div>
+                  isIcam(p) ? (
+                    <span className="inline-flex items-center bg-white rounded-md px-1.5 py-0.5 border border-black/5 shadow-sm" title={ecole.label}>
+                      <img src="/logos/icam.png" alt="ICAM" title={ecole.label} draggable={false} className="h-3.5 w-auto" />
+                    </span>
+                  ) : (
+                    <div className="text-[11px] text-slate-500 truncate max-w-full" title={ecole.label}>
+                      🎓 {ecole.short}
+                    </div>
+                  )
                 )}
               </div>
               <div className={`w-full ${m.h} rounded-t-xl bg-gradient-to-b ${m.grad} border border-white/10 flex flex-col items-center justify-center`}>
