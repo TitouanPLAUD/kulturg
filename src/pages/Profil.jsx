@@ -130,6 +130,28 @@ export default function Profil() {
         </div>
       </section>
 
+      {/* Jouer par thème */}
+      <section>
+        <h2 className="heading text-xl mb-4">Jouer par thème</h2>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+          {THEME_LIST.map(t => {
+            const s = state.byTheme[t.id] || { answered: 0, correct: 0 }
+            const acc = s.answered ? Math.round((s.correct / s.answered) * 100) : null
+            return (
+              <Link key={t.id} to={`/qcm?theme=${t.id}`}
+                className="card p-4 hover:bg-white/5 transition group">
+                <div className="text-3xl mb-2">{t.emoji}</div>
+                <div className="font-semibold text-sm">{t.label}</div>
+                {acc !== null
+                  ? <div className="text-xs text-midi-accent mt-1">{acc} % réussite</div>
+                  : <div className="text-xs text-slate-500 mt-1">Non joué</div>
+                }
+              </Link>
+            )
+          })}
+        </div>
+      </section>
+
       {/* Réussite par thème */}
       <section className="card p-5">
         <h2 className="heading text-xl mb-4">Par thème</h2>

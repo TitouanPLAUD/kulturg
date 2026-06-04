@@ -1,10 +1,8 @@
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useGame, levelFromXP, gradeFromLevel } from '../context/GameContext.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useRaceRoom } from '../hooks/useRaceRoom.js'
-import { THEME_LIST } from '../data/themes.js'
-import { useAllQuestions } from '../hooks/useQuestions.js'
 
 const games = [
   { to: '/multi', title: 'Jeu TV',           desc: 'À 4 joueurs : reproduction de la mécanique télé en 4 phases.', emoji: '📺', tone: 'from-amber-500 to-orange-600' },
@@ -15,80 +13,64 @@ const games = [
 export default function Home() {
   const { state } = useGame()
   const { user, profile } = useAuth()
-  const QUESTIONS = useAllQuestions()
   const level = levelFromXP(state.totalXP)
   const grade = gradeFromLevel(level)
-  // Phrase aléatoire tirée une seule fois au montage (change à chaque connexion)
-  const gradeMessage = useMemo(
-    () => grade.messages[Math.floor(Math.random() * grade.messages.length)],
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    []
-  )
   const accuracy = state.totalAnswered
     ? Math.round((state.totalCorrect / state.totalAnswered) * 100)
     : 0
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-6">
 
-      {/* Hero */}
-      <section className="card p-8 md:p-10 relative overflow-hidden">
-        <div className="absolute -top-20 -right-20 w-80 h-80 rounded-full bg-midi-accent/10 blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-24 -left-10 w-72 h-72 rounded-full bg-blue-500/10 blur-3xl pointer-events-none" />
+      {/* Hero (compact) */}
+      <section className="card p-5 md:p-6 relative overflow-hidden">
+        <div className="absolute -top-20 -right-20 w-72 h-72 rounded-full bg-midi-accent/10 blur-3xl pointer-events-none" />
 
-        <div className="relative">
-          {/* Identité + Grade */}
-          {user && profile ? (
-            <div className="flex items-center gap-3 mb-5">
-              <span className="text-4xl">{profile.avatar}</span>
-              <div>
-                <div className="text-slate-400 text-xs uppercase tracking-widest">Bienvenue,</div>
-                <div className="font-display text-2xl text-white leading-tight">{profile.nickname}</div>
-                <div className={`flex items-center gap-1.5 text-sm font-semibold mt-0.5 ${grade.color}`}>
-                  <span>{grade.emoji}</span>
-                  <span>{grade.name}</span>
-                  <span className="text-slate-500 font-normal text-xs">· Niv. {level}</span>
+        <div className="relative flex flex-col sm:flex-row sm:items-center gap-4">
+          <div className="flex-1 min-w-0">
+            {/* Identité + Grade */}
+            {user && profile ? (
+              <div className="flex items-center gap-3">
+                <span className="text-4xl shrink-0">{profile.avatar}</span>
+                <div className="min-w-0">
+                  <div className="text-slate-400 text-xs uppercase tracking-widest">Bienvenue,</div>
+                  <div className="font-display text-2xl text-white leading-tight truncate">{profile.nickname}</div>
+                  <div className={`flex items-center gap-1.5 text-sm font-semibold mt-0.5 ${grade.color}`}>
+                    <span>{grade.emoji}</span>
+                    <span className="truncate">{grade.name}</span>
+                    <span className="text-slate-500 font-normal text-xs shrink-0">· Niv. {level}</span>
+                  </div>
                 </div>
               </div>
-            </div>
-          ) : (
-            <span className="chip mb-4 inline-flex items-center gap-2">
-              <img src="/logo.png" className="h-5 w-5 rounded-md object-cover" alt="" />
-              Les Douze Coups de Minuit
-            </span>
-          )}
-
-          <h1 className="heading text-4xl md:text-5xl mb-3">
-            {user && profile
-              ? <>{grade.emoji} <span className="text-midi-accent">{grade.name}</span></>
-              : <>Deviens un <span className="text-midi-accent">Maître de Minuit</span></>
-            }
-          </h1>
-          <p className="text-slate-400 max-w-2xl text-sm md:text-base">
-            {user && profile
-              ? `${gradeMessage} · ${QUESTIONS.length} questions, dix thèmes t'attendent.`
-              : `Six mini-jeux, dix thèmes, ${QUESTIONS.length} questions. Suis ta progression, débloque des badges et bats tes records.`
-            }
-          </p>
-
-          {/* Stats */}
-          <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <StatCard label="Niveau" value={level} accent />
-            <StatCard label="XP total" value={state.totalXP.toLocaleString('fr-FR')} />
-            <StatCard label="Réussite" value={`${accuracy} %`} />
-            <StatCard label="Série 🔥" value={`${state.streak.current} j`} />
+            ) : (
+              <>
+                <span className="chip mb-2 inline-flex items-center gap-2">
+                  <img src="/logo.png" className="h-5 w-5 rounded-md object-cover" alt="" />
+                  Les Douze Coups de Minuit
+                </span>
+                <h1 className="heading text-3xl md:text-4xl">
+                  Deviens un <span className="text-midi-accent">Maître de Minuit</span>
+                </h1>
+              </>
+            )}
           </div>
 
-          {/* CTA */}
-          <div className="mt-6 flex flex-wrap gap-3">
-            <Link to="/qcm" className="btn btn-primary">▶ Commencer un QCM</Link>
+          {/* CTA compact */}
+          <div className="flex flex-wrap gap-2 shrink-0">
             <PublicSalonButton user={user} />
-            <Link to="/duel" className="btn btn-secondary">⚔️ Lancer un duel</Link>
             {user
               ? <Link to="/profil" className="btn btn-ghost">Mon profil</Link>
               : <Link to="/auth" className="btn btn-ghost">Créer un compte</Link>
             }
           </div>
+        </div>
+
+        {/* Stats */}
+        <div className="relative mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <StatCard label="Niveau" value={level} accent />
+          <StatCard label="XP total" value={state.totalXP.toLocaleString('fr-FR')} />
+          <StatCard label="Réussite" value={`${accuracy} %`} />
+          <StatCard label="Série 🔥" value={`${state.streak.current} j`} />
         </div>
       </section>
 
@@ -109,28 +91,6 @@ export default function Home() {
               </div>
             </Link>
           ))}
-        </div>
-      </section>
-
-      {/* Thèmes */}
-      <section>
-        <SectionTitle>Thèmes</SectionTitle>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-          {THEME_LIST.map(t => {
-            const s = state.byTheme[t.id] || { answered: 0, correct: 0 }
-            const acc = s.answered ? Math.round((s.correct / s.answered) * 100) : null
-            return (
-              <Link key={t.id} to={`/qcm?theme=${t.id}`}
-                className="card p-4 hover:bg-white/5 transition group">
-                <div className="text-3xl mb-2">{t.emoji}</div>
-                <div className="font-semibold text-sm">{t.label}</div>
-                {acc !== null
-                  ? <div className="text-xs text-midi-accent mt-1">{acc} % réussite</div>
-                  : <div className="text-xs text-slate-500 mt-1">Non joué</div>
-                }
-              </Link>
-            )
-          })}
         </div>
       </section>
 
