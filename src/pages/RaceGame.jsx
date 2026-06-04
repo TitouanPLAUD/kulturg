@@ -95,7 +95,7 @@ export default function RaceGame() {
       )}
 
       {phase === 'lobby'    && <RaceLobby room={room} participants={participants} isHost={isHost} code={code} onStart={startGame} />}
-      {phase === 'playing'  && <RacePlaying pd={pd} participants={participants} answers={answers} myAnswers={myAnswers} isHost={isHost} submitAnswer={submitAnswer} hostAdvance={hostAdvance} userId={user.id} />}
+      {phase === 'playing'  && <RacePlaying pd={pd} participants={participants} answers={answers} myAnswers={myAnswers} isHost={isHost} submitAnswer={submitAnswer} hostAdvance={hostAdvance} userId={user.id} isPublic={room.is_public} />}
       {phase === 'finished' && <RaceFinished participants={participants} answers={answers} q_count={pd.q_count ?? Q_COUNT} questions={pd.questions ?? []} myAnswers={myAnswers} userId={user.id} />}
     </Shell>
   )
@@ -270,7 +270,7 @@ function RaceLobby({ room, participants, isHost, code, onStart }) {
 }
 
 // ─── Partie en cours ────────────────────────────────────────────
-function RacePlaying({ pd, participants, answers, myAnswers, isHost, submitAnswer, hostAdvance, userId }) {
+function RacePlaying({ pd, participants, answers, myAnswers, isHost, submitAnswer, hostAdvance, userId, isPublic }) {
   const questions  = pd.questions ?? []
   const q_idx      = pd.q_idx ?? 0
   const q          = questions[q_idx]
@@ -307,7 +307,7 @@ function RacePlaying({ pd, participants, answers, myAnswers, isHost, submitAnswe
     if (myAns) return
     setSelected(idx)
     const isCorrect = idx === q.answer
-    answer(q.theme ?? 'multi', q.difficulty ?? 1, isCorrect)
+    answer(q.theme ?? 'multi', q.difficulty ?? 1, isCorrect, isPublic)
     await submitAnswer({ q_idx, answer_idx: idx, is_correct: isCorrect })
   }
 

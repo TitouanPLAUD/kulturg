@@ -85,7 +85,7 @@ function TvGameCore() {
   const pd    = room.phase_data ?? {}
   const meta  = PHASE_META[phase]
   const myProfileId = participants.find(p => p.profile_id === user.id)?.profile_id ?? user.id
-  const props = { room, pd, participants, answers, myAnswers, isHost, submitAnswer, hostAdvance, myProfileId }
+  const props = { room, isPublic: room.is_public, pd, participants, answers, myAnswers, isHost, submitAnswer, hostAdvance, myProfileId }
 
   return (
     <TV grad={meta?.grad}>
@@ -401,17 +401,17 @@ function LobbyPhase({ room, participants, isHost, onStart, code }) {
 }
 
 // ─── Coup d'Envoi / Coup par Coup ─────────────────────────────
-function CoupEnvoiPhase({ phase, pd, participants, answers, myAnswers, isHost, submitAnswer, hostAdvance, myProfileId }) {
+function CoupEnvoiPhase({ phase, pd, participants, answers, myAnswers, isHost, submitAnswer, hostAdvance, myProfileId, isPublic }) {
   if (pd.subphase === 'duel') {
     return <EnvoiDuel phase={phase} pd={pd} participants={participants} answers={answers}
-      myAnswers={myAnswers} isHost={isHost} submitAnswer={submitAnswer} hostAdvance={hostAdvance} myProfileId={myProfileId} />
+      myAnswers={myAnswers} isHost={isHost} submitAnswer={submitAnswer} hostAdvance={hostAdvance} myProfileId={myProfileId} isPublic={isPublic} />
   }
   return <EnvoiQuestion phase={phase} pd={pd} participants={participants} answers={answers}
-    myAnswers={myAnswers} isHost={isHost} submitAnswer={submitAnswer} hostAdvance={hostAdvance} myProfileId={myProfileId} />
+    myAnswers={myAnswers} isHost={isHost} submitAnswer={submitAnswer} hostAdvance={hostAdvance} myProfileId={myProfileId} isPublic={isPublic} />
 }
 
 // — Question normale —
-function EnvoiQuestion({ phase, pd, participants, answers, myAnswers, isHost, submitAnswer, hostAdvance, myProfileId }) {
+function EnvoiQuestion({ phase, pd, participants, answers, myAnswers, isHost, submitAnswer, hostAdvance, myProfileId, isPublic }) {
   const questions     = pd.questions ?? []
   const q_idx         = pd.q_idx ?? 0
   const q             = questions[q_idx]
@@ -468,7 +468,7 @@ function EnvoiQuestion({ phase, pd, participants, answers, myAnswers, isHost, su
     if (!isActive || myAnswer || revealed || selected !== null || !q) return
     setSelected(idx)
     const isCorrect = idx === q.answer
-    awardXp(q.theme ?? 'multi', q.difficulty ?? 1, isCorrect)
+    awardXp(q.theme ?? 'multi', q.difficulty ?? 1, isCorrect, isPublic)
     await submitAnswer({ phase, q_idx, answer_idx: idx, is_correct: isCorrect, time_ms: Date.now() - startedAt })
   }
 
@@ -499,7 +499,7 @@ function EnvoiQuestion({ phase, pd, participants, answers, myAnswers, isHost, su
 }
 
 // — Duel —
-function EnvoiDuel({ phase, pd, participants, answers, myAnswers, isHost, submitAnswer, hostAdvance, myProfileId }) {
+function EnvoiDuel({ phase, pd, participants, answers, myAnswers, isHost, submitAnswer, hostAdvance, myProfileId, isPublic }) {
   const duelPhase     = phase + '_duel'
   const duelQuestion  = pd.duel_question
   const { secs, pct, expired } = useTimer(pd.q_start_at, DURATIONS.duel)
@@ -551,7 +551,7 @@ function EnvoiDuel({ phase, pd, participants, answers, myAnswers, isHost, submit
     if (!isDuelPlayer || myAnswer || revealed || selected !== null || !duelQuestion) return
     setSelected(idx)
     const isCorrect = idx === duelQuestion.answer
-    awardXp(duelQuestion.theme ?? 'multi', duelQuestion.difficulty ?? 1, isCorrect)
+    awardXp(duelQuestion.theme ?? 'multi', duelQuestion.difficulty ?? 1, isCorrect, isPublic)
     await submitAnswer({ phase: duelPhase, q_idx: 0, answer_idx: idx, is_correct: isCorrect, time_ms: Date.now() - startedAt })
   }
 
@@ -633,7 +633,7 @@ function EnvoiDuel({ phase, pd, participants, answers, myAnswers, isHost, submit
 }
 
 // ─── Coup Fatal ───────────────────────────────────────────────
-function CoupFatalPhase({ pd, participants, answers, myAnswers, isHost, submitAnswer, hostAdvance, myProfileId }) {
+function CoupFatalPhase({ pd, participants, answers, myAnswers, isHost, submitAnswer, hostAdvance, myProfileId, isPublic }) {
   const questions     = pd.questions ?? []
   const q_idx         = pd.q_idx ?? 0
   const q             = questions[q_idx]
@@ -689,7 +689,7 @@ function CoupFatalPhase({ pd, participants, answers, myAnswers, isHost, submitAn
     if (!isActive || myAnswer || revealed || selected !== null || !q) return
     setSelected(idx)
     const isCorrect = idx === q.answer
-    awardXp(q.theme ?? 'multi', q.difficulty ?? 1, isCorrect)
+    awardXp(q.theme ?? 'multi', q.difficulty ?? 1, isCorrect, isPublic)
     await submitAnswer({ phase: 'coup_fatal', q_idx, answer_idx: idx, is_correct: isCorrect, time_ms: Date.now() - startedAt })
   }
 
@@ -759,7 +759,7 @@ function CoupFatalPhase({ pd, participants, answers, myAnswers, isHost, submitAn
 }
 
 // ─── Coup de Maître (solo) ────────────────────────────────────
-function CoupDeMaitrePhase({ pd, participants, answers, myAnswers, isHost, submitAnswer, hostAdvance, myProfileId }) {
+function CoupDeMaitrePhase({ pd, participants, answers, myAnswers, isHost, submitAnswer, hostAdvance, myProfileId, isPublic }) {
   const questions   = pd.questions ?? []
   const q_idx       = pd.q_idx ?? 0
   const q           = questions[q_idx]
@@ -815,7 +815,7 @@ function CoupDeMaitrePhase({ pd, participants, answers, myAnswers, isHost, submi
     if (!isMaitre || myAnswer || revealed || selected !== null || !q) return
     setSelected(idx)
     const isCorrect = idx === q.answer
-    awardXp(q.theme ?? 'multi', q.difficulty ?? 1, isCorrect)
+    awardXp(q.theme ?? 'multi', q.difficulty ?? 1, isCorrect, isPublic)
     await submitAnswer({ phase: 'coup_de_maitre', q_idx, answer_idx: idx, is_correct: isCorrect, time_ms: Date.now() - startedAt })
   }
 
@@ -896,7 +896,7 @@ function CoupDeMaitrePhase({ pd, participants, answers, myAnswers, isHost, submi
 }
 
 // ─── Étoile Mystérieuse (solo) ────────────────────────────────
-function EtoileMysterieusePhase({ pd, participants, answers, myAnswers, isHost, submitAnswer, hostAdvance, myProfileId }) {
+function EtoileMysterieusePhase({ pd, participants, answers, myAnswers, isHost, submitAnswer, hostAdvance, myProfileId, isPublic }) {
   const personality  = pd.personality
   const maitre_id    = pd.maitre_id
   const isMaitre     = myProfileId === maitre_id
@@ -952,7 +952,7 @@ function EtoileMysterieusePhase({ pd, participants, answers, myAnswers, isHost, 
     if (!isMaitre || myAnswer || revealed || selected !== null || !personality) return
     setSelected(idx)
     const isCorrect = idx === personality.answer
-    awardXp(personality.theme ?? 'multi', personality.difficulty ?? 3, isCorrect)
+    awardXp(personality.theme ?? 'multi', personality.difficulty ?? 3, isCorrect, isPublic)
     await submitAnswer({ phase: 'etoile_mysterieuse', q_idx: 0, answer_idx: idx, is_correct: isCorrect, time_ms: Date.now() - startedAt })
   }
 

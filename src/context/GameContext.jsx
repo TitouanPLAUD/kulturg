@@ -9,8 +9,9 @@ const GameContext = createContext(null)
 function reducer(state, action) {
   switch (action.type) {
     case 'ANSWER': {
-      const { theme, difficulty, correct } = action
-      const points = correct ? DIFFICULTY[difficulty].points : 0
+      const { theme, difficulty, correct, awardXp = true } = action
+      // En partie privée (awardXp=false), aucun XP n'est gagné.
+      const points = (correct && awardXp) ? DIFFICULTY[difficulty].points : 0
       const byTheme = { ...state.byTheme }
       const t = byTheme[theme] || { answered: 0, correct: 0, xp: 0 }
       byTheme[theme] = {
@@ -141,7 +142,7 @@ export function GameProvider({ children }) {
 
   const api = useMemo(() => ({
     state,
-    answer: (theme, difficulty, correct) => dispatch({ type: 'ANSWER', theme, difficulty, correct }),
+    answer: (theme, difficulty, correct, awardXp = true) => dispatch({ type: 'ANSWER', theme, difficulty, correct, awardXp }),
     srsReview: (qid, correct) => dispatch({ type: 'SRS_REVIEW', qid, correct }),
     finishSession: (session) => dispatch({ type: 'FINISH_SESSION', session }),
     reset: () => dispatch({ type: 'RESET' }),
