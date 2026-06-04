@@ -77,7 +77,7 @@ export default function RaceGame() {
 
       {confirmQuit && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="bg-[#111827] border border-white/10 rounded-2xl p-6 w-full max-w-sm text-center space-y-4 animate-pop">
+          <div className="game-modal bg-[#111827] border border-white/10 rounded-2xl p-6 w-full max-w-sm text-center space-y-4 animate-pop">
             <div className="text-4xl">🚪</div>
             <h2 className="font-display text-2xl tracking-wider">Quitter la partie ?</h2>
             <div className="flex gap-3">
@@ -104,7 +104,7 @@ export default function RaceGame() {
 // ─── Shell ──────────────────────────────────────────────────────
 function Shell({ children }) {
   return (
-    <div className="min-h-screen bg-[#07090f] text-white bg-gradient-to-b from-green-950/30 to-[#07090f] overflow-x-hidden">
+    <div className="game-shell min-h-screen bg-[#07090f] text-white bg-gradient-to-b from-green-950/30 to-[#07090f] overflow-x-hidden">
       {children}
     </div>
   )

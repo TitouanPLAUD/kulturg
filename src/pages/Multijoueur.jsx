@@ -183,7 +183,7 @@ function RaceSettingsModal({ onClose, onCreate, loading }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
       onClick={onClose}>
-      <div className="bg-[#0c1018] border border-green-500/20 rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto space-y-6 animate-pop"
+      <div className="game-modal bg-[#0c1018] border border-green-500/20 rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto space-y-6 animate-pop"
         onClick={e => e.stopPropagation()}>
         <div className="text-center">
           <div className="text-4xl mb-1">⚙️🏁</div>

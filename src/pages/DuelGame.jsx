@@ -50,7 +50,7 @@ export default function DuelGame() {
 // ─── Shell ────────────────────────────────────────────────────
 function Shell({ children }) {
   return (
-    <div className="min-h-screen bg-[#060c18] text-white flex flex-col">
+    <div className="game-shell min-h-screen bg-[#060c18] text-white flex flex-col">
       {children}
     </div>
   )

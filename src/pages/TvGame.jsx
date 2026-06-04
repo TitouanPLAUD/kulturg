@@ -103,7 +103,7 @@ function TvGameCore() {
       {/* Modal confirmation quitter */}
       {confirmQuit && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="bg-[#111827] border border-white/10 rounded-2xl p-6 w-full max-w-sm text-center space-y-4 animate-pop">
+          <div className="game-modal bg-[#111827] border border-white/10 rounded-2xl p-6 w-full max-w-sm text-center space-y-4 animate-pop">
             <div className="text-4xl">🚪</div>
             <h2 className="font-display text-2xl tracking-wider text-white">Quitter la partie ?</h2>
             <p className="text-slate-400 text-sm">
@@ -147,7 +147,7 @@ function TvGameCore() {
 // ─── TV shell ─────────────────────────────────────────────────
 function TV({ children, grad = '' }) {
   return (
-    <div className={`min-h-screen bg-[#060c18] text-white bg-gradient-to-b ${grad || 'from-slate-950'} to-[#060c18] overflow-x-hidden`}>
+    <div className={`game-shell min-h-screen bg-[#060c18] text-white bg-gradient-to-b ${grad || 'from-slate-950'} to-[#060c18] overflow-x-hidden`}>
       {children}
     </div>
   )

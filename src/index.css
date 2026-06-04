@@ -102,6 +102,17 @@ html[data-theme='light'] header {
   box-shadow: 0 1px 12px rgba(15,23,42,0.08);
 }
 
+/* ===== LIGHT — écrans de jeu (fonds sombres forcés en dur) ===== */
+/* En mode clair, on neutralise le fond sombre + le dégradé immersif des
+   écrans de jeu. Le mode sombre n'est pas affecté. */
+html[data-theme='light'] .game-shell {
+  background: var(--bg-base) !important;     /* shorthand → retire aussi le dégradé */
+  color: var(--text-base) !important;
+}
+html[data-theme='light'] .game-modal {
+  background: var(--bg-card) !important;
+}
+
 html[data-theme='light'] .btn-ghost {
   background: rgba(15,23,42,0.05);
   color: #0f172a;
