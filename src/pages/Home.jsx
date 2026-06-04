@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext.jsx'
 import { useRaceRoom } from '../hooks/useRaceRoom.js'
 import { useTvRoom } from '../hooks/useTvRoom.js'
 import { supabase } from '../lib/supabase.js'
+import { findEcole } from '../data/ecoles.js'
 
 export default function Home() {
   const { state } = useGame()
@@ -173,7 +174,7 @@ function Podium({ currentUserId }) {
     async function load() {
       const { data } = await supabase
         .from('profiles')
-        .select('id, nickname, avatar, total_xp')
+        .select('id, nickname, avatar, total_xp, school')
         .gt('total_xp', 0)
         .order('total_xp', { ascending: false })
         .limit(3)
@@ -225,14 +226,22 @@ function Podium({ currentUserId }) {
             )
           }
           const isMe = p.id === currentUserId
+          const ecole = p.school ? findEcole(p.school) : null
           return (
             <div key={p.id} className="flex flex-col items-center gap-2 text-center">
               <div className="text-2xl">{m.medal}</div>
               <div className={`w-14 h-14 rounded-2xl grid place-items-center text-3xl bg-white/5 ring-2 ${m.ring}`}>
                 {p.avatar ?? '🎭'}
               </div>
-              <div className={`text-sm font-semibold truncate max-w-full ${isMe ? 'text-midi-accent' : 'text-white'}`}>
-                {p.nickname}{isMe && <span className="text-xs opacity-70"> (moi)</span>}
+              <div className="flex flex-col items-center gap-0.5 max-w-full">
+                <div className={`text-sm font-semibold truncate max-w-full ${isMe ? 'text-midi-accent' : 'text-white'}`}>
+                  {p.nickname}{isMe && <span className="text-xs opacity-70"> (moi)</span>}
+                </div>
+                {ecole && ecole.value !== 'aucune' && (
+                  <div className="text-[11px] text-slate-500 truncate max-w-full" title={ecole.label}>
+                    🎓 {ecole.short}
+                  </div>
+                )}
               </div>
               <div className={`w-full ${m.h} rounded-t-xl bg-gradient-to-b ${m.grad} border border-white/10 flex flex-col items-center justify-center`}>
                 <div className={`font-display text-xl ${m.txt}`}>{(p.total_xp ?? 0).toLocaleString('fr-FR')}</div>
