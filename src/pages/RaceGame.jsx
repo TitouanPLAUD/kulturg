@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
+import { useGame } from '../context/GameContext.jsx'
 import {
   useRaceRoom,
   computeQuestionPoints,
@@ -222,6 +223,7 @@ function RacePlaying({ pd, participants, answers, myAnswers, isHost, submitAnswe
   const q          = questions[q_idx]
   const { secs, pct, expired } = useTimer(pd.q_start_at)
 
+  const { answer } = useGame()
   const [selected, setSelected] = useState(null)
   const startedAt = pd.q_start_at ? new Date(pd.q_start_at).getTime() : Date.now()
 
@@ -251,7 +253,9 @@ function RacePlaying({ pd, participants, answers, myAnswers, isHost, submitAnswe
     const myAns = myAnswers.find(a => a.q_idx === q_idx)
     if (myAns) return
     setSelected(idx)
-    await submitAnswer({ q_idx, answer_idx: idx, is_correct: idx === q.answer })
+    const isCorrect = idx === q.answer
+    answer(q.theme ?? 'multi', q.difficulty ?? 1, isCorrect)
+    await submitAnswer({ q_idx, answer_idx: idx, is_correct: isCorrect })
   }
 
   if (!q) return <Centered><Spinner /></Centered>

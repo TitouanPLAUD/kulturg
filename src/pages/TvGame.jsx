@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
+import { useGame } from '../context/GameContext.jsx'
 import { useTvRoom, gainForAnswer } from '../hooks/useTvRoom.js'
 import { JLRProvider, useJLR } from '../components/JLRAvatar.jsx'
 
@@ -395,6 +396,7 @@ function EnvoiQuestion({ phase, pd, participants, answers, myAnswers, isHost, su
   const startedAt   = pd.q_start_at ? new Date(pd.q_start_at).getTime() : Date.now()
   const { trigger } = useJLR()
 
+  const { answer: awardXp } = useGame()
   const myAnswer  = myAnswers.find(a => a.phase === phase && a.q_idx === q_idx)
   const qAnswers  = answers.filter(a => a.phase === phase && a.q_idx === q_idx)
   const isActive  = activePlayers.includes(myProfileId)
@@ -438,7 +440,9 @@ function EnvoiQuestion({ phase, pd, participants, answers, myAnswers, isHost, su
   async function pick(idx) {
     if (!isActive || myAnswer || revealed || selected !== null || !q) return
     setSelected(idx)
-    await submitAnswer({ phase, q_idx, answer_idx: idx, is_correct: idx === q.answer, time_ms: Date.now() - startedAt })
+    const isCorrect = idx === q.answer
+    awardXp(q.theme ?? 'multi', q.difficulty ?? 1, isCorrect)
+    await submitAnswer({ phase, q_idx, answer_idx: idx, is_correct: isCorrect, time_ms: Date.now() - startedAt })
   }
 
   if (!q) return <Centered><Spinner /></Centered>
@@ -479,6 +483,7 @@ function EnvoiDuel({ phase, pd, participants, answers, myAnswers, isHost, submit
   const startedAt   = pd.q_start_at ? new Date(pd.q_start_at).getTime() : Date.now()
   const { trigger } = useJLR()
 
+  const { answer: awardXp } = useGame()
   const isDuelPlayer = myProfileId === pd.rouge_player_id || myProfileId === pd.duel_vs_id
   const myAnswer     = myAnswers.find(a => a.phase === duelPhase)
   const duelAnswers  = answers.filter(a => a.phase === duelPhase &&
@@ -518,7 +523,9 @@ function EnvoiDuel({ phase, pd, participants, answers, myAnswers, isHost, submit
   async function pick(idx) {
     if (!isDuelPlayer || myAnswer || revealed || selected !== null || !duelQuestion) return
     setSelected(idx)
-    await submitAnswer({ phase: duelPhase, q_idx: 0, answer_idx: idx, is_correct: idx === duelQuestion.answer, time_ms: Date.now() - startedAt })
+    const isCorrect = idx === duelQuestion.answer
+    awardXp(duelQuestion.theme ?? 'multi', duelQuestion.difficulty ?? 1, isCorrect)
+    await submitAnswer({ phase: duelPhase, q_idx: 0, answer_idx: idx, is_correct: isCorrect, time_ms: Date.now() - startedAt })
   }
 
   const rougeP  = participants.find(p => p.profile_id === pd.rouge_player_id)
@@ -612,6 +619,7 @@ function CoupFatalPhase({ pd, participants, answers, myAnswers, isHost, submitAn
   const startedAt   = pd.q_start_at ? new Date(pd.q_start_at).getTime() : Date.now()
   const { trigger } = useJLR()
 
+  const { answer: awardXp } = useGame()
   const myAnswer  = myAnswers.find(a => a.phase === 'coup_fatal' && a.q_idx === q_idx)
   const qAnswers  = answers.filter(a => a.phase === 'coup_fatal' && a.q_idx === q_idx)
   const isActive  = activePlayers.includes(myProfileId)
@@ -653,7 +661,9 @@ function CoupFatalPhase({ pd, participants, answers, myAnswers, isHost, submitAn
   async function pick(idx) {
     if (!isActive || myAnswer || revealed || selected !== null || !q) return
     setSelected(idx)
-    await submitAnswer({ phase: 'coup_fatal', q_idx, answer_idx: idx, is_correct: idx === q.answer, time_ms: Date.now() - startedAt })
+    const isCorrect = idx === q.answer
+    awardXp(q.theme ?? 'multi', q.difficulty ?? 1, isCorrect)
+    await submitAnswer({ phase: 'coup_fatal', q_idx, answer_idx: idx, is_correct: isCorrect, time_ms: Date.now() - startedAt })
   }
 
   if (!q) return <Centered><Spinner /></Centered>
@@ -738,6 +748,7 @@ function CoupDeMaitrePhase({ pd, participants, answers, myAnswers, isHost, submi
   const startedAt   = pd.q_start_at ? new Date(pd.q_start_at).getTime() : Date.now()
   const { trigger } = useJLR()
 
+  const { answer: awardXp } = useGame()
   const myAnswer   = myAnswers.find(a => a.phase === 'coup_de_maitre' && a.q_idx === q_idx)
   const maitreAns  = answers.find(a => a.phase === 'coup_de_maitre' && a.q_idx === q_idx && a.profile_id === maitre_id)
   const correctCount = pd.correct_count ?? 0
@@ -776,7 +787,9 @@ function CoupDeMaitrePhase({ pd, participants, answers, myAnswers, isHost, submi
   async function pick(idx) {
     if (!isMaitre || myAnswer || revealed || selected !== null || !q) return
     setSelected(idx)
-    await submitAnswer({ phase: 'coup_de_maitre', q_idx, answer_idx: idx, is_correct: idx === q.answer, time_ms: Date.now() - startedAt })
+    const isCorrect = idx === q.answer
+    awardXp(q.theme ?? 'multi', q.difficulty ?? 1, isCorrect)
+    await submitAnswer({ phase: 'coup_de_maitre', q_idx, answer_idx: idx, is_correct: isCorrect, time_ms: Date.now() - startedAt })
   }
 
   if (!q || !personality) return <Centered><Spinner /></Centered>
@@ -869,6 +882,7 @@ function EtoileMysterieusePhase({ pd, participants, answers, myAnswers, isHost, 
   const startedAt   = pd.q_start_at ? new Date(pd.q_start_at).getTime() : Date.now()
   const { trigger } = useJLR()
 
+  const { answer: awardXp } = useGame()
   const myAnswer  = myAnswers.find(a => a.phase === 'etoile_mysterieuse')
   const maitreAns = answers.find(a => a.phase === 'etoile_mysterieuse' && a.profile_id === maitre_id)
   const maitrePart = participants.find(p => p.profile_id === maitre_id)
@@ -910,7 +924,9 @@ function EtoileMysterieusePhase({ pd, participants, answers, myAnswers, isHost, 
   async function pick(idx) {
     if (!isMaitre || myAnswer || revealed || selected !== null || !personality) return
     setSelected(idx)
-    await submitAnswer({ phase: 'etoile_mysterieuse', q_idx: 0, answer_idx: idx, is_correct: idx === personality.answer, time_ms: Date.now() - startedAt })
+    const isCorrect = idx === personality.answer
+    awardXp(personality.theme ?? 'multi', personality.difficulty ?? 3, isCorrect)
+    await submitAnswer({ phase: 'etoile_mysterieuse', q_idx: 0, answer_idx: idx, is_correct: isCorrect, time_ms: Date.now() - startedAt })
   }
 
   if (!personality) return <Centered><Spinner /></Centered>

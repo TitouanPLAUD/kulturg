@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
+import { useGame } from '../context/GameContext.jsx'
 import { useDuelRoom, computeDuelScores, TARGET_SCORE } from '../hooks/useDuelRoom.js'
 
 const QUESTION_DURATION = 12000
@@ -154,6 +155,7 @@ function PlayingPhase({ room, profiles, answers, myAnswers, isHost, submitAnswer
   const advRef    = useRef(false)
   const prevIdx   = useRef(q_idx)
   const startedAt = pd.q_start_at ? new Date(pd.q_start_at).getTime() : Date.now()
+  const { answer } = useGame()
 
   const { scores, roundWinners } = computeDuelScores(answers)
   const hostScore  = scores[room.host_id]  ?? 0
@@ -204,6 +206,7 @@ function PlayingPhase({ room, profiles, answers, myAnswers, isHost, submitAnswer
     if (myAnswer || revealed || selected !== null || !q) return
     setSelected(idx)
     const isCorrect = idx === q.answer
+    answer(q.theme ?? 'multi', q.difficulty ?? 1, isCorrect)
     await submitAnswer({ q_idx, answer_idx: idx, is_correct: isCorrect, time_ms: Date.now() - startedAt })
   }
 
