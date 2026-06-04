@@ -5,14 +5,52 @@ import { QUESTIONS as ALL_QUESTIONS } from '../data/questions.js'
 
 export const RACE_MAX_PLAYERS = 15
 export const RACE_MIN_PLAYERS = 2
-export const Q_COUNT          = 10
-export const TIMER_MS         = 20000
+export const Q_COUNT          = 10      // nombre de questions par défaut
+export const TIMER_MS         = 20000   // durée par question par défaut (ms)
+
+// Réglages personnalisables d'une partie
+export const Q_COUNT_OPTIONS = [5, 10, 15, 20]      // nombre de questions
+export const TIMER_OPTIONS   = [10, 15, 20, 30]     // durée par question (secondes)
+export const DIFFICULTY_OPTIONS = [
+  { value: 'all', label: 'Toutes',    emoji: '🎲' },
+  { value: 1,     label: 'Facile',    emoji: '🟢' },
+  { value: 2,     label: 'Moyen',     emoji: '🟠' },
+  { value: 3,     label: 'Difficile', emoji: '🔴' },
+]
+
+export const DEFAULT_RACE_SETTINGS = {
+  themes:     [],     // [] = tous les thèmes
+  difficulty: 'all',  // 'all' | 1 | 2 | 3
+  duration:   20,     // secondes par question
+  count:      10,     // nombre de questions
+}
 
 // Points par rang de réponse correcte
 export const POINTS = [5, 3, 2, 1] // 1er, 2e, 3e, reste
 
 function pick(arr, n) {
   return [...arr].sort(() => Math.random() - 0.5).slice(0, n)
+}
+
+// Sélectionne les questions selon les réglages (thèmes / difficulté / nombre)
+function pickQuestions(settings) {
+  const s = { ...DEFAULT_RACE_SETTINGS, ...(settings ?? {}) }
+  let pool = ALL_QUESTIONS
+
+  if (s.themes?.length) {
+    const set = new Set(s.themes)
+    const filtered = pool.filter(q => set.has(q.theme))
+    if (filtered.length) pool = filtered
+  }
+
+  if (s.difficulty && s.difficulty !== 'all') {
+    const filtered = pool.filter(q => q.difficulty === s.difficulty)
+    if (filtered.length) pool = filtered
+  }
+
+  if (!pool.length) pool = ALL_QUESTIONS
+  const n = Math.min(s.count ?? Q_COUNT, pool.length)
+  return pick(pool, n)
 }
 
 function generateCode() {
@@ -129,15 +167,19 @@ export function useRaceRoom(code) {
 
   async function startGame() {
     if (!isHost || participants.length < RACE_MIN_PLAYERS) return
+    const settings  = { ...DEFAULT_RACE_SETTINGS, ...(room.phase_data?.settings ?? {}) }
+    const questions = pickQuestions(settings)
     await supabase.from('race_answers').delete().eq('room_id', room.id)
     setAnswers([])
     return updateRoom({
       phase: 'playing',
       phase_data: {
-        questions:   pick(ALL_QUESTIONS, Q_COUNT),
+        settings,
+        questions,
         q_idx:       0,
         q_start_at:  new Date().toISOString(),
-        q_count:     Q_COUNT,
+        q_count:     questions.length,
+        timer_ms:    (settings.duration ?? TIMER_MS / 1000) * 1000,
       },
     })
   }
@@ -154,11 +196,14 @@ export function useRaceRoom(code) {
     })
   }
 
-  async function createRoom({ isPublic = false } = {}) {
+  async function createRoom({ isPublic = false, settings } = {}) {
     if (!user) return null
     const code = generateCode()
+    const phase_data = settings
+      ? { settings: { ...DEFAULT_RACE_SETTINGS, ...settings } }
+      : {}
     const { data, error } = await supabase
-      .from('race_rooms').insert({ code, host_id: user.id, is_public: isPublic }).select().single()
+      .from('race_rooms').insert({ code, host_id: user.id, is_public: isPublic, phase_data }).select().single()
     if (error || !data) return null
     await supabase.from('race_participants').insert({ room_id: data.id, profile_id: user.id })
     return data.code

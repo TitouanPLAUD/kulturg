@@ -2,7 +2,14 @@ import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useTvRoom } from '../hooks/useTvRoom.js'
-import { useRaceRoom } from '../hooks/useRaceRoom.js'
+import {
+  useRaceRoom,
+  DEFAULT_RACE_SETTINGS,
+  Q_COUNT_OPTIONS,
+  TIMER_OPTIONS,
+  DIFFICULTY_OPTIONS,
+} from '../hooks/useRaceRoom.js'
+import { THEME_LIST } from '../data/themes.js'
 
 export default function Multijoueur() {
   const { user } = useAuth()
@@ -58,22 +65,25 @@ export default function Multijoueur() {
           btnClass="bg-green-500 hover:bg-green-400 text-black"
           useHook={() => useRaceRoom(null)}
           route="race"
+          customizable
         />
       </div>
     </div>
   )
 }
 
-function ModeCard({ emoji, title, subtitle, description, phases, accentClass, btnClass, useHook, route }) {
+function ModeCard({ emoji, title, subtitle, description, phases, accentClass, btnClass, useHook, route, customizable }) {
   const navigate = useNavigate()
   const [joinCode, setJoinCode] = useState('')
   const [error,    setError]    = useState('')
   const [loading,  setLoading]  = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
   const { createRoom, joinRoom } = useHook()
 
-  async function handleCreate() {
+  async function handleCreate(settings) {
+    setShowSettings(false)
     setLoading(true); setError('')
-    const code = await createRoom()
+    const code = await createRoom(settings ? { settings } : undefined)
     if (code) navigate(`/${route}/${code}`)
     else { setError('Erreur lors de la création.'); setLoading(false) }
   }
@@ -120,9 +130,9 @@ function ModeCard({ emoji, title, subtitle, description, phases, accentClass, bt
 
       {/* Actions */}
       <div className="flex flex-col gap-3 mt-auto">
-        <button onClick={handleCreate} disabled={loading}
+        <button onClick={() => customizable ? setShowSettings(true) : handleCreate()} disabled={loading}
           className={`w-full py-3 rounded-xl font-bold transition disabled:opacity-60 ${btnClass}`}>
-          {loading ? '…' : '🔒 Créer une partie privée'}
+          {loading ? '…' : customizable ? '⚙️ Créer une partie personnalisée' : '🔒 Créer une partie privée'}
         </button>
 
         <form onSubmit={handleJoin} className="flex gap-2">
@@ -138,6 +148,133 @@ function ModeCard({ emoji, title, subtitle, description, phases, accentClass, bt
             Rejoindre
           </button>
         </form>
+      </div>
+
+      {showSettings && (
+        <RaceSettingsModal
+          onClose={() => setShowSettings(false)}
+          onCreate={handleCreate}
+          loading={loading}
+        />
+      )}
+    </div>
+  )
+}
+
+// ─── Modal de réglages d'une partie personnalisée (Course aux Points) ──
+function RaceSettingsModal({ onClose, onCreate, loading }) {
+  const [themes,     setThemes]     = useState(DEFAULT_RACE_SETTINGS.themes)
+  const [difficulty, setDifficulty] = useState(DEFAULT_RACE_SETTINGS.difficulty)
+  const [duration,   setDuration]   = useState(DEFAULT_RACE_SETTINGS.duration)
+  const [count,      setCount]      = useState(DEFAULT_RACE_SETTINGS.count)
+
+  function toggleTheme(id) {
+    setThemes(prev => prev.includes(id) ? prev.filter(t => t !== id) : [...prev, id])
+  }
+
+  function submit() {
+    onCreate({ themes, difficulty, duration, count })
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+      onClick={onClose}>
+      <div className="bg-[#0c1018] border border-green-500/20 rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto space-y-6 animate-pop"
+        onClick={e => e.stopPropagation()}>
+        <div className="text-center">
+          <div className="text-4xl mb-1">⚙️🏁</div>
+          <h2 className="font-display text-2xl tracking-wider">Réglages de la partie</h2>
+          <p className="text-xs text-slate-500 mt-1">Personnalise ta Course aux Points</p>
+        </div>
+
+        {/* Thèmes */}
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <label className="text-xs font-semibold text-slate-400 uppercase tracking-widest">Thèmes des questions</label>
+            <button onClick={() => setThemes([])}
+              className={`text-xs ${themes.length === 0 ? 'text-green-400' : 'text-slate-500 hover:text-white'}`}>
+              Tous
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {THEME_LIST.map(t => {
+              const active = themes.includes(t.id)
+              return (
+                <button key={t.id} onClick={() => toggleTheme(t.id)}
+                  className={`px-3 py-1.5 rounded-full text-sm font-medium border transition
+                    ${active
+                      ? 'bg-green-500/20 border-green-500/50 text-green-300'
+                      : 'bg-white/5 border-white/10 text-slate-400 hover:border-white/30'}`}>
+                  {t.emoji} {t.label}
+                </button>
+              )
+            })}
+          </div>
+          <p className="text-xs text-slate-600 mt-2">
+            {themes.length === 0 ? 'Tous les thèmes seront utilisés.' : `${themes.length} thème${themes.length > 1 ? 's' : ''} sélectionné${themes.length > 1 ? 's' : ''}.`}
+          </p>
+        </div>
+
+        {/* Difficulté */}
+        <div>
+          <label className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-2 block">Difficulté</label>
+          <div className="grid grid-cols-4 gap-2">
+            {DIFFICULTY_OPTIONS.map(d => (
+              <button key={String(d.value)} onClick={() => setDifficulty(d.value)}
+                className={`py-2.5 rounded-xl text-sm font-medium border transition flex flex-col items-center gap-1
+                  ${difficulty === d.value
+                    ? 'bg-green-500/20 border-green-500/50 text-green-300'
+                    : 'bg-white/5 border-white/10 text-slate-400 hover:border-white/30'}`}>
+                <span className="text-lg">{d.emoji}</span>
+                <span className="text-xs">{d.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Durée par question */}
+        <div>
+          <label className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-2 block">Durée par question</label>
+          <div className="grid grid-cols-4 gap-2">
+            {TIMER_OPTIONS.map(s => (
+              <button key={s} onClick={() => setDuration(s)}
+                className={`py-2.5 rounded-xl text-sm font-bold border transition
+                  ${duration === s
+                    ? 'bg-green-500/20 border-green-500/50 text-green-300'
+                    : 'bg-white/5 border-white/10 text-slate-400 hover:border-white/30'}`}>
+                {s}s
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Nombre de questions */}
+        <div>
+          <label className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-2 block">Nombre de questions</label>
+          <div className="grid grid-cols-4 gap-2">
+            {Q_COUNT_OPTIONS.map(n => (
+              <button key={n} onClick={() => setCount(n)}
+                className={`py-2.5 rounded-xl text-sm font-bold border transition
+                  ${count === n
+                    ? 'bg-green-500/20 border-green-500/50 text-green-300'
+                    : 'bg-white/5 border-white/10 text-slate-400 hover:border-white/30'}`}>
+                {n}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="flex gap-3 pt-2">
+          <button onClick={onClose}
+            className="flex-1 py-3 rounded-xl bg-white/5 border border-white/10 text-slate-400 hover:text-white font-semibold transition text-sm">
+            Annuler
+          </button>
+          <button onClick={submit} disabled={loading}
+            className="flex-1 py-3 rounded-xl bg-green-500 hover:bg-green-400 text-black font-bold transition disabled:opacity-60">
+            {loading ? '…' : '🏁 Créer la partie'}
+          </button>
+        </div>
       </div>
     </div>
   )

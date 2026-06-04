@@ -12,27 +12,30 @@ import {
   TIMER_MS,
   POINTS,
 } from '../hooks/useRaceRoom.js'
+import { THEMES } from '../data/themes.js'
+
+const DIFF_LABELS = { all: 'Toutes', 1: 'Facile', 2: 'Moyen', 3: 'Difficile' }
 
 // ─── Timer ─────────────────────────────────────────────────────
-function useTimer(startAt) {
-  const [timeLeft, setTimeLeft] = useState(TIMER_MS)
+function useTimer(startAt, timerMs = TIMER_MS) {
+  const [timeLeft, setTimeLeft] = useState(timerMs)
   useEffect(() => {
-    if (!startAt) { setTimeLeft(TIMER_MS); return }
+    if (!startAt) { setTimeLeft(timerMs); return }
     const origin  = new Date(startAt).getTime()
-    const initial = Math.max(0, TIMER_MS - (Date.now() - origin))
+    const initial = Math.max(0, timerMs - (Date.now() - origin))
     setTimeLeft(initial)
     if (initial === 0) return
     const tick = setInterval(() => {
-      const left = Math.max(0, TIMER_MS - (Date.now() - origin))
+      const left = Math.max(0, timerMs - (Date.now() - origin))
       setTimeLeft(left)
       if (left === 0) clearInterval(tick)
     }, 100)
     return () => clearInterval(tick)
-  }, [startAt])
+  }, [startAt, timerMs])
   return {
     timeLeft,
     secs:    Math.ceil(timeLeft / 1000),
-    pct:     (timeLeft / TIMER_MS) * 100,
+    pct:     (timeLeft / timerMs) * 100,
     expired: timeLeft === 0,
   }
 }
@@ -107,6 +110,9 @@ function RaceLobby({ room, participants, isHost, code, onStart }) {
   const n = participants.length
   const canStart = n >= RACE_MIN_PLAYERS
   const isPublic = room.is_public
+  const settings = room.phase_data?.settings
+  const qCount   = settings?.count ?? Q_COUNT
+  const duration = settings?.duration ?? TIMER_MS / 1000
 
   // Salon public : l'hôte lance automatiquement 20s après qu'on ait atteint 2 joueurs
   const onStartRef = useRef(onStart)
@@ -141,8 +147,34 @@ function RaceLobby({ room, participants, isHost, code, onStart }) {
             🌍 Salon public · tout le monde peut rejoindre
           </span>
         )}
-        <p className="text-slate-500 text-sm">Jusqu'à {RACE_MAX_PLAYERS} joueurs · {Q_COUNT} questions · 20 secondes chacune</p>
+        <p className="text-slate-500 text-sm">Jusqu'à {RACE_MAX_PLAYERS} joueurs · {qCount} questions · {duration} secondes chacune</p>
       </div>
+
+      {/* Réglages de la partie */}
+      {settings && (
+        <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
+          <p className="text-xs text-slate-500 uppercase tracking-widest mb-3">⚙️ Réglages</p>
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <SettingRow label="Questions" value={`${qCount}`} />
+            <SettingRow label="Durée / question" value={`${duration}s`} />
+            <SettingRow label="Difficulté" value={DIFF_LABELS[settings.difficulty] ?? 'Toutes'} />
+            <SettingRow label="Thèmes" value={
+              settings.themes?.length
+                ? `${settings.themes.length} choisi${settings.themes.length > 1 ? 's' : ''}`
+                : 'Tous'
+            } />
+          </div>
+          {settings.themes?.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mt-3">
+              {settings.themes.map(id => (
+                <span key={id} className="text-xs bg-white/5 border border-white/10 rounded-full px-2 py-0.5 text-slate-300">
+                  {THEMES[id]?.emoji} {THEMES[id]?.label ?? id}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Code (salon privé uniquement) */}
       {!isPublic && (
@@ -221,7 +253,7 @@ function RacePlaying({ pd, participants, answers, myAnswers, isHost, submitAnswe
   const questions  = pd.questions ?? []
   const q_idx      = pd.q_idx ?? 0
   const q          = questions[q_idx]
-  const { secs, pct, expired } = useTimer(pd.q_start_at)
+  const { secs, pct, expired } = useTimer(pd.q_start_at, pd.timer_ms ?? TIMER_MS)
 
   const { answer } = useGame()
   const [selected, setSelected] = useState(null)
@@ -621,6 +653,14 @@ function RecapCard({ q, idx, ans, status }) {
 // ─── Utilitaires ───────────────────────────────────────────────
 function Centered({ children }) {
   return <div className="flex flex-col items-center justify-center min-h-screen gap-3 px-4">{children}</div>
+}
+function SettingRow({ label, value }) {
+  return (
+    <div className="flex items-center justify-between bg-white/5 rounded-lg px-3 py-2">
+      <span className="text-slate-500 text-xs">{label}</span>
+      <span className="font-semibold text-slate-200">{value}</span>
+    </div>
+  )
 }
 function Spinner() {
   return <div className="w-10 h-10 rounded-full border-2 border-green-500 border-t-transparent animate-spin" />
