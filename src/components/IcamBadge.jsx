@@ -185,14 +185,14 @@ function IcamBar({ className = '' }) {
             <mask id="icamMask"><rect width="260" height="54" fill="white" rx="10" /></mask>
           </defs>
 
-          <rect width="260" height="54" rx="10" fill="#f6eccb" />
-          <rect x="4" y="4" width="252" height="46" rx="8" fill="transparent" stroke="#e3c98a" strokeWidth="1" />
+          <rect width="260" height="54" rx="10" fill="#fafaf8" />
+          <rect x="4" y="4" width="252" height="46" rx="8" fill="transparent" stroke="#dcd9d2" strokeWidth="1" />
 
           {/* Logo ICAM */}
           <image href={LOGO} x="12" y="14" width="50" height="26" preserveAspectRatio="xMidYMid meet" />
 
           {/* Textes */}
-          <text fontFamily="Helvetica-Bold, Helvetica, Arial" fontSize="8.5" fontWeight="bold" fill="#7a6a3f" x="74" y="22" letterSpacing="1">
+          <text fontFamily="Helvetica-Bold, Helvetica, Arial" fontSize="8.5" fontWeight="bold" fill="#9a948a" x="74" y="22" letterSpacing="1">
             ÉCOLE D'INGÉNIEURS
           </text>
           <text fontFamily="Helvetica-Bold, Helvetica, Arial" fontSize="16" fontWeight="bold" fill="#5b5b5b" x="73" y="41">
