@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useGame } from '../context/GameContext.jsx'
-import { useTvRoom, gainForAnswer } from '../hooks/useTvRoom.js'
+import { useTvRoom, gainForAnswer, TV_REQUIRED_PLAYERS } from '../hooks/useTvRoom.js'
 import { JLRProvider, useJLR } from '../components/JLRAvatar.jsx'
 
 // ─── Métadonnées des phases ───────────────────────────────────
@@ -224,12 +224,30 @@ function LobbyPhase({ room, participants, isHost, onStart, code }) {
   const [copied, setCopied] = useState(false)
   const { trigger } = useJLR()
   const prevCount = useRef(participants.length)
+  const isPublic = room.is_public
 
   useEffect(() => { const t = setTimeout(() => trigger('idle', 'lobby', 0), 800); return () => clearTimeout(t) }, [trigger])
   useEffect(() => {
     if (participants.length > prevCount.current) trigger('excited', 'lobby', 4000)
     prevCount.current = participants.length
   }, [participants.length, trigger])
+
+  // Salon public : l'hôte lance automatiquement dès que la salle est complète
+  const onStartRef = useRef(onStart)
+  onStartRef.current = onStart
+  const [countdown, setCountdown] = useState(null)
+  const canStart = participants.length >= TV_REQUIRED_PLAYERS
+  useEffect(() => {
+    if (!isPublic || !isHost || !canStart) { setCountdown(null); return }
+    setCountdown(5)
+    const tick = setInterval(() => {
+      setCountdown(c => {
+        if (c <= 1) { clearInterval(tick); onStartRef.current(); return 0 }
+        return c - 1
+      })
+    }, 1000)
+    return () => clearInterval(tick)
+  }, [isPublic, isHost, canStart])
 
   function copyCode() { navigator.clipboard.writeText(code); setCopied(true); setTimeout(() => setCopied(false), 2000) }
 
@@ -242,19 +260,23 @@ function LobbyPhase({ room, participants, isHost, onStart, code }) {
         <div className="text-center space-y-2">
           <div className="text-6xl">📺</div>
           <h1 className="font-display text-4xl md:text-5xl tracking-wider">Les 12 Coups de Midi</h1>
-          <p className="text-slate-500 text-sm">Salle d'attente</p>
+          {isPublic
+            ? <span className="inline-flex items-center gap-1.5 text-xs font-semibold bg-yellow-500/15 text-yellow-400 px-3 py-1 rounded-full">🌍 Salon public · tout le monde peut rejoindre</span>
+            : <p className="text-slate-500 text-sm">Salle d'attente</p>}
         </div>
 
-        <div className="bg-white/5 border border-white/10 rounded-2xl p-5 text-center">
-          <p className="text-xs text-slate-500 uppercase tracking-widest mb-2">Code de la partie</p>
-          <div className="flex items-center justify-center gap-3">
-            <span className="font-mono text-3xl tracking-[0.3em] font-black text-yellow-400">{code}</span>
-            <button onClick={copyCode} className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition text-sm">
-              {copied ? '✓' : '📋'}
-            </button>
+        {!isPublic && (
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-5 text-center">
+            <p className="text-xs text-slate-500 uppercase tracking-widest mb-2">Code de la partie</p>
+            <div className="flex items-center justify-center gap-3">
+              <span className="font-mono text-3xl tracking-[0.3em] font-black text-yellow-400">{code}</span>
+              <button onClick={copyCode} className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition text-sm">
+                {copied ? '✓' : '📋'}
+              </button>
+            </div>
+            <p className="text-xs text-slate-600 mt-2">Partage ce code à tes adversaires</p>
           </div>
-          <p className="text-xs text-slate-600 mt-2">Partage ce code à tes adversaires</p>
-        </div>
+        )}
 
         <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
           <div className="flex items-center justify-between mb-4">
@@ -359,13 +381,17 @@ function LobbyPhase({ room, participants, isHost, onStart, code }) {
             className="w-full py-4 rounded-2xl font-display text-xl tracking-wider bg-yellow-500 text-black hover:bg-yellow-400 transition disabled:opacity-40 disabled:cursor-not-allowed">
             {n < 4
               ? `⏳ En attente de ${4 - n} joueur${4 - n > 1 ? 's' : ''} (${n}/4)`
-              : '▶ Lancer la partie !'}
+              : isPublic && countdown !== null
+                ? `🚀 Lancement dans ${countdown}s — clique pour démarrer maintenant`
+                : '▶ Lancer la partie !'}
           </button>
         ) : (
           <p className="text-center text-slate-500 text-sm py-4">
             {n < 4
               ? `⏳ En attente de ${4 - n} joueur${4 - n > 1 ? 's' : ''} (${n}/4)…`
-              : "⏳ En attente que l'hôte lance la partie…"}
+              : isPublic
+                ? '⏳ La partie démarre dès que la salle est complète…'
+                : "⏳ En attente que l'hôte lance la partie…"}
           </p>
         )}
       </div>

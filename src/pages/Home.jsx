@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useGame, levelFromXP, gradeFromLevel } from '../context/GameContext.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useRaceRoom } from '../hooks/useRaceRoom.js'
+import { useTvRoom } from '../hooks/useTvRoom.js'
 import { supabase } from '../lib/supabase.js'
 
 export default function Home() {
@@ -73,38 +74,20 @@ export default function Home() {
         <section>
           <SectionTitle>🎮 Jeux</SectionTitle>
           <div className="space-y-4">
-            <GameCard
-              to="/multi" emoji="📺" title="Jeu TV"
+            <SplitGameCard
+              user={user} emoji="📺" title="Jeu TV"
               desc="À 4 joueurs : reproduction de la mécanique télé en 4 phases."
               tone="from-amber-500 to-orange-600"
+              useHook={() => useTvRoom(null)} route="tv"
+              publicClass="bg-yellow-500 hover:bg-yellow-400 text-black"
             />
-            <GameCard
-              to="/multi" emoji="⚔️" title="Frappe Express"
-              desc="2 joueurs : premier à 5 bonnes réponses gagne le duel."
-              tone="from-blue-500 to-cyan-600"
+            <SplitGameCard
+              user={user} emoji="🏁" title="Course aux Points"
+              desc="2 à 15 joueurs : le plus rapide pour scorer un max."
+              tone="from-green-500 to-emerald-600"
+              useHook={() => useRaceRoom(null)} route="race"
+              publicClass="bg-green-500 hover:bg-green-400 text-black"
             />
-
-            {/* Course aux Points — divisée en deux */}
-            <div className="card p-5">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 grid place-items-center text-2xl shadow-lg shrink-0">
-                  🏁
-                </div>
-                <div className="min-w-0">
-                  <div className="font-semibold text-base">Course aux Points</div>
-                  <div className="text-sm text-slate-400 leading-relaxed">2 à 15 joueurs · le plus rapide pour scorer un max.</div>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <PublicSalonButton user={user}
-                  className="w-full py-2.5 rounded-xl font-semibold text-sm bg-green-500 hover:bg-green-400 text-black transition disabled:opacity-60"
-                  label="🌍 Salon public" />
-                <Link to="/multi"
-                  className="w-full py-2.5 rounded-xl font-semibold text-sm text-center bg-white/5 border border-white/10 text-slate-200 hover:bg-white/10 transition">
-                  🔒 Partie privée
-                </Link>
-              </div>
-            </div>
           </div>
         </section>
 
@@ -133,33 +116,43 @@ export default function Home() {
   )
 }
 
-// ─── Carte de jeu (colonne de gauche) ─────────────────────────
-function GameCard({ to, emoji, title, desc, tone }) {
+// ─── Carte de jeu divisée : salon public · partie privée ──────
+function SplitGameCard({ user, emoji, title, desc, tone, useHook, route, publicClass }) {
   return (
-    <Link to={to} className="card p-5 group hover:-translate-y-1 transition-all duration-200 flex items-center gap-4">
-      <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${tone} grid place-items-center text-2xl shadow-lg shrink-0`}>
-        {emoji}
+    <div className="card p-5">
+      <div className="flex items-center gap-3 mb-4">
+        <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${tone} grid place-items-center text-2xl shadow-lg shrink-0`}>
+          {emoji}
+        </div>
+        <div className="min-w-0">
+          <div className="font-semibold text-base">{title}</div>
+          <div className="text-sm text-slate-400 leading-relaxed">{desc}</div>
+        </div>
       </div>
-      <div className="min-w-0 flex-1">
-        <div className="font-semibold text-base">{title}</div>
-        <div className="text-sm text-slate-400 mt-0.5 leading-relaxed">{desc}</div>
+      <div className="grid grid-cols-2 gap-2">
+        <PublicSalonButton user={user} useHook={useHook} route={route}
+          className={`w-full py-2.5 rounded-xl font-semibold text-sm transition disabled:opacity-60 ${publicClass}`}
+          label="🌍 Salon public" />
+        <Link to="/multi"
+          className="w-full py-2.5 rounded-xl font-semibold text-sm text-center bg-white/5 border border-white/10 text-slate-200 hover:bg-white/10 transition">
+          🔒 Partie privée
+        </Link>
       </div>
-      <div className="text-sm text-midi-accent group-hover:translate-x-1 transition-transform shrink-0">→</div>
-    </Link>
+    </div>
   )
 }
 
 // ─── Bouton « Salon public » (matchmaking sans code) ──────────
-function PublicSalonButton({ user, className, label }) {
+function PublicSalonButton({ user, useHook, route, className, label }) {
   const navigate = useNavigate()
-  const { joinPublicRoom } = useRaceRoom(null)
+  const { joinPublicRoom } = useHook()
   const [loading, setLoading] = useState(false)
 
   async function handleClick() {
     if (!user) { navigate('/auth'); return }
     setLoading(true)
     const { code, error } = await joinPublicRoom()
-    if (code) navigate(`/race/${code}`)
+    if (code) navigate(`/${route}/${code}`)
     else { setLoading(false); alert(error ?? 'Impossible de rejoindre le salon public.') }
   }
 
@@ -171,55 +164,20 @@ function PublicSalonButton({ user, className, label }) {
   )
 }
 
-// ─── Podium : top 3 joueurs du site (ratio victoires/parties) ──
+// ─── Podium : top 3 joueurs du site (par XP) ──────────────────
 function Podium({ currentUserId }) {
   const [top, setTop]         = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function load() {
-      const { data: profiles } = await supabase
-        .from('profiles').select('id, nickname, avatar')
-      if (!profiles) { setLoading(false); return }
-
-      const [{ data: tvRooms }, { data: tvParts }, { data: duelRooms }] = await Promise.all([
-        supabase.from('tv_rooms').select('id, phase_data').eq('phase', 'finished'),
-        supabase.from('tv_participants').select('room_id, profile_id'),
-        supabase.from('duel_rooms').select('host_id, guest_id, phase_data').eq('phase', 'finished'),
-      ])
-
-      const stats = {}
-      const ensure = id => { if (!stats[id]) stats[id] = { wins: 0, losses: 0 } }
-
-      const tvRoomMap = Object.fromEntries((tvRooms ?? []).map(r => [r.id, r]))
-      for (const p of (tvParts ?? [])) {
-        const room = tvRoomMap[p.room_id]
-        if (!room) continue
-        ensure(p.profile_id)
-        if (room.phase_data?.maitre_id === p.profile_id) stats[p.profile_id].wins++
-        else stats[p.profile_id].losses++
-      }
-      for (const r of (duelRooms ?? [])) {
-        const { host_id, guest_id, phase_data } = r
-        if (!host_id || !guest_id) continue
-        for (const pid of [host_id, guest_id]) {
-          ensure(pid)
-          if (phase_data?.winner_id === pid) stats[pid].wins++
-          else if (phase_data?.winner_id) stats[pid].losses++
-        }
-      }
-
-      const ranked = profiles
-        .map(p => {
-          const s = stats[p.id] ?? { wins: 0, losses: 0 }
-          const total = s.wins + s.losses
-          return { ...p, wins: s.wins, total, ratio: total > 0 ? s.wins / total : -1 }
-        })
-        .filter(p => p.total > 0)
-        .sort((a, b) => (b.ratio - a.ratio) || (b.wins - a.wins) || (b.total - a.total))
-        .slice(0, 3)
-
-      setTop(ranked)
+      const { data } = await supabase
+        .from('profiles')
+        .select('id, nickname, avatar, total_xp')
+        .gt('total_xp', 0)
+        .order('total_xp', { ascending: false })
+        .limit(3)
+      setTop(data ?? [])
       setLoading(false)
     }
     load()
@@ -237,7 +195,7 @@ function Podium({ currentUserId }) {
     return (
       <div className="card p-8 text-center text-slate-500">
         <div className="text-4xl mb-3">🏜️</div>
-        <p className="text-sm">Aucune partie multijoueur terminée pour l'instant.</p>
+        <p className="text-sm">Aucun joueur classé pour l'instant.</p>
         <Link to="/multi" className="text-midi-accent hover:underline text-sm">Lance une partie →</Link>
       </div>
     )
@@ -277,14 +235,14 @@ function Podium({ currentUserId }) {
                 {p.nickname}{isMe && <span className="text-xs opacity-70"> (moi)</span>}
               </div>
               <div className={`w-full ${m.h} rounded-t-xl bg-gradient-to-b ${m.grad} border border-white/10 flex flex-col items-center justify-center`}>
-                <div className={`font-display text-xl ${m.txt}`}>{Math.round(p.ratio * 100)}%</div>
-                <div className="text-[10px] text-slate-500 uppercase tracking-wider">{p.wins}V · {p.total}j</div>
+                <div className={`font-display text-xl ${m.txt}`}>{(p.total_xp ?? 0).toLocaleString('fr-FR')}</div>
+                <div className="text-[10px] text-slate-500 uppercase tracking-wider">XP · Niv. {levelFromXP(p.total_xp ?? 0)}</div>
               </div>
             </div>
           )
         })}
       </div>
-      <p className="text-xs text-slate-600 text-center mt-3">Classé par ratio de victoires en multijoueur</p>
+      <p className="text-xs text-slate-600 text-center mt-3">Classé par XP total</p>
     </div>
   )
 }

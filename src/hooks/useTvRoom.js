@@ -408,13 +408,53 @@ export function useTvRoom(code) {
   }
 
   // ── Créer / rejoindre ─────────────────────────────────────
-  async function createRoom() {
+  async function createRoom({ isPublic = false } = {}) {
     if (!user) return null
     const code = generateCode()
-    const { data, error } = await supabase.from('tv_rooms').insert({ code, host_id: user.id }).select().single()
+    const { data, error } = await supabase.from('tv_rooms').insert({ code, host_id: user.id, is_public: isPublic }).select().single()
     if (error || !data) return null
     await supabase.from('tv_participants').insert({ room_id: data.id, profile_id: user.id })
     return data.code
+  }
+
+  // Matchmaking : rejoint un salon TV public ouvert, ou en crée un.
+  async function joinPublicRoom() {
+    if (!user) return { error: 'Non connecté' }
+
+    const since = new Date(Date.now() - 30 * 60 * 1000).toISOString()
+    const { data: rooms } = await supabase
+      .from('tv_rooms')
+      .select('*')
+      .eq('is_public', true)
+      .eq('phase', 'lobby')
+      .gte('created_at', since)
+      .order('created_at', { ascending: true })
+
+    if (rooms?.length) {
+      const ids = rooms.map(r => r.id)
+      const { data: parts } = await supabase
+        .from('tv_participants')
+        .select('room_id, profile_id')
+        .in('room_id', ids)
+
+      const byRoom = {}
+      for (const p of (parts ?? [])) (byRoom[p.room_id] ??= []).push(p.profile_id)
+
+      for (const r of rooms) {
+        const members = byRoom[r.id] ?? []
+        if (members.includes(user.id)) return { code: r.code }
+        const hostPresent = members.includes(r.host_id)
+        if (hostPresent && members.length < TV_MAX_PLAYERS) {
+          const { error } = await supabase
+            .from('tv_participants').insert({ room_id: r.id, profile_id: user.id })
+          if (!error) return { code: r.code }
+        }
+      }
+    }
+
+    const code = await createRoom({ isPublic: true })
+    if (!code) return { error: 'Erreur lors de la création du salon.' }
+    return { code }
   }
 
   async function joinRoom(roomCode) {
@@ -434,6 +474,6 @@ export function useTvRoom(code) {
   return {
     room, participants, answers, loading, isHost,
     myAnswers: answers.filter(a => a.profile_id === user?.id),
-    submitAnswer, hostAdvance, startGame, createRoom, joinRoom,
+    submitAnswer, hostAdvance, startGame, createRoom, joinRoom, joinPublicRoom,
   }
 }

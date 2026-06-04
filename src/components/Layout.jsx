@@ -6,7 +6,7 @@ import ChatWidget from './ChatWidget.jsx'
 
 const navLinks = [
   { to: '/',           label: 'Accueil',      emoji: '🏠', end: true },
-  { to: '/multi',      label: 'Multijoueur',  emoji: '🎮' },
+  { to: '/multi',      label: 'Partie perso', emoji: '🔒' },
   { to: '/classement', label: 'Classement',   emoji: '🏆' },
   { to: '/reglages',   label: 'Réglages',     emoji: '⚙️' },
 ]

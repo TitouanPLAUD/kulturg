@@ -1,6 +1,8 @@
-import { createContext, useContext, useEffect, useMemo, useReducer } from 'react'
+import { createContext, useContext, useEffect, useMemo, useReducer, useRef } from 'react'
 import { loadState, saveState, resetState } from '../utils/storage.js'
 import { DIFFICULTY } from '../data/themes.js'
+import { useAuth } from './AuthContext.jsx'
+import { supabase } from '../lib/supabase.js'
 
 const GameContext = createContext(null)
 
@@ -58,6 +60,17 @@ function reducer(state, action) {
       if (state.badges.includes(action.id)) return state
       return { ...state, badges: [...state.badges, action.id] }
     }
+    case 'MERGE_REMOTE': {
+      // Fusion « le plus haut gagne » au login : on ne prend les valeurs serveur
+      // que si elles dépassent le local (évite d'écraser une progression).
+      if ((action.total_xp ?? 0) <= state.totalXP) return state
+      return {
+        ...state,
+        totalXP:       action.total_xp,
+        totalAnswered: action.total_answered ?? state.totalAnswered,
+        totalCorrect:  action.total_correct ?? state.totalCorrect,
+      }
+    }
     case 'RESET': {
       resetState()
       return loadState()
@@ -75,8 +88,40 @@ function daysBetween(a, b) {
 
 export function GameProvider({ children }) {
   const [state, dispatch] = useReducer(reducer, null, loadState)
+  const { user, profile } = useAuth()
+  const mergedRef = useRef(false)
+  const pushTimer = useRef(null)
 
   useEffect(() => { saveState(state) }, [state])
+
+  // ── Sync serveur : fusion au login puis envoi de la progression ──
+  // À la connexion, on récupère la progression serveur et on garde la plus
+  // élevée (cross-device safe).
+  useEffect(() => {
+    if (!profile) { mergedRef.current = false; return }
+    if (mergedRef.current) return
+    mergedRef.current = true
+    dispatch({
+      type: 'MERGE_REMOTE',
+      total_xp:       profile.total_xp ?? 0,
+      total_answered: profile.total_answered ?? 0,
+      total_correct:  profile.total_correct ?? 0,
+    })
+  }, [profile])
+
+  // Envoi (débauncé) de la progression locale vers le profil serveur.
+  useEffect(() => {
+    if (!user) return
+    clearTimeout(pushTimer.current)
+    pushTimer.current = setTimeout(() => {
+      supabase.from('profiles').update({
+        total_xp:       state.totalXP,
+        total_answered: state.totalAnswered,
+        total_correct:  state.totalCorrect,
+      }).eq('id', user.id)
+    }, 1500)
+    return () => clearTimeout(pushTimer.current)
+  }, [user, state.totalXP, state.totalAnswered, state.totalCorrect])
 
   // Auto-attribution de badges
   useEffect(() => {
