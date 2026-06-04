@@ -89,7 +89,7 @@ export default function Home() {
               desc="2 à 15 joueurs : le plus rapide pour scorer un max."
               tone="from-green-500 to-emerald-600"
               useHook={() => useRaceRoom(null)} route="race"
-              highlight="#22c55e" highlightSubtle="#86efac"
+              highlight="#4ade80" highlightSubtle="#bbf7d0"
             />
           </div>
         </section>
