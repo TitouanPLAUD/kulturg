@@ -114,8 +114,10 @@ function Shell({ children }) {
 function RaceLobby({ room, participants, isHost, code, onStart }) {
   const [copied, setCopied] = useState(false)
   const n = participants.length
-  const canStart = n >= RACE_MIN_PLAYERS
   const isPublic = room.is_public
+  // Solo autorisé en partie privée ; 2 joueurs min en salon public
+  const minPlayers = isPublic ? RACE_MIN_PLAYERS : 1
+  const canStart = n >= minPlayers
   const settings = room.phase_data?.settings
   const qCount   = settings?.count ?? Q_COUNT
   const duration = settings?.duration ?? TIMER_MS / 1000
@@ -252,7 +254,9 @@ function RaceLobby({ room, participants, isHost, code, onStart }) {
             ? `⏳ En attente de joueurs (${n}/${RACE_MIN_PLAYERS} min)`
             : isPublic && countdown !== null
               ? `🚀 Lancement dans ${countdown}s — clique pour démarrer maintenant`
-              : '▶ Lancer la course !'}
+              : !isPublic && n === 1
+                ? '▶ Lancer en solo !'
+                : '▶ Lancer la course !'}
         </button>
       ) : (
         <p className="text-center text-slate-500 text-sm py-4">

@@ -216,7 +216,9 @@ export function useRaceRoom(code) {
   }
 
   async function startGame() {
-    if (!isHost || participants.length < RACE_MIN_PLAYERS) return
+    // Solo autorisé en partie privée ; 2 joueurs min en salon public (matchmaking)
+    const minPlayers = room?.is_public ? RACE_MIN_PLAYERS : 1
+    if (!isHost || participants.length < minPlayers) return
     const settings  = { ...DEFAULT_RACE_SETTINGS, ...(room.phase_data?.settings ?? {}) }
     const questions = pickQuestions(settings)
     await supabase.from('race_answers').delete().eq('room_id', room.id)
