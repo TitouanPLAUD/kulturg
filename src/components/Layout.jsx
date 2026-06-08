@@ -39,7 +39,6 @@ export default function Layout() {
   const xp = user && profile ? (profile.total_xp ?? 0) : state.totalXP
   const level = levelFromXP(xp)
   const next = nextLevelThreshold(xp)
-  const progress = next > 0 ? Math.min(100, (xp / next) * 100) : 100
   // Progression à l'intérieur du niveau courant (pour l'anneau autour de l'avatar)
   const levelBase = LEVEL_THRESHOLDS[level - 1] ?? 0
   const levelPct = next > levelBase
@@ -108,11 +107,6 @@ export default function Layout() {
           )}
         </div>
 
-        {/* Barre XP */}
-        <div className="h-0.5 bg-white/5">
-          <div className="h-full bg-gradient-to-r from-midi-accent to-blue-600 transition-all duration-700"
-            style={{ width: `${progress}%` }} />
-        </div>
 
         {/* Nav mobile */}
         <nav className="md:hidden flex items-center gap-0.5 overflow-x-auto scrollbar-thin px-3 py-2 border-t border-white/5">
