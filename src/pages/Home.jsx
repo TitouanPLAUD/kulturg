@@ -79,6 +79,31 @@ export default function Home() {
         )}
       </section>
 
+      {/* ── Accueil nouveaux joueurs ── */}
+      {(!user || state.totalXP === 0) && (
+        <section className="card p-4 sm:p-5 border border-midi-accent/20 bg-midi-accent/5 flex items-start gap-3">
+          <span className="text-2xl shrink-0">👋</span>
+          <div className="flex-1 text-sm leading-relaxed">
+            <p className="text-white font-semibold mb-1">
+              {user ? 'Bienvenue dans l\'arène !' : 'Pas encore de compte ?'}
+            </p>
+            <p className="text-slate-400">
+              {user ? (
+                <>
+                  Lance un <strong className="text-midi-accent">🌍 Salon public</strong> pour jouer instantanément avec d'autres,
+                  ou crée une <strong className="text-midi-accent">🔒 Partie privée</strong> à partager par code avec tes amis.
+                  Tu gagnes des XP à chaque partie et tu débloques des grades !
+                </>
+              ) : (
+                <>
+                  Crée un compte en 30s pour sauvegarder ta progression, gagner des XP, débloquer des grades et te mesurer à toute la promo dans le <strong className="text-white">classement</strong>.
+                </>
+              )}
+            </p>
+          </div>
+        </section>
+      )}
+
       {/* ── Bas : jeux à gauche · podium à droite ── */}
       <div className="grid lg:grid-cols-2 gap-6 items-start">
 
