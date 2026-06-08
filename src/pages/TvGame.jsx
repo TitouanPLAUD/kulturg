@@ -5,6 +5,7 @@ import { useGame } from '../context/GameContext.jsx'
 import { useTvRoom, gainForAnswer, TV_REQUIRED_PLAYERS } from '../hooks/useTvRoom.js'
 import { JLRProvider, useJLR } from '../components/JLRAvatar.jsx'
 import Avatar from '../components/Avatar.jsx'
+import { awardXPOnce, tvXP } from '../utils/multiplayerXP.js'
 
 // ─── Métadonnées des phases ───────────────────────────────────
 const PHASE_META = {
@@ -138,7 +139,7 @@ function TvGameCore() {
         {phase === 'coup_fatal'         && <CoupFatalPhase {...props} />}
         {phase === 'coup_de_maitre'     && <CoupDeMaitrePhase {...props} />}
         {phase === 'etoile_mysterieuse' && <EtoileMysterieusePhase {...props} />}
-        {phase === 'finished'           && <FinishedPhase pd={pd} participants={participants} answers={answers} />}
+        {phase === 'finished'           && <FinishedPhase pd={pd} participants={participants} answers={answers} roomId={room.id} myProfileId={myProfileId} />}
       </div>
     </TV>
   )
@@ -1009,9 +1010,10 @@ function EtoileMysterieusePhase({ pd, participants, answers, myAnswers, isHost, 
 }
 
 // ─── Finished ─────────────────────────────────────────────────
-function FinishedPhase({ pd, participants, answers }) {
+function FinishedPhase({ pd, participants, answers, roomId, myProfileId }) {
   const [show, setShow] = useState(false)
   const { trigger } = useJLR()
+  const { addXP } = useGame()
 
   useEffect(() => {
     const t1 = setTimeout(() => setShow(true), 400)
@@ -1024,6 +1026,18 @@ function FinishedPhase({ pd, participants, answers }) {
   const finalScore   = pd.final_score ?? pd.score ?? 0
   const etoileWon    = pd.etoile_correct === true
   const eliminated   = pd.eliminated ?? []
+
+  // ── Récompense XP (une seule fois par partie / utilisateur) ──
+  const xpEarnedRef = useRef(null)
+  useEffect(() => {
+    if (!roomId || !myProfileId || xpEarnedRef.current !== null) return
+    const wasParticipant = participants.some(p => p.profile_id === myProfileId)
+    if (!wasParticipant) { xpEarnedRef.current = 0; return }
+    const isMaitre = myProfileId === maitre_id
+    const amount = tvXP(isMaitre)
+    const got = awardXPOnce(`tv:${roomId}:${myProfileId}`, amount, addXP)
+    xpEarnedRef.current = got
+  }, [roomId, myProfileId, maitre_id, participants, addXP])
 
   // Ordre d'élimination (dernier éliminé = 2e, anté-dernier = 3e, etc.)
   const rankings = [
@@ -1069,6 +1083,12 @@ function FinishedPhase({ pd, participants, answers }) {
             )
           })}
         </div>
+
+        {xpEarnedRef.current > 0 && (
+          <div className="text-center text-midi-accent font-bold text-lg animate-pop">
+            +{xpEarnedRef.current} XP gagnés !
+          </div>
+        )}
 
         <Link to="/tv" className="block w-full py-4 text-center rounded-2xl bg-yellow-500 text-black font-display text-xl tracking-wider hover:bg-yellow-400 transition">
           Nouvelle partie

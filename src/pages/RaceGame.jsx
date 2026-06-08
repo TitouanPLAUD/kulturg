@@ -19,6 +19,7 @@ import {
 } from '../hooks/useRaceRoom.js'
 import { THEMES } from '../data/themes.js'
 import Avatar from '../components/Avatar.jsx'
+import { awardXPOnce, raceXP } from '../utils/multiplayerXP.js'
 
 const DIFF_LABELS = { all: 'Toutes', 1: 'Facile', 2: 'Moyen', 3: 'Difficile' }
 
@@ -96,7 +97,7 @@ export default function RaceGame() {
 
       {phase === 'lobby'    && <RaceLobby room={room} participants={participants} isHost={isHost} code={code} onStart={startGame} />}
       {phase === 'playing'  && <RacePlaying pd={pd} participants={participants} answers={answers} myAnswers={myAnswers} isHost={isHost} submitAnswer={submitAnswer} hostAdvance={hostAdvance} userId={user.id} isPublic={room.is_public} />}
-      {phase === 'finished' && <RaceFinished participants={participants} answers={answers} q_count={pd.q_count ?? Q_COUNT} questions={pd.questions ?? []} myAnswers={myAnswers} userId={user.id} />}
+      {phase === 'finished' && <RaceFinished participants={participants} answers={answers} q_count={pd.q_count ?? Q_COUNT} questions={pd.questions ?? []} myAnswers={myAnswers} userId={user.id} roomId={room.id} />}
     </Shell>
   )
 }
@@ -510,7 +511,7 @@ function Scoreboard({ participants, answers, q_count, currentUserId }) {
 }
 
 // ─── Écran final ───────────────────────────────────────────────
-function RaceFinished({ participants, answers, q_count, questions, myAnswers, userId }) {
+function RaceFinished({ participants, answers, q_count, questions, myAnswers, userId, roomId }) {
   const scores = computeScores(answers, q_count)
   const ranked = [...participants]
     .map(p => ({ ...p, score: scores[p.profile_id] ?? 0 }))
@@ -520,6 +521,18 @@ function RaceFinished({ participants, answers, q_count, questions, myAnswers, us
   const podium  = ranked.slice(0, 3)
   const rest    = ranked.slice(3)
   const winner  = ranked[0]
+  const { addXP } = useGame()
+
+  // Récompense XP — une fois, par room+user. Basé sur le rang et le score.
+  const myEntry  = ranked.find(p => p.profile_id === userId)
+  const myRank   = myEntry ? ranked.indexOf(myEntry) + 1 : null
+  const myScore  = myEntry?.score ?? 0
+  const xpEarnedRef = useRef(null)
+  useEffect(() => {
+    if (xpEarnedRef.current !== null || !roomId || !userId || !myRank) return
+    const amount = raceXP(myRank, myScore)
+    xpEarnedRef.current = awardXPOnce(`race:${roomId}:${userId}`, amount, addXP)
+  }, [roomId, userId, myRank, myScore, addXP])
 
   return (
     <div className="max-w-xl mx-auto px-4 py-10 space-y-6">
@@ -566,6 +579,12 @@ function RaceFinished({ participants, answers, q_count, questions, myAnswers, us
 
       {/* Récapitulatif des questions */}
       <RaceRecap questions={questions} myAnswers={myAnswers} q_count={q_count} />
+
+      {xpEarnedRef.current > 0 && (
+        <div className="text-center text-midi-accent font-bold text-lg animate-pop">
+          +{xpEarnedRef.current} XP gagnés !
+        </div>
+      )}
 
       <div className="flex gap-3">
         <Link to="/multi"

@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext.jsx'
 import { useGame } from '../context/GameContext.jsx'
 import { useDuelRoom, computeDuelScores, TARGET_SCORE } from '../hooks/useDuelRoom.js'
 import Avatar from '../components/Avatar.jsx'
+import { awardXPOnce, duelXP } from '../utils/multiplayerXP.js'
 
 const QUESTION_DURATION = 12000
 
@@ -368,8 +369,19 @@ function FinishedPhase({ room, profiles, answers, user }) {
   const isWinner = winnerId === user.id
   const { scores } = computeDuelScores(answers)
   const [show, setShow] = useState(false)
+  const { addXP } = useGame()
 
   useEffect(() => { const t = setTimeout(() => setShow(true), 300); return () => clearTimeout(t) }, [])
+
+  // Récompense XP — une seule fois, si le joueur a participé et qu'il y a un gagnant (pas d'égalité)
+  const xpEarnedRef = useRef(null)
+  useEffect(() => {
+    if (xpEarnedRef.current !== null || !room?.id || !user?.id) return
+    const wasParticipant = user.id === room.host_id || user.id === room.guest_id
+    if (!wasParticipant || winnerId == null) { xpEarnedRef.current = 0; return }
+    const amount = duelXP(isWinner)
+    xpEarnedRef.current = awardXPOnce(`duel:${room.id}:${user.id}`, amount, addXP)
+  }, [room?.id, user?.id, winnerId, isWinner, addXP])
 
   return (
     <div className="flex-1 flex flex-col items-center justify-center px-4 py-10 gap-8">
@@ -424,6 +436,12 @@ function FinishedPhase({ room, profiles, answers, user }) {
             )
           })}
         </div>
+
+        {xpEarnedRef.current > 0 && (
+          <div className="text-center text-midi-accent font-bold text-lg animate-pop">
+            +{xpEarnedRef.current} XP gagnés !
+          </div>
+        )}
 
         <div className="flex gap-3">
           <Link to="/multi" className="flex-1 py-3 text-center rounded-xl bg-yellow-500 text-black font-bold hover:bg-yellow-400 transition">

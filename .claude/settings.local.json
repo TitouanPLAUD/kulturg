@@ -19,7 +19,26 @@
       "Bash(node -e ' *)",
       "Bash(node --input-type=module)",
       "Bash(ls -t ~/Downloads/*.png ~/Downloads/*.jpg ~/Desktop/*.png ~/Desktop/*.jpg 2>/dev/null | head -10)",
-      "Bash(cp ~/Downloads/Gemini_Generated_Image_18zsj118zsj118zs.png /Users/titouanplaud/Documents/KULTURG/public/logo.png)"
+      "Bash(cp ~/Downloads/Gemini_Generated_Image_18zsj118zsj118zs.png /Users/titouanplaud/Documents/KULTURG/public/logo.png)",
+      "Bash(python3 -m py_compile main.py config.py)",
+      "Bash(mkdir -p archive)",
+      "Bash(git mv *)",
+      "Bash(mv Source_Code_V1.py SourceCode_WebServer.py Source_Code_V2.py Source_Code_V2_ESP32DevkitV1.py archive/)",
+      "Bash(rm -f .DS_Store)",
+      "mcp__Claude_Preview__preview_start",
+      "Read(//usr/bin/**)",
+      "Bash(/usr/bin/python3 --version)",
+      "Read(//opt/homebrew/bin/**)",
+      "Bash(rm -f \"/Users/titouanplaud/Library/Mobile Documents/com~apple~CloudDocs/Documents/ICAM/A4/Projet Mécatronique/PROJET_CLAUDE_CODE/preview_server.py\"; rm -f /Users/titouanplaud/Documents/KULTURG/.claude/launch.json; rm -rf /tmp/loop-preview; echo \"--- dossier projet final ---\"; ls -1 \"/Users/titouanplaud/Library/Mobile Documents/com~apple~CloudDocs/Documents/ICAM/A4/Projet Mécatronique/PROJET_CLAUDE_CODE\")",
+      "Bash(command -v mpremote)",
+      "Bash(python3 -m mpremote version)",
+      "Read(//Applications/Thonny.app/**)",
+      "Bash(command -v thonny)",
+      "Bash(command -v ampy)",
+      "Bash(cp \"/Users/titouanplaud/Library/Mobile Documents/com~apple~CloudDocs/Documents/ICAM/A4/Projet Mécatronique/PROJET_CLAUDE_CODE/index.html\" /tmp/loop-preview/ && echo \"OK\")",
+      "Bash(rm -f /Users/titouanplaud/Documents/KULTURG/.claude/launch.json)",
+      "Bash(rm -rf /tmp/loop-preview)",
+      "Bash(python3 -m py_compile loop.py)"
     ]
   }
 }

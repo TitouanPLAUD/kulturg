@@ -72,6 +72,10 @@ function reducer(state, action) {
         totalCorrect:  action.total_correct ?? state.totalCorrect,
       }
     }
+    case 'ADD_XP': {
+      // Récompense multijoueur — XP uniquement, n'affecte pas answered/correct
+      return { ...state, totalXP: state.totalXP + (action.amount ?? 0) }
+    }
     case 'RESET': {
       resetState()
       return loadState()
@@ -145,6 +149,7 @@ export function GameProvider({ children }) {
     answer: (theme, difficulty, correct, awardXp = true) => dispatch({ type: 'ANSWER', theme, difficulty, correct, awardXp }),
     srsReview: (qid, correct) => dispatch({ type: 'SRS_REVIEW', qid, correct }),
     finishSession: (session) => dispatch({ type: 'FINISH_SESSION', session }),
+    addXP: (amount) => dispatch({ type: 'ADD_XP', amount }),
     reset: () => dispatch({ type: 'RESET' }),
   }), [state])
 
