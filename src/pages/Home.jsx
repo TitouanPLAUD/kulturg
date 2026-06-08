@@ -110,8 +110,8 @@ export default function Home() {
 
         {/* Jeux (colonne) */}
         <section className="flex flex-col">
-          <div className="flex items-center mb-4" style={{ minHeight: '2.25rem' }}>
-            <SectionTitle className="mb-0">Jeux</SectionTitle>
+          <div className="flex items-center justify-center mb-4" style={{ minHeight: '2.25rem' }}>
+            <SectionTitle className="mb-0 uppercase tracking-wide">Jeux</SectionTitle>
           </div>
           <div className="flex-1 grid grid-rows-2 gap-4">
             <SplitGameCard
@@ -133,9 +133,9 @@ export default function Home() {
 
         {/* Podium (top 3 du site) */}
         <section className="flex flex-col">
-          <div className="flex items-center justify-between mb-4" style={{ minHeight: '2.25rem' }}>
-            <SectionTitle className="mb-0">Podium</SectionTitle>
-            <Link to="/classement" className="text-sm text-midi-accent hover:underline">Voir tout →</Link>
+          <div className="relative flex items-center justify-center mb-4" style={{ minHeight: '2.25rem' }}>
+            <SectionTitle className="mb-0 uppercase tracking-wide">Podium</SectionTitle>
+            <Link to="/classement" className="absolute right-0 text-sm text-midi-accent hover:underline">Voir tout →</Link>
           </div>
           <div className="flex-1 flex flex-col">
             <Podium currentUserId={user?.id} myXP={state.totalXP} />
