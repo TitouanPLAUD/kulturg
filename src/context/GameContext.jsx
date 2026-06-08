@@ -104,66 +104,53 @@ export function GameProvider({ children }) {
   // élevée (cross-device safe). Si le local est en avance, on force un push
   // immédiat car MERGE_REMOTE ne change pas le state dans ce cas et le
   // useEffect de push ne se redéclencherait pas.
+  // Push serveur via RPC sync_progress (SECURITY DEFINER + GREATEST côté serveur).
+  function pushProgress() {
+    if (!user) return
+    supabase.rpc('sync_progress', {
+      xp:       state.totalXP,
+      answered: state.totalAnswered,
+      correct:  state.totalCorrect,
+    })
+  }
+
+  // Au login : merge de la valeur serveur dans le state local (le plus haut
+  // gagne). Le push qui suit aligne la DB grâce au GREATEST de la RPC.
   useEffect(() => {
     if (!profile || !user) { mergedRef.current = false; return }
     if (mergedRef.current) return
     mergedRef.current = true
-    const remoteXP = profile.total_xp ?? 0
-    if (remoteXP < state.totalXP) {
-      // Local en avance → push immédiat pour aligner la DB
-      supabase.from('profiles').update({
-        total_xp:       state.totalXP,
-        total_answered: state.totalAnswered,
-        total_correct:  state.totalCorrect,
-      }).eq('id', user.id)
-    } else {
-      dispatch({
-        type: 'MERGE_REMOTE',
-        total_xp:       remoteXP,
-        total_answered: profile.total_answered ?? 0,
-        total_correct:  profile.total_correct ?? 0,
-      })
-    }
+    dispatch({
+      type: 'MERGE_REMOTE',
+      total_xp:       profile.total_xp ?? 0,
+      total_answered: profile.total_answered ?? 0,
+      total_correct:  profile.total_correct ?? 0,
+    })
+    pushProgress() // aligne la DB si le local est en avance
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile, user])
 
-  // Envoi (débouncé court) de la progression locale vers le profil serveur.
-  // Délai court (400ms) pour minimiser le risque de perte si le user ferme
-  // l'onglet juste après une fin de partie multi.
+  // Envoi débouncé (400ms) à chaque changement de progression.
   useEffect(() => {
     if (!user) return
     clearTimeout(pushTimer.current)
-    pushTimer.current = setTimeout(() => {
-      supabase.from('profiles').update({
-        total_xp:       state.totalXP,
-        total_answered: state.totalAnswered,
-        total_correct:  state.totalCorrect,
-      }).eq('id', user.id)
-    }, 400)
+    pushTimer.current = setTimeout(pushProgress, 400)
     return () => clearTimeout(pushTimer.current)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, state.totalXP, state.totalAnswered, state.totalCorrect])
 
-  // Flush à la fermeture de l'onglet / changement de visibilité — garantit que
-  // les XP gagnés juste avant un départ ne sont pas perdus.
+  // Flush immédiat quand l'onglet se ferme / passe en arrière-plan.
   useEffect(() => {
     if (!user) return
-    function flush() {
-      if (pushTimer.current) {
-        clearTimeout(pushTimer.current)
-        // Tir-et-oublie : la requête peut continuer même si la page se ferme
-        supabase.from('profiles').update({
-          total_xp:       state.totalXP,
-          total_answered: state.totalAnswered,
-          total_correct:  state.totalCorrect,
-        }).eq('id', user.id)
-      }
-    }
+    function flush() { clearTimeout(pushTimer.current); pushProgress() }
+    function onHidden() { if (document.visibilityState === 'hidden') flush() }
     window.addEventListener('pagehide', flush)
-    window.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'hidden') flush()
-    })
+    document.addEventListener('visibilitychange', onHidden)
     return () => {
       window.removeEventListener('pagehide', flush)
+      document.removeEventListener('visibilitychange', onHidden)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, state.totalXP, state.totalAnswered, state.totalCorrect])
 
   // Auto-attribution de badges
