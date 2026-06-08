@@ -6,6 +6,10 @@ import App from './App.jsx'
 import { GameProvider } from './context/GameContext.jsx'
 import { AuthProvider } from './context/AuthContext.jsx'
 import { SettingsProvider } from './context/SettingsContext.jsx'
+import { loadCommunityQuestions } from './data/communityQuestions.js'
+
+// Charge les questions validées par les fondateurs (non bloquant)
+loadCommunityQuestions()
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback, useRef } from 'react'
 import { supabase } from '../lib/supabase.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import { QUESTIONS as ALL_QUESTIONS } from '../data/questions.js'
+import { getCommunityQuestions } from '../data/communityQuestions.js'
 
 export const TARGET_SCORE = 5
 const Q_COUNT = 15
@@ -119,7 +120,7 @@ export function useDuelRoom(code) {
     await updateRoom({
       phase: 'playing',
       phase_data: {
-        questions: pick(ALL_QUESTIONS, Q_COUNT),
+        questions: pick([...ALL_QUESTIONS, ...getCommunityQuestions()], Q_COUNT),
         q_idx: 0,
         q_start_at: new Date().toISOString(),
       },

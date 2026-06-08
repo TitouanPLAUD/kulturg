@@ -41,12 +41,20 @@ export function AuthProvider({ children }) {
     await supabase.auth.signOut()
   }
 
+  const isFounder = !!user && FOUNDER_IDS.includes(user.id)
+
   return (
-    <AuthContext.Provider value={{ user, profile, loading, signOut, refreshProfile }}>
+    <AuthContext.Provider value={{ user, profile, loading, signOut, refreshProfile, isFounder }}>
       {children}
     </AuthContext.Provider>
   )
 }
+
+// Comptes fondateurs (accès à la page admin)
+export const FOUNDER_IDS = [
+  'cde9f634-0188-448f-915e-9e70cb82aca9', // 31avgeek
+  '1375fb6b-b869-4586-8e78-c2a9248c8e3d', // edouardvasse
+]
 
 export function useAuth() {
   return useContext(AuthContext)

@@ -2,7 +2,14 @@ import { useEffect, useState, useCallback, useRef } from 'react'
 import { supabase } from '../lib/supabase.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import { QUESTIONS as ALL_QUESTIONS } from '../data/questions.js'
+import { getCommunityQuestions } from '../data/communityQuestions.js'
 import { PERSONALITIES } from '../data/personalities.js'
+
+// Pool complet (built-in + communautaires acceptées)
+const fullPool = () => [...ALL_QUESTIONS, ...getCommunityQuestions()]
+// Pool QCM uniquement (pour les phases qui ne gèrent pas le texte libre :
+// duel du Coup d'Envoi/par Coup, et Coup de Maître)
+const mcqPool  = () => fullPool().filter(q => Array.isArray(q.choices))
 
 // ─── Phases officielles ───────────────────────────────────────
 export const PHASES = [
@@ -184,7 +191,7 @@ export function useTvRoom(code) {
     return updateRoom({
       phase:      'coup_envoi',
       phase_data: {
-        ...makeBattleData(activeIds, rnd(ALL_QUESTIONS, 20), rnd(ALL_QUESTIONS, 1)[0]),
+        ...makeBattleData(activeIds, rnd(fullPool(), 20), rnd(mcqPool(), 1)[0]),
         game_started_at,
       },
     })
@@ -221,7 +228,7 @@ export function useTvRoom(code) {
         if (phase === 'coup_envoi' && newActive.length === 3) {
           return updateRoom({
             phase:      'coup_par_coup',
-            phase_data: makeBattleData(newActive, rnd(ALL_QUESTIONS, 20), rnd(ALL_QUESTIONS, 1)[0], newEliminated),
+            phase_data: makeBattleData(newActive, rnd(fullPool(), 20), rnd(mcqPool(), 1)[0], newEliminated),
           })
         }
         // 2 restants → coup fatal
@@ -233,7 +240,7 @@ export function useTvRoom(code) {
               eliminated:     newEliminated,
               champion_id:    winner_id,
               coups:          Object.fromEntries(newActive.map(id => [id, 12])),
-              questions:      rnd(ALL_QUESTIONS, 15),
+              questions:      rnd(fullPool(), 15),
               q_idx:          0,
               q_start_at:     new Date().toISOString(),
             },
@@ -291,7 +298,7 @@ export function useTvRoom(code) {
       if (phase === 'coup_envoi' && newActive.length === 3) {
         return updateRoom({
           phase:      'coup_par_coup',
-          phase_data: makeBattleData(newActive, rnd(ALL_QUESTIONS, 20), rnd(ALL_QUESTIONS, 1)[0], newEliminated),
+          phase_data: makeBattleData(newActive, rnd(fullPool(), 20), rnd(mcqPool(), 1)[0], newEliminated),
         })
       }
       return updateRoom({
@@ -301,7 +308,7 @@ export function useTvRoom(code) {
           eliminated:     newEliminated,
           champion_id:    newActive[0],
           coups:          Object.fromEntries(newActive.map(id => [id, 12])),
-          questions:      rnd(ALL_QUESTIONS, 15),
+          questions:      rnd(fullPool(), 15),
           q_idx:          0,
           q_start_at:     new Date().toISOString(),
         },
@@ -334,7 +341,7 @@ export function useTvRoom(code) {
           phase_data: {
             maitre_id:     winnerId,
             eliminated:    [...(pd.eliminated ?? []), loserId],
-            questions:     rnd(ALL_QUESTIONS, 5),
+            questions:     rnd(mcqPool(), 5),
             personality:   pickPersonality(),
             q_idx:         0,
             correct_count: 0,

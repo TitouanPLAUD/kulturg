@@ -8,7 +8,7 @@ import MotMysterieux from './pages/MotMysterieux.jsx'
 import EtoileMysterieuse from './pages/EtoileMysterieuse.jsx'
 import Revision from './pages/Revision.jsx'
 import Profil from './pages/Profil.jsx'
-import Admin from './pages/Admin.jsx'
+import AdminPanel from './pages/AdminPanel.jsx'
 import Auth from './pages/Auth.jsx'
 import Amis from './pages/Amis.jsx'
 import TvLanding from './pages/TvLanding.jsx'
@@ -42,7 +42,7 @@ export default function App() {
         <Route path="classement" element={<Classement />} />
         <Route path="multi" element={<Multijoueur />} />
         <Route path="tv" element={<TvLanding />} />
-        <Route path="admin" element={<Admin />} />
+        <Route path="admin" element={<AdminPanel />} />
         <Route path="reglages" element={<Reglages />} />
       </Route>
     </Routes>

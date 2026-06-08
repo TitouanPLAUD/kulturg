@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback, useRef } from 'react'
 import { supabase } from '../lib/supabase.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import { QUESTIONS as ALL_QUESTIONS } from '../data/questions.js'
+import { getCommunityQuestions } from '../data/communityQuestions.js'
 
 export const RACE_MAX_PLAYERS = 15
 export const RACE_MIN_PLAYERS = 2
@@ -69,7 +70,7 @@ function pick(arr, n) {
 // de chaque, alternées (Q1 QCM, Q2 libre, Q3 QCM…) pour le rythme.
 function pickQuestions(settings) {
   const s = { ...DEFAULT_RACE_SETTINGS, ...(settings ?? {}) }
-  let pool = ALL_QUESTIONS
+  let pool = [...ALL_QUESTIONS, ...getCommunityQuestions()]
 
   if (s.themes?.length) {
     const set = new Set(s.themes)

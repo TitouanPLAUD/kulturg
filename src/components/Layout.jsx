@@ -32,7 +32,7 @@ function NavItem({ to, label, emoji, end = false }) {
 
 export default function Layout() {
   const { state } = useGame()
-  const { user, profile, signOut } = useAuth()
+  const { user, profile, signOut, isFounder } = useAuth()
   const navigate = useNavigate()
 
   const level = levelFromXP(state.totalXP)
@@ -61,6 +61,7 @@ export default function Layout() {
           <nav className="ml-4 hidden md:flex items-center gap-0.5">
             {navLinks.map(l => <NavItem key={l.to} {...l} end={l.end} />)}
             {user && authLinks.map(l => <NavItem key={l.to} {...l} />)}
+            {isFounder && <NavItem to="/admin" label="Admin" emoji="🛡️" />}
           </nav>
 
           {/* Spacer */}
@@ -108,6 +109,7 @@ export default function Layout() {
         <nav className="md:hidden flex items-center gap-0.5 overflow-x-auto scrollbar-thin px-3 py-2 border-t border-white/5">
           {navLinks.map(l => <MobileLink key={l.to} to={l.to} label={l.emoji} end={l.end} />)}
           {user && authLinks.map(l => <MobileLink key={l.to} to={l.to} label={l.emoji} />)}
+          {isFounder && <MobileLink to="/admin" label="🛡️" />}
         </nav>
       </header>
 
