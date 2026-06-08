@@ -33,6 +33,19 @@ export function AuthProvider({ children }) {
     return () => subscription.unsubscribe()
   }, [])
 
+  // Abonnement temps réel au profil du joueur : un bannissement (ou un
+  // changement d'avatar/XP côté serveur) se répercute immédiatement.
+  useEffect(() => {
+    if (!user) return
+    const channel = supabase
+      .channel(`profile-${user.id}`)
+      .on('postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${user.id}` },
+        ({ new: row }) => setProfile(row))
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [user])
+
   async function refreshProfile() {
     if (user) await fetchProfile(user.id)
   }

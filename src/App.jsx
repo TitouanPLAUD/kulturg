@@ -1,4 +1,6 @@
 import { Route, Routes } from 'react-router-dom'
+import { useAuth } from './context/AuthContext.jsx'
+import BanScreen from './components/BanScreen.jsx'
 import Layout from './components/Layout.jsx'
 import Home from './pages/Home.jsx'
 import QCM from './pages/QCM.jsx'
@@ -21,6 +23,11 @@ import Reglages from './pages/Reglages.jsx'
 import Chat from './pages/Chat.jsx'
 
 export default function App() {
+  const { profile } = useAuth()
+
+  // Joueur banni → tout est bloqué, où qu'il soit dans l'app
+  if (profile?.banned) return <BanScreen />
+
   return (
     <Routes>
       <Route path="auth" element={<Auth />} />

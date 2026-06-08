@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase.js'
-import { useAuth } from '../context/AuthContext.jsx'
+import { useAuth, FOUNDER_IDS } from '../context/AuthContext.jsx'
 import { THEMES } from '../data/themes.js'
 import { loadCommunityQuestions } from '../data/communityQuestions.js'
 
@@ -29,15 +29,21 @@ export default function AdminPanel() {
       <div className="flex rounded-xl bg-white/5 border border-white/10 p-1 gap-1">
         <button onClick={() => setTab('questions')}
           className={`flex-1 py-2 rounded-lg text-sm font-semibold transition ${tab === 'questions' ? 'bg-midi-accent text-white' : 'text-slate-300'}`}>
-          ❓ Questions proposées
+          ❓ Questions
         </button>
         <button onClick={() => setTab('feedbacks')}
           className={`flex-1 py-2 rounded-lg text-sm font-semibold transition ${tab === 'feedbacks' ? 'bg-midi-accent text-white' : 'text-slate-300'}`}>
           💬 Feedbacks
         </button>
+        <button onClick={() => setTab('players')}
+          className={`flex-1 py-2 rounded-lg text-sm font-semibold transition ${tab === 'players' ? 'bg-midi-accent text-white' : 'text-slate-300'}`}>
+          👥 Joueurs
+        </button>
       </div>
 
-      {tab === 'questions' ? <QuestionsTab /> : <FeedbacksTab />}
+      {tab === 'questions' && <QuestionsTab />}
+      {tab === 'feedbacks' && <FeedbacksTab />}
+      {tab === 'players'   && <PlayersTab />}
     </div>
   )
 }
@@ -252,6 +258,95 @@ function FeedbacksTab() {
               className="mt-3 text-xs px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 transition">
               {resolved ? '↩ Rouvrir' : '✓ Marquer résolu'}
             </button>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+// ─── Joueurs (bannissement) ──────────────────────────────────
+function PlayersTab() {
+  const [rows,    setRows]    = useState([])
+  const [loading, setLoading] = useState(true)
+  const [search,  setSearch]  = useState('')
+  const [busy,    setBusy]    = useState(null)
+
+  const load = useCallback(async () => {
+    setLoading(true)
+    const { data } = await supabase
+      .from('profiles')
+      .select('id, nickname, avatar, total_xp, banned, ban_reason')
+      .order('total_xp', { ascending: false })
+    // On masque le compte système Administration
+    setRows((data ?? []).filter(p => p.nickname !== 'Administration'))
+    setLoading(false)
+  }, [])
+
+  useEffect(() => { load() }, [load])
+
+  async function ban(p) {
+    const reason = window.prompt(`Bannir ${p.nickname} ?\nMotif (facultatif, visible par le joueur) :`, '')
+    if (reason === null) return // annulé
+    setBusy(p.id)
+    const { error } = await supabase.rpc('set_ban', { target: p.id, ban: true, reason: reason.trim() || null })
+    setBusy(null)
+    if (error) { alert('Erreur : ' + error.message); return }
+    load()
+  }
+
+  async function unban(p) {
+    setBusy(p.id)
+    const { error } = await supabase.rpc('set_ban', { target: p.id, ban: false })
+    setBusy(null)
+    if (error) { alert('Erreur : ' + error.message); return }
+    load()
+  }
+
+  if (loading) return <Spinner />
+
+  const q = search.trim().toLowerCase()
+  const filtered = q ? rows.filter(p => (p.nickname ?? '').toLowerCase().includes(q)) : rows
+
+  return (
+    <div className="space-y-3">
+      <input
+        value={search}
+        onChange={e => setSearch(e.target.value)}
+        placeholder="Rechercher un joueur…"
+        className="input w-full text-sm" />
+
+      {filtered.length === 0 ? (
+        <Empty icon="🔍" text="Aucun joueur trouvé." />
+      ) : filtered.map(p => {
+        const isFounderRow = FOUNDER_IDS.includes(p.id)
+        return (
+          <div key={p.id} className={`card p-3 flex items-center gap-3 ${p.banned ? 'border border-red-500/30 bg-red-500/5' : ''}`}>
+            <span className="text-2xl shrink-0">{(p.avatar ?? '').startsWith('/') ? <img src={p.avatar} alt="" className="w-8 h-8 rounded-lg object-cover" /> : (p.avatar ?? '🎭')}</span>
+            <div className="flex-1 min-w-0">
+              <div className="font-semibold truncate flex items-center gap-2">
+                {p.nickname}
+                {isFounderRow && <span className="text-xs bg-midi-accent/20 text-midi-accent px-2 py-0.5 rounded-full">Fondateur</span>}
+                {p.banned && <span className="text-xs bg-red-500/20 text-red-400 px-2 py-0.5 rounded-full">Banni</span>}
+              </div>
+              <div className="text-xs text-slate-500">
+                {(p.total_xp ?? 0).toLocaleString('fr-FR')} XP
+                {p.banned && p.ban_reason && <span className="text-red-400/70"> · {p.ban_reason}</span>}
+              </div>
+            </div>
+            {isFounderRow ? (
+              <span className="text-xs text-slate-600 shrink-0">protégé</span>
+            ) : p.banned ? (
+              <button onClick={() => unban(p)} disabled={busy === p.id}
+                className="shrink-0 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 text-sm font-semibold transition disabled:opacity-50">
+                {busy === p.id ? '…' : 'Débannir'}
+              </button>
+            ) : (
+              <button onClick={() => ban(p)} disabled={busy === p.id}
+                className="shrink-0 px-3 py-1.5 rounded-lg bg-red-600/80 hover:bg-red-500 text-white text-sm font-semibold transition disabled:opacity-50">
+                {busy === p.id ? '…' : '🚫 Bannir'}
+              </button>
+            )}
           </div>
         )
       })}
