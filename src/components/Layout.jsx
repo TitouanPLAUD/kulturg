@@ -35,9 +35,11 @@ export default function Layout() {
   const { user, profile, signOut, isFounder } = useAuth()
   const navigate = useNavigate()
 
-  const level = levelFromXP(state.totalXP)
-  const next = nextLevelThreshold(state.totalXP)
-  const progress = next > 0 ? Math.min(100, (state.totalXP / next) * 100) : 100
+  // XP de classement (serveur) pour les joueurs connectés, sinon progression locale.
+  const xp = user && profile ? (profile.total_xp ?? 0) : state.totalXP
+  const level = levelFromXP(xp)
+  const next = nextLevelThreshold(xp)
+  const progress = next > 0 ? Math.min(100, (xp / next) * 100) : 100
 
   async function handleSignOut() {
     await signOut()
@@ -77,7 +79,7 @@ export default function Layout() {
               </NavLink>
               <div className="hidden sm:block text-right">
                 <div className="text-xs text-slate-500">Niv. {level}</div>
-                <div className="text-xs font-semibold text-midi-accent">{state.totalXP} XP</div>
+                <div className="text-xs font-semibold text-midi-accent">{xp} XP</div>
               </div>
               <button
                 onClick={handleSignOut}
@@ -89,7 +91,7 @@ export default function Layout() {
             <div className="flex items-center gap-2">
               <div className="hidden sm:block text-right">
                 <div className="text-xs text-slate-500">Niv. {level}</div>
-                <div className="text-xs font-semibold text-midi-accent">{state.totalXP} XP</div>
+                <div className="text-xs font-semibold text-midi-accent">{xp} XP</div>
               </div>
               <NavLink to="/auth"
                 className="px-4 py-2 rounded-lg text-sm font-semibold bg-midi-accent text-white hover:bg-blue-400 transition">

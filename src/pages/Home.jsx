@@ -14,11 +14,14 @@ export default function Home() {
   const { state } = useGame()
   const { user, profile } = useAuth()
   const myEcole = profile?.school ? findEcole(profile.school) : null
-  const level = levelFromXP(state.totalXP)
+  // XP de classement (serveur) : identique au classement, n'augmente qu'en
+  // partie publique. Pour les invités, on retombe sur la progression locale.
+  const rankedXP   = user && profile ? (profile.total_xp ?? 0) : state.totalXP
+  const answered   = user && profile ? (profile.total_answered ?? 0) : state.totalAnswered
+  const correct    = user && profile ? (profile.total_correct ?? 0) : state.totalCorrect
+  const level = levelFromXP(rankedXP)
   const grade = gradeFromLevel(level)
-  const accuracy = state.totalAnswered
-    ? Math.round((state.totalCorrect / state.totalAnswered) * 100)
-    : 0
+  const accuracy = answered ? Math.round((correct / answered) * 100) : 0
 
   return (
     <div className="space-y-6">
@@ -66,7 +69,7 @@ export default function Home() {
         {/* Stats */}
         <div className="relative mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
           <StatCard label="Niveau" value={level} accent />
-          <StatCard label="XP total" value={state.totalXP.toLocaleString('fr-FR')} />
+          <StatCard label="XP total" value={rankedXP.toLocaleString('fr-FR')} />
           <StatCard label="Réussite" value={`${accuracy} %`} />
           <StatCard label="Série 🔥" value={`${state.streak.current} j`} />
         </div>

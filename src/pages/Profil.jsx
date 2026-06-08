@@ -12,13 +12,17 @@ export default function Profil() {
   const { state, reset } = useGame()
   const { user, profile, refreshProfile } = useAuth()
   const [showAvatarPicker, setShowAvatarPicker] = useState(false)
-  const level = levelFromXP(state.totalXP)
+  // XP de classement (serveur) pour les joueurs connectés, sinon progression locale.
+  const rankedXP = user && profile ? (profile.total_xp ?? 0) : state.totalXP
+  const answered = user && profile ? (profile.total_answered ?? 0) : state.totalAnswered
+  const correct  = user && profile ? (profile.total_correct ?? 0) : state.totalCorrect
+  const level = levelFromXP(rankedXP)
   const grade = gradeFromLevel(level)
-  const next  = nextLevelThreshold(state.totalXP)
-  const accuracy = state.totalAnswered
-    ? Math.round((state.totalCorrect / state.totalAnswered) * 100)
+  const next  = nextLevelThreshold(rankedXP)
+  const accuracy = answered
+    ? Math.round((correct / answered) * 100)
     : 0
-  const xpPct = next > 0 ? Math.min(100, (state.totalXP / next) * 100) : 100
+  const xpPct = next > 0 ? Math.min(100, (rankedXP / next) * 100) : 100
 
   return (
     <div className="space-y-6 max-w-3xl mx-auto">
@@ -60,7 +64,7 @@ export default function Profil() {
               <span>{grade.emoji}</span><span>{grade.name}</span>
             </div>
             <div className="text-slate-400 text-xs mt-0.5">
-              Niveau {level} · {state.totalXP.toLocaleString('fr-FR')} XP
+              Niveau {level} · {rankedXP.toLocaleString('fr-FR')} XP
             </div>
 
             {/* Barre XP */}
@@ -71,8 +75,8 @@ export default function Profil() {
               />
             </div>
             <div className="text-xs text-slate-500 mt-1">
-              {next > state.totalXP
-                ? `${(next - state.totalXP).toLocaleString('fr-FR')} XP avant le niveau ${level + 1}`
+              {next > rankedXP
+                ? `${(next - rankedXP).toLocaleString('fr-FR')} XP avant le niveau ${level + 1}`
                 : 'Niveau maximum atteint 🏆'}
             </div>
           </div>
@@ -111,8 +115,8 @@ export default function Profil() {
       <section>
         <h2 className="heading text-lg mb-3 text-slate-300 uppercase tracking-wider text-xs">Statistiques</h2>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <Stat label="Réponses" value={state.totalAnswered} />
-          <Stat label="Correctes" value={state.totalCorrect} />
+          <Stat label="Réponses" value={answered} />
+          <Stat label="Correctes" value={correct} />
           <Stat label="Réussite" value={`${accuracy} %`} accent />
           <Stat label="Record Duel" value={state.bestDuel} />
           <Stat label="Série" value={`${state.streak.current} j 🔥`} />
