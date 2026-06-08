@@ -10,7 +10,7 @@ const TIER_STYLE = {
 }
 
 export default function AchievementBadge({ achievement, size = 52 }) {
-  const { baseName, emoji, tier, tierLabel, unlocked, progress, value, nextThreshold, desc } = achievement
+  const { baseName, emoji, tier, tierLabel, unlocked, progress, value, nextThreshold, desc, tierImages } = achievement
   const st = TIER_STYLE[tier] ?? TIER_STYLE[0]
 
   const stroke = 4
@@ -22,29 +22,41 @@ export default function AchievementBadge({ achievement, size = 52 }) {
     ? `${baseName}${tierLabel ? ' ' + tierLabel : ''} · ${desc} : ${value}/${nextThreshold}`
     : `${baseName} ${tierLabel} · ${desc} : palier max atteint`
 
+  // Badge basé sur des images de palier (ex. Streak) : image du palier courant
+  // (ou palier 1 grisé si verrouillé), avec barre de progression dessous.
+  const imgSrc = tierImages ? tierImages[unlocked ? tier - 1 : 0] : null
+
   return (
     <div className="flex flex-col items-center gap-1 w-[64px]" title={title}>
       <div className="relative" style={{ width: size, height: size }}>
-        {/* Anneau de progression */}
-        <svg width={size} height={size} className="absolute inset-0 -rotate-90">
-          <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="rgba(148,163,184,0.18)" strokeWidth={stroke} />
-          {progress > 0 && (
-            <circle
-              cx={size / 2} cy={size / 2} r={r} fill="none"
-              stroke={unlocked ? st.ring : 'rgba(148,163,184,0.55)'}
-              strokeWidth={stroke} strokeLinecap="round"
-              strokeDasharray={circ} strokeDashoffset={offset}
-            />
-          )}
-        </svg>
-
-        {/* Médaille */}
-        <div
-          className={`absolute inset-[6px] rounded-full grid place-items-center shadow-inner transition ${unlocked ? '' : 'grayscale opacity-50'}`}
-          style={{ background: `radial-gradient(circle at 32% 26%, ${st.from}, ${st.to})` }}
-        >
-          <span className="text-lg leading-none" aria-hidden="true">{emoji}</span>
-        </div>
+        {imgSrc ? (
+          <img
+            src={imgSrc} alt={baseName} draggable={false}
+            className={`absolute inset-0 w-full h-full object-contain drop-shadow ${unlocked ? '' : 'grayscale opacity-50'}`}
+          />
+        ) : (
+          <>
+            {/* Anneau de progression */}
+            <svg width={size} height={size} className="absolute inset-0 -rotate-90">
+              <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="rgba(148,163,184,0.18)" strokeWidth={stroke} />
+              {progress > 0 && (
+                <circle
+                  cx={size / 2} cy={size / 2} r={r} fill="none"
+                  stroke={unlocked ? st.ring : 'rgba(148,163,184,0.55)'}
+                  strokeWidth={stroke} strokeLinecap="round"
+                  strokeDasharray={circ} strokeDashoffset={offset}
+                />
+              )}
+            </svg>
+            {/* Médaille */}
+            <div
+              className={`absolute inset-[6px] rounded-full grid place-items-center shadow-inner transition ${unlocked ? '' : 'grayscale opacity-50'}`}
+              style={{ background: `radial-gradient(circle at 32% 26%, ${st.from}, ${st.to})` }}
+            >
+              <span className="text-lg leading-none" aria-hidden="true">{emoji}</span>
+            </div>
+          </>
+        )}
 
         {/* Pastille de palier */}
         {unlocked && (

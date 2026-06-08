@@ -77,11 +77,11 @@ export default function Home() {
         </div>
 
         {/* Badge d'école + achievements */}
-        <div className="relative mt-4 flex flex-wrap items-center justify-center sm:justify-start gap-x-5 gap-y-3">
+        <div className="relative mt-4 flex flex-col items-center sm:flex-row sm:items-start gap-x-6 gap-y-4">
           {user && myEcole?.logo && (
             <SchoolBadge logo={myEcole.logo} label={myEcole.label} />
           )}
-          <div className="flex flex-wrap gap-2.5">
+          <div className="flex flex-wrap justify-center sm:justify-start gap-3">
             {achievements.map(a => (
               <AchievementBadge key={a.id} achievement={a} />
             ))}

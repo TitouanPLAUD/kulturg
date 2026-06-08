@@ -27,11 +27,12 @@ export const ACHIEVEMENTS = [
     metric: (s) => s.games?.tvWon ?? 0,
   },
   {
-    id: 'braise',
-    baseName: 'Braise',
+    id: 'streak',
+    baseName: 'Streak',
     emoji: '🔥',
     desc: "Jours d'affilée (série)",
     tiers: [3, 7, 30],
+    tierImages: ['/badges/streak-1.png', '/badges/streak-2.png', '/badges/streak-3.png'],
     metric: (s) => Math.max(s.maxStreak ?? 0, s.streak?.current ?? 0),
   },
   {
@@ -66,6 +67,7 @@ export function evalAchievement(a, state) {
     baseName: a.baseName,
     emoji: a.emoji,
     desc: a.desc,
+    tierImages: a.tierImages ?? null,
     value,
     tier,
     tierLabel: tier > 0 ? ROMAN[tier - 1] : null,
