@@ -2,6 +2,13 @@ import { EXTRA } from './questions.extra.js'
 import { BULK } from './questions.bulk.js'
 import { MORE } from './questions.more.js'
 import { NEW } from './questions.new.js'
+import { OPEN_QUESTIONS } from './questions.open.js'
+
+// Marque les questions à réponse libre avec type='open' (les autres sont 'mcq' par défaut)
+const OPEN_TAGGED = OPEN_QUESTIONS.map(q => ({ ...q, type: 'open' }))
+
+// Détecte si une question est à réponse libre
+export const isOpenQuestion = (q) => q?.type === 'open' || !Array.isArray(q?.choices)
 
 // Banque de questions — format: { id, theme, difficulty (1-3), q, choices: [a,b,c,d], answer (index), explain? }
 // "answer" est l'index dans choices.
@@ -208,7 +215,7 @@ const BASE = [
   { id: 'so10', theme: 'societe', difficulty: 2, q: "Qui est le secrétaire général de l'ONU (2024) ?", choices: ["Ban Ki-moon", "Kofi Annan", "António Guterres", "Boutros-Ghali"], answer: 2 },
 ]
 
-export const QUESTIONS = [...BASE, ...EXTRA, ...BULK, ...MORE, ...NEW]
+export const QUESTIONS = [...BASE, ...EXTRA, ...BULK, ...MORE, ...NEW, ...OPEN_TAGGED]
 
 export const QUESTIONS_BY_THEME = QUESTIONS.reduce((acc, q) => {
   (acc[q.theme] ||= []).push(q)

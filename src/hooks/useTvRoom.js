@@ -150,10 +150,12 @@ export function useTvRoom(code) {
   }, [code, loadParticipants])
 
   // ── Soumettre une réponse ─────────────────────────────────
-  async function submitAnswer({ phase, q_idx, answer_idx, is_correct, time_ms }) {
+  async function submitAnswer({ phase, q_idx, answer_idx, is_correct, time_ms, answer_text }) {
     if (!user || !room) return
     await supabase.from('tv_answers').upsert(
-      { room_id: room.id, profile_id: user.id, phase, q_idx, answer_idx, is_correct, time_ms },
+      { room_id: room.id, profile_id: user.id, phase, q_idx,
+        answer_idx: answer_idx ?? -1, is_correct, time_ms,
+        answer_text: answer_text ?? null },
       { onConflict: 'room_id,profile_id,phase,q_idx' }
     )
   }

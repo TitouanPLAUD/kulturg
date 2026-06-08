@@ -207,11 +207,13 @@ export function useRaceRoom(code) {
     if (data) setRoom(data)
   }
 
-  async function submitAnswer({ q_idx, answer_idx, is_correct }) {
+  async function submitAnswer({ q_idx, answer_idx, is_correct, answer_text }) {
     if (!user || !room) return
     // INSERT only (no upsert) pour préserver le answered_at server-side d'origine
     await supabase.from('race_answers').insert({
-      room_id: room.id, profile_id: user.id, q_idx, answer_idx, is_correct,
+      room_id: room.id, profile_id: user.id, q_idx,
+      answer_idx: answer_idx ?? -1, is_correct,
+      answer_text: answer_text ?? null,
     })
   }
 

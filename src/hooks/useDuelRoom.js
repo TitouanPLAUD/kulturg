@@ -102,10 +102,12 @@ export function useDuelRoom(code) {
     if (data) setRoom(data)
   }
 
-  async function submitAnswer({ q_idx, answer_idx, is_correct, time_ms }) {
+  async function submitAnswer({ q_idx, answer_idx, is_correct, time_ms, answer_text }) {
     if (!user || !room) return
     await supabase.from('duel_answers').upsert(
-      { room_id: room.id, profile_id: user.id, q_idx, answer_idx, is_correct, time_ms },
+      { room_id: room.id, profile_id: user.id, q_idx,
+        answer_idx: answer_idx ?? -1, is_correct, time_ms,
+        answer_text: answer_text ?? null },
       { onConflict: 'room_id,profile_id,q_idx' }
     )
   }

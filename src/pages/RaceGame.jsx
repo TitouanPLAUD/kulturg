@@ -20,6 +20,9 @@ import {
 import { THEMES } from '../data/themes.js'
 import Avatar from '../components/Avatar.jsx'
 import { awardXPOnce, raceXP } from '../utils/multiplayerXP.js'
+import { isOpenQuestion } from '../data/questions.js'
+import { matchAnswer } from '../utils/answerMatch.js'
+import TextAnswerInput from '../components/TextAnswerInput.jsx'
 
 const DIFF_LABELS = { all: 'Toutes', 1: 'Facile', 2: 'Moyen', 3: 'Difficile' }
 
@@ -318,6 +321,16 @@ function RacePlaying({ pd, participants, answers, myAnswers, isHost, submitAnswe
     await submitAnswer({ q_idx, answer_idx: idx, is_correct: isCorrect })
   }
 
+  async function submitText(text) {
+    if (revealed || selected !== null || !q) return
+    const myAns = myAnswers.find(a => a.q_idx === q_idx)
+    if (myAns) return
+    setSelected('typed') // marqueur pour locker l'input
+    const isCorrect = matchAnswer(text, q.answer, q.accepts)
+    answer(q.theme ?? 'multi', q.difficulty ?? 1, isCorrect, isPublic)
+    await submitAnswer({ q_idx, answer_idx: -1, is_correct: isCorrect, answer_text: text })
+  }
+
   if (!q) return <Centered><Spinner /></Centered>
 
   const myAnswer     = myAnswers.find(a => a.q_idx === q_idx)
@@ -366,7 +379,19 @@ function RacePlaying({ pd, participants, answers, myAnswers, isHost, submitAnswe
           {q.theme && <p className="text-xs text-slate-600 uppercase tracking-wider mt-3">{q.theme}</p>}
         </div>
 
-        {/* Choices */}
+        {/* Réponse — texte libre OU choix multiples */}
+        {isOpenQuestion(q) ? (
+          <div className="mb-5">
+            <TextAnswerInput
+              answer={q.answer}
+              typed={myAnswer?.answer_text ?? null}
+              revealed={revealed}
+              isCorrect={myAnswer?.is_correct ?? null}
+              onSubmit={submitText}
+              accent="border-green-400"
+            />
+          </div>
+        ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5">
           {(q.choices ?? []).map((choice, idx) => {
             const isCorrect  = idx === q.answer
@@ -392,6 +417,7 @@ function RacePlaying({ pd, participants, answers, myAnswers, isHost, submitAnswe
             )
           })}
         </div>
+        )}
 
         {/* Feedback après révélation */}
         {revealed && (
@@ -692,6 +718,24 @@ function RecapCard({ q, idx, ans, status }) {
 
       <p className="font-semibold text-sm md:text-base mb-3">{q.q}</p>
 
+      {isOpenQuestion(q) ? (
+        <div className="space-y-1.5">
+          {ans?.answer_text && (
+            <div className={`flex items-center gap-2 text-sm rounded-lg px-3 py-1.5 ${
+              ans.is_correct ? 'bg-green-500/15 text-green-300 font-medium' : 'bg-red-500/15 text-red-300 line-through'
+            }`}>
+              <span className="text-xs opacity-50">✍️</span>
+              <span className="flex-1 break-words">{ans.answer_text}</span>
+              <span className={`text-xs font-semibold ${ans.is_correct ? 'text-green-400' : 'text-red-400'}`}>Ta réponse</span>
+            </div>
+          )}
+          <div className="flex items-center gap-2 text-sm rounded-lg px-3 py-1.5 bg-green-500/10 text-green-300 font-medium">
+            <span className="text-xs opacity-50">💡</span>
+            <span className="flex-1 break-words">{q.answer}</span>
+            <span className="text-green-400 text-xs font-semibold">Bonne réponse</span>
+          </div>
+        </div>
+      ) : (
       <div className="space-y-1.5">
         {(q.choices ?? []).map((choice, ci) => {
           const isCorrect = ci === q.answer
@@ -710,6 +754,7 @@ function RecapCard({ q, idx, ans, status }) {
           )
         })}
       </div>
+      )}
     </div>
   )
 }

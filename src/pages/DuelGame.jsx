@@ -5,6 +5,9 @@ import { useGame } from '../context/GameContext.jsx'
 import { useDuelRoom, computeDuelScores, TARGET_SCORE } from '../hooks/useDuelRoom.js'
 import Avatar from '../components/Avatar.jsx'
 import { awardXPOnce, duelXP } from '../utils/multiplayerXP.js'
+import { isOpenQuestion } from '../data/questions.js'
+import { matchAnswer } from '../utils/answerMatch.js'
+import TextAnswerInput from '../components/TextAnswerInput.jsx'
 
 const QUESTION_DURATION = 12000
 
@@ -212,6 +215,14 @@ function PlayingPhase({ room, profiles, answers, myAnswers, isHost, submitAnswer
     await submitAnswer({ q_idx, answer_idx: idx, is_correct: isCorrect, time_ms: Date.now() - startedAt })
   }
 
+  async function submitText(text) {
+    if (myAnswer || revealed || selected !== null || !q) return
+    setSelected('typed')
+    const isCorrect = matchAnswer(text, q.answer, q.accepts)
+    answer(q.theme ?? 'multi', q.difficulty ?? 1, isCorrect)
+    await submitAnswer({ q_idx, answer_idx: -1, is_correct: isCorrect, time_ms: Date.now() - startedAt, answer_text: text })
+  }
+
   if (!q) return <Center><Spinner /></Center>
 
   const urgent = secs <= 3
@@ -296,7 +307,16 @@ function PlayingPhase({ room, profiles, answers, myAnswers, isHost, submitAnswer
           {q.theme && <p className="text-xs text-slate-600 mt-2 uppercase tracking-wider">{q.theme}</p>}
         </div>
 
-        {/* Choices */}
+        {/* Réponse — texte libre OU choix multiples */}
+        {isOpenQuestion(q) ? (
+          <TextAnswerInput
+            answer={q.answer}
+            typed={myAnswer?.answer_text ?? null}
+            revealed={revealed}
+            isCorrect={myAnswer?.is_correct ?? null}
+            onSubmit={submitText}
+          />
+        ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {q.choices?.map((choice, idx) => {
             const isCorrect  = idx === q.answer
@@ -324,6 +344,7 @@ function PlayingPhase({ room, profiles, answers, myAnswers, isHost, submitAnswer
             )
           })}
         </div>
+        )}
 
         {/* Players status */}
         <div className="grid grid-cols-2 gap-3">

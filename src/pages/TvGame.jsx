@@ -6,6 +6,9 @@ import { useTvRoom, gainForAnswer, TV_REQUIRED_PLAYERS } from '../hooks/useTvRoo
 import { JLRProvider, useJLR } from '../components/JLRAvatar.jsx'
 import Avatar from '../components/Avatar.jsx'
 import { awardXPOnce, tvXP } from '../utils/multiplayerXP.js'
+import { isOpenQuestion } from '../data/questions.js'
+import { matchAnswer } from '../utils/answerMatch.js'
+import TextAnswerInput from '../components/TextAnswerInput.jsx'
 
 // ─── Métadonnées des phases ───────────────────────────────────
 const PHASE_META = {
@@ -485,9 +488,18 @@ function EnvoiQuestion({ phase, pd, participants, answers, myAnswers, isHost, su
     await submitAnswer({ phase, q_idx, answer_idx: idx, is_correct: isCorrect, time_ms: Date.now() - startedAt })
   }
 
+  async function submitText(text) {
+    if (!isActive || myAnswer || revealed || selected !== null || !q) return
+    setSelected('typed')
+    const isCorrect = matchAnswer(text, q.answer, q.accepts)
+    awardXp(q.theme ?? 'multi', q.difficulty ?? 1, isCorrect, isPublic)
+    await submitAnswer({ phase, q_idx, answer_idx: -1, is_correct: isCorrect, time_ms: Date.now() - startedAt, answer_text: text })
+  }
+
   if (!q) return <Centered><Spinner /></Centered>
 
   const meta = PHASE_META[phase]
+  const isOpen = isOpenQuestion(q)
 
   return (
     <div className="space-y-5 pt-4">
@@ -495,10 +507,20 @@ function EnvoiQuestion({ phase, pd, participants, answers, myAnswers, isHost, su
 
       <QuestionCard text={q.q} theme={q.theme} />
 
+      {isOpen ? (
+        <TextAnswerInput
+          answer={q.answer}
+          typed={myAnswer?.answer_text ?? null}
+          revealed={revealed}
+          isCorrect={myAnswer?.is_correct ?? null}
+          onSubmit={submitText}
+          disableAll={!isActive} />
+      ) : (
       <ChoicesGrid choices={q.choices} answer={q.answer} revealed={revealed}
         selected={isActive ? (myAnswer?.answer_idx ?? selected) : null}
         onPick={isActive ? pick : () => {}}
         disableAll={!isActive} />
+      )}
 
       {!isActive && <SpectatorBanner />}
 
@@ -706,7 +728,16 @@ function CoupFatalPhase({ pd, participants, answers, myAnswers, isHost, submitAn
     await submitAnswer({ phase: 'coup_fatal', q_idx, answer_idx: idx, is_correct: isCorrect, time_ms: Date.now() - startedAt })
   }
 
+  async function submitText(text) {
+    if (!isActive || myAnswer || revealed || selected !== null || !q) return
+    setSelected('typed')
+    const isCorrect = matchAnswer(text, q.answer, q.accepts)
+    awardXp(q.theme ?? 'multi', q.difficulty ?? 1, isCorrect, isPublic)
+    await submitAnswer({ phase: 'coup_fatal', q_idx, answer_idx: -1, is_correct: isCorrect, time_ms: Date.now() - startedAt, answer_text: text })
+  }
+
   if (!q) return <Centered><Spinner /></Centered>
+  const isOpen = isOpenQuestion(q)
 
   return (
     <div className="space-y-5 pt-4">
@@ -760,11 +791,22 @@ function CoupFatalPhase({ pd, participants, answers, myAnswers, isHost, submitAn
 
       <QuestionCard text={q.q} theme={q.theme} />
 
+      {isOpen ? (
+        <TextAnswerInput
+          answer={q.answer}
+          typed={myAnswer?.answer_text ?? null}
+          revealed={revealed}
+          isCorrect={myAnswer?.is_correct ?? null}
+          onSubmit={submitText}
+          disableAll={!isActive}
+          accent="border-red-500" />
+      ) : (
       <ChoicesGrid choices={q.choices} answer={q.answer} revealed={revealed}
         selected={isActive ? (myAnswer?.answer_idx ?? selected) : null}
         onPick={isActive ? pick : () => {}}
         disableAll={!isActive}
         accent="border-red-500 bg-red-500/15 text-red-300" />
+      )}
 
       {!isActive && <SpectatorBanner />}
     </div>
