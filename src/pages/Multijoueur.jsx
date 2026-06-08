@@ -40,11 +40,12 @@ export default function Multijoueur() {
           title="Jeu TV"
           subtitle="4 joueurs requis"
           description="Simulation des 12 Coups de Midi : Coup d'Envoi, Coup Fatal, Coup de Maître et Étoile Mystérieuse."
+          iconTone="text-midi-accent"
           phases={[
-            { icon: '⚔️', label: 'Coup d\'Envoi',    detail: 'Élimination progressive' },
-            { icon: '💀', label: 'Coup Fatal',        detail: '12 coups · −2 par erreur' },
-            { icon: '🏆', label: 'Coup de Maître',    detail: 'Solo · cagnotte en jeu' },
-            { icon: '⭐', label: 'Étoile Mystérieuse', detail: '5/5 requis · voiture !' },
+            { icon: 'target', label: 'Coup d\'Envoi',    detail: 'Élimination progressive' },
+            { icon: 'skull',  label: 'Coup Fatal',        detail: '12 coups · −2 par erreur' },
+            { icon: 'crown',  label: 'Coup de Maître',    detail: 'Solo · cagnotte en jeu' },
+            { icon: 'star',   label: 'Étoile Mystérieuse', detail: '5/5 requis · voiture !' },
           ]}
           accentClass="border-midi-accent/30 hover:border-midi-accent/60"
           btnClass="bg-midi-accent hover:bg-blue-400 text-white"
@@ -59,11 +60,12 @@ export default function Multijoueur() {
           title="Course aux Points"
           subtitle="2 à 15 joueurs"
           description="Tous les joueurs voient les mêmes questions. Sois le plus rapide à répondre correctement pour scorer un maximum !"
+          iconTone="text-green-400"
           phases={[
-            { icon: '🥇', label: '1er correct',  detail: '+5 points' },
-            { icon: '🥈', label: '2e correct',   detail: '+3 points' },
-            { icon: '🥉', label: '3e correct',   detail: '+2 points' },
-            { icon: '✅', label: 'Autres',        detail: '+1 point · Incorrect = 0' },
+            { icon: 'medal-gold',   label: '1er correct',  detail: '+5 points' },
+            { icon: 'medal-silver', label: '2e correct',   detail: '+3 points' },
+            { icon: 'medal-bronze', label: '3e correct',   detail: '+2 points' },
+            { icon: 'check',        label: 'Autres',        detail: '+1 point · Incorrect = 0' },
           ]}
           accentClass="border-green-500/30 hover:border-green-500/60"
           btnClass="bg-green-500 hover:bg-green-400 text-black"
@@ -77,7 +79,35 @@ export default function Multijoueur() {
   )
 }
 
-function ModeCard({ emoji, logo, title, subtitle, description, phases, accentClass, btnClass, highlight, highlightSubtle, useHook, route, customizable }) {
+// ─── Icônes au trait (sobres, dans la DA) ─────────────────────
+const ICON_PATHS = {
+  target:  <><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="5" /><circle cx="12" cy="12" r="1.5" /></>,
+  skull:   <><circle cx="9" cy="12" r="1" /><circle cx="15" cy="12" r="1" /><path d="M8 20v2h8v-2" /><path d="m12.5 17-.5-1-.5 1h1z" /><path d="M16 20a2 2 0 0 0 1.56-3.25 8 8 0 1 0-11.12 0A2 2 0 0 0 8 20" /></>,
+  crown:   <><path d="m3 7 4 3 5-6 5 6 4-3-2 12H5z" /><path d="M5 21h14" /></>,
+  star:    <path d="M12 3.5l2.6 5.27 5.82.85-4.21 4.1.99 5.79L12 16.77l-5.2 2.74.99-5.79-4.21-4.1 5.82-.85z" />,
+  check:   <><circle cx="12" cy="12" r="9" /><path d="m8.3 12 2.5 2.5 4.9-4.9" /></>,
+  lock:    <><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></>,
+  sliders: <><line x1="4" y1="8" x2="20" y2="8" /><line x1="4" y1="16" x2="20" y2="16" /><circle cx="9" cy="8" r="2" /><circle cx="15" cy="16" r="2" /></>,
+}
+
+function Icon({ name, className = 'w-4 h-4' }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
+      strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
+      {ICON_PATHS[name]}
+    </svg>
+  )
+}
+
+function PhaseIcon({ name, tone }) {
+  if (name.startsWith('medal-')) {
+    const metal = name.slice(6) // gold | silver | bronze
+    return <img src={`/medals/${metal}.svg`} alt="" draggable={false} className="h-4 w-auto" />
+  }
+  return <Icon name={name} className={`w-[18px] h-[18px] ${tone}`} />
+}
+
+function ModeCard({ emoji, logo, title, subtitle, description, phases, iconTone, accentClass, btnClass, highlight, highlightSubtle, useHook, route, customizable }) {
   const navigate = useNavigate()
   const [joinCode, setJoinCode] = useState('')
   const [error,    setError]    = useState('')
@@ -121,8 +151,8 @@ function ModeCard({ emoji, logo, title, subtitle, description, phases, accentCla
       {/* Phases */}
       <div className="space-y-1.5">
         {phases.map(p => (
-          <div key={p.label} className="flex items-center gap-2 text-sm">
-            <span>{p.icon}</span>
+          <div key={p.label} className="flex items-center gap-2.5 text-sm">
+            <span className="shrink-0 w-5 flex justify-center"><PhaseIcon name={p.icon} tone={iconTone} /></span>
             <span className="font-medium text-slate-300">{p.label}</span>
             <span className="text-slate-600 text-xs">· {p.detail}</span>
           </div>
@@ -139,7 +169,12 @@ function ModeCard({ emoji, logo, title, subtitle, description, phases, accentCla
       <div className="flex flex-col gap-3 mt-auto">
         <ShinyButton onClick={() => customizable ? setShowSettings(true) : handleCreate()} disabled={loading}
           className="w-full" highlight={highlight} highlightSubtle={highlightSubtle}>
-          {loading ? '…' : customizable ? '⚙️ Créer une partie personnalisée' : '🔒 Créer une partie privée'}
+          {loading ? '…' : (
+            <span className="inline-flex items-center justify-center gap-2">
+              <Icon name={customizable ? 'sliders' : 'lock'} className="w-4 h-4" />
+              {customizable ? 'Créer une partie personnalisée' : 'Créer une partie privée'}
+            </span>
+          )}
         </ShinyButton>
 
         <form onSubmit={handleJoin} className="flex gap-2">
