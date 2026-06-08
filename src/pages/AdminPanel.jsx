@@ -271,33 +271,42 @@ function PlayersTab() {
   const [loading, setLoading] = useState(true)
   const [search,  setSearch]  = useState('')
   const [busy,    setBusy]    = useState(null)
+  const [rousteFor, setRousteFor] = useState(null) // joueur ciblé par la modale
 
   const load = useCallback(async () => {
     setLoading(true)
     const { data } = await supabase
       .from('profiles')
-      .select('id, nickname, avatar, total_xp, banned, ban_reason')
+      .select('id, nickname, avatar, total_xp, banned, ban_reason, banned_until')
       .order('total_xp', { ascending: false })
-    // On masque le compte système Administration
     setRows((data ?? []).filter(p => p.nickname !== 'Administration'))
     setLoading(false)
   }, [])
 
   useEffect(() => { load() }, [load])
 
-  async function ban(p) {
-    const reason = window.prompt(`Bannir ${p.nickname} ?\nMotif (facultatif, visible par le joueur) :`, '')
-    if (reason === null) return // annulé
+  // Applique une sanction : permanent OU timeout (durée en minutes)
+  async function applyRouste({ mode, minutes, reason }) {
+    const p = rousteFor
+    if (!p) return
+    setRousteFor(null)
     setBusy(p.id)
-    const { error } = await supabase.rpc('set_ban', { target: p.id, ban: true, reason: reason.trim() || null })
+    const until = mode === 'timeout'
+      ? new Date(Date.now() + minutes * 60 * 1000).toISOString()
+      : null
+    const { error } = await supabase.rpc('moderate_player', {
+      target: p.id, p_banned: mode === 'ban', p_until: until, p_reason: reason || null,
+    })
     setBusy(null)
     if (error) { alert('Erreur : ' + error.message); return }
     load()
   }
 
-  async function unban(p) {
+  async function lift(p) {
     setBusy(p.id)
-    const { error } = await supabase.rpc('set_ban', { target: p.id, ban: false })
+    const { error } = await supabase.rpc('moderate_player', {
+      target: p.id, p_banned: false, p_until: null, p_reason: null,
+    })
     setBusy(null)
     if (error) { alert('Erreur : ' + error.message); return }
     load()
@@ -307,6 +316,14 @@ function PlayersTab() {
 
   const q = search.trim().toLowerCase()
   const filtered = q ? rows.filter(p => (p.nickname ?? '').toLowerCase().includes(q)) : rows
+
+  function statusOf(p) {
+    if (p.banned) return { sanctioned: true, label: 'Banni' }
+    if (p.banned_until && new Date(p.banned_until) > new Date()) {
+      return { sanctioned: true, label: 'Timeout', until: new Date(p.banned_until) }
+    }
+    return { sanctioned: false }
+  }
 
   return (
     <div className="space-y-3">
@@ -320,36 +337,123 @@ function PlayersTab() {
         <Empty icon="🔍" text="Aucun joueur trouvé." />
       ) : filtered.map(p => {
         const isFounderRow = FOUNDER_IDS.includes(p.id)
+        const st = statusOf(p)
         return (
-          <div key={p.id} className={`card p-3 flex items-center gap-3 ${p.banned ? 'border border-red-500/30 bg-red-500/5' : ''}`}>
+          <div key={p.id} className={`card p-3 flex items-center gap-3 ${st.sanctioned ? 'border border-red-500/30 bg-red-500/5' : ''}`}>
             <span className="text-2xl shrink-0">{(p.avatar ?? '').startsWith('/') ? <img src={p.avatar} alt="" className="w-8 h-8 rounded-lg object-cover" /> : (p.avatar ?? '🎭')}</span>
             <div className="flex-1 min-w-0">
               <div className="font-semibold truncate flex items-center gap-2">
                 {p.nickname}
                 {isFounderRow && <span className="text-xs bg-midi-accent/20 text-midi-accent px-2 py-0.5 rounded-full">Fondateur</span>}
-                {p.banned && <span className="text-xs bg-red-500/20 text-red-400 px-2 py-0.5 rounded-full">Banni</span>}
+                {st.sanctioned && <span className="text-xs bg-red-500/20 text-red-400 px-2 py-0.5 rounded-full">{st.label}</span>}
               </div>
               <div className="text-xs text-slate-500">
                 {(p.total_xp ?? 0).toLocaleString('fr-FR')} XP
-                {p.banned && p.ban_reason && <span className="text-red-400/70"> · {p.ban_reason}</span>}
+                {st.until && <span className="text-red-400/70"> · jusqu'à {st.until.toLocaleString('fr-FR', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' })}</span>}
+                {p.ban_reason && <span className="text-red-400/70"> · {p.ban_reason}</span>}
               </div>
             </div>
             {isFounderRow ? (
               <span className="text-xs text-slate-600 shrink-0">protégé</span>
-            ) : p.banned ? (
-              <button onClick={() => unban(p)} disabled={busy === p.id}
+            ) : st.sanctioned ? (
+              <button onClick={() => lift(p)} disabled={busy === p.id}
                 className="shrink-0 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 text-sm font-semibold transition disabled:opacity-50">
-                {busy === p.id ? '…' : 'Débannir'}
+                {busy === p.id ? '…' : 'Lever'}
               </button>
             ) : (
-              <button onClick={() => ban(p)} disabled={busy === p.id}
+              <button onClick={() => setRousteFor(p)} disabled={busy === p.id}
                 className="shrink-0 px-3 py-1.5 rounded-lg bg-red-600/80 hover:bg-red-500 text-white text-sm font-semibold transition disabled:opacity-50">
-                {busy === p.id ? '…' : '🚫 Bannir'}
+                {busy === p.id ? '…' : '🥊 Mettre une rouste'}
               </button>
             )}
           </div>
         )
       })}
+
+      {rousteFor && (
+        <RousteModal player={rousteFor} onClose={() => setRousteFor(null)} onApply={applyRouste} />
+      )}
+    </div>
+  )
+}
+
+// ─── Modale « Mettre une rouste » ────────────────────────────
+function RousteModal({ player, onClose, onApply }) {
+  const [mode,    setMode]    = useState('timeout')  // 'timeout' | 'ban'
+  const [minutes, setMinutes] = useState(15)
+  const [reason,  setReason]  = useState('')
+
+  const PRESETS = [
+    { label: '5 min',  m: 5 },
+    { label: '15 min', m: 15 },
+    { label: '1 h',    m: 60 },
+    { label: '12 h',   m: 720 },
+    { label: '1 jour', m: 1440 },
+  ]
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+      onMouseDown={e => e.target === e.currentTarget && onClose()}>
+      <div className="rounded-2xl border border-white/15 shadow-2xl w-full max-w-sm animate-pop" style={{ background: 'var(--bg-card)' }}>
+        <div className="flex items-center justify-between px-5 pt-5 pb-3">
+          <h2 className="font-display text-xl tracking-wider">🥊 Rouste · {player.nickname}</h2>
+          <button onClick={onClose} className="text-slate-400 hover:text-white text-xl leading-none">✕</button>
+        </div>
+
+        <div className="px-5 pb-5 space-y-4">
+          {/* Choix du type */}
+          <div className="grid grid-cols-2 gap-2">
+            <button type="button" onClick={() => setMode('timeout')}
+              className={`py-2.5 rounded-xl border-2 text-sm font-semibold transition ${mode === 'timeout' ? 'border-amber-500/40 bg-amber-500/10 text-amber-300' : 'border-white/10 bg-white/5 text-slate-400'}`}>
+              ⏳ Timeout
+            </button>
+            <button type="button" onClick={() => setMode('ban')}
+              className={`py-2.5 rounded-xl border-2 text-sm font-semibold transition ${mode === 'ban' ? 'border-red-500/40 bg-red-500/10 text-red-300' : 'border-white/10 bg-white/5 text-slate-400'}`}>
+              🚫 Bannissement
+            </button>
+          </div>
+
+          {/* Durée (timeout uniquement) */}
+          {mode === 'timeout' && (
+            <div className="space-y-2">
+              <label className="block text-xs text-slate-400 uppercase tracking-widest">Durée</label>
+              <div className="flex flex-wrap gap-1.5">
+                {PRESETS.map(pr => (
+                  <button key={pr.m} type="button" onClick={() => setMinutes(pr.m)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${minutes === pr.m ? 'bg-amber-500 text-black' : 'bg-white/5 text-slate-400 hover:bg-white/10'}`}>
+                    {pr.label}
+                  </button>
+                ))}
+              </div>
+              <div className="flex items-center gap-2">
+                <input type="number" min={1} max={43200} value={minutes}
+                  onChange={e => setMinutes(Math.max(1, Number(e.target.value) || 1))}
+                  className="input w-24 text-sm" />
+                <span className="text-sm text-slate-500">minutes personnalisées</span>
+              </div>
+            </div>
+          )}
+
+          {/* Motif */}
+          <div>
+            <label className="block text-xs text-slate-400 mb-1 uppercase tracking-widest">Motif <span className="text-slate-600">(facultatif, vu par le joueur)</span></label>
+            <input value={reason} onChange={e => setReason(e.target.value)} maxLength={200}
+              placeholder="Ex : spam dans le chat" className="input w-full text-sm" />
+          </div>
+
+          {/* Actions */}
+          <div className="flex gap-2 pt-1">
+            <button onClick={onClose}
+              className="flex-1 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 font-semibold transition">
+              Annuler
+            </button>
+            <button onClick={() => onApply({ mode, minutes, reason: reason.trim() })}
+              className={`flex-1 py-2.5 rounded-xl text-white font-semibold transition ${mode === 'ban' ? 'bg-red-600 hover:bg-red-500' : 'bg-amber-600 hover:bg-amber-500'}`}>
+              {mode === 'ban' ? '🚫 Bannir' : `⏳ Timeout ${minutes >= 60 ? Math.round(minutes/60*10)/10 + 'h' : minutes + 'min'}`}
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

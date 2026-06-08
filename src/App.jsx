@@ -1,5 +1,7 @@
+import { useEffect, useState } from 'react'
 import { Route, Routes } from 'react-router-dom'
 import { useAuth } from './context/AuthContext.jsx'
+import { banState } from './utils/ban.js'
 import BanScreen from './components/BanScreen.jsx'
 import Layout from './components/Layout.jsx'
 import Home from './pages/Home.jsx'
@@ -24,9 +26,20 @@ import Chat from './pages/Chat.jsx'
 
 export default function App() {
   const { profile } = useAuth()
+  const ban = banState(profile)
 
-  // Joueur banni → tout est bloqué, où qu'il soit dans l'app
-  if (profile?.banned) return <BanScreen />
+  // Re-render automatique à l'expiration d'un timeout (sans event DB)
+  const [, force] = useState(0)
+  useEffect(() => {
+    if (ban.active && !ban.permanent && ban.until) {
+      const ms = ban.until.getTime() - Date.now()
+      const t = setTimeout(() => force(x => x + 1), Math.max(0, ms) + 500)
+      return () => clearTimeout(t)
+    }
+  }, [ban.active, ban.permanent, ban.until?.getTime()])
+
+  // Joueur sanctionné → tout est bloqué, où qu'il soit dans l'app
+  if (ban.active) return <BanScreen ban={ban} />
 
   return (
     <Routes>
