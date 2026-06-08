@@ -402,14 +402,15 @@ function RacePlaying({ pd, participants, answers, myAnswers, isHost, submitAnswe
               else if (isSelected)  cls += 'border-red-500 bg-red-500/10 text-red-400'
               else                  cls += 'border-white/5 text-slate-600 opacity-30'
             } else if (isSelected) {
-              // Feedback immédiat au clic : vert si correct, rouge si faux
+              // Feedback immédiat au clic : vert si correct, rouge si faux + petit bounce
               cls += isCorrect
-                ? 'z-10 border-green-400 bg-green-500/15 text-green-300'
-                : 'z-10 border-red-400 bg-red-500/15 text-red-300'
+                ? 'z-10 border-green-400 bg-green-500/15 text-green-300 animate-bounce-press'
+                : 'z-10 border-red-400 bg-red-500/15 text-red-300 animate-bounce-press'
             } else if (selectedProp !== null) {
               cls += 'border-white/10 bg-white/5 text-slate-500 cursor-default opacity-50'
             } else {
-              cls += 'border-white/10 bg-white/5 hover:border-green-500/40 hover:bg-green-500/8 cursor-pointer'
+              // Survol : léger soulèvement + agrandissement · clic : enfoncement
+              cls += 'border-white/10 bg-white/5 cursor-pointer hover:border-green-500/40 hover:bg-green-500/10 hover:-translate-y-0.5 hover:scale-[1.02] hover:shadow-lg hover:shadow-green-500/10 active:scale-95'
             }
             return (
               <button key={idx} className={cls} onClick={() => pick(idx)}>

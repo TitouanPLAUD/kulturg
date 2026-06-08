@@ -21,11 +21,18 @@ export default {
         pop: { '0%': { transform: 'scale(0.9)', opacity: 0 }, '100%': { transform: 'scale(1)', opacity: 1 } },
         shake: { '0%,100%': { transform: 'translateX(0)' }, '25%': { transform: 'translateX(-6px)' }, '75%': { transform: 'translateX(6px)' } },
         glow: { '0%,100%': { boxShadow: '0 0 0 0 rgba(75,142,248,0.5)' }, '50%': { boxShadow: '0 0 28px 6px rgba(75,142,248,0.55)' } },
+        'bounce-press': {
+          '0%':   { transform: 'scale(1)' },
+          '30%':  { transform: 'scale(0.93)' },
+          '60%':  { transform: 'scale(1.05)' },
+          '100%': { transform: 'scale(1)' },
+        },
       },
       animation: {
         pop: 'pop 0.25s ease-out',
         shake: 'shake 0.3s ease-in-out',
         glow: 'glow 2s ease-in-out infinite',
+        'bounce-press': 'bounce-press 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
       },
     },
   },
