@@ -101,20 +101,34 @@ export function GameProvider({ children }) {
 
   // ── Sync serveur : fusion au login puis envoi de la progression ──
   // À la connexion, on récupère la progression serveur et on garde la plus
-  // élevée (cross-device safe).
+  // élevée (cross-device safe). Si le local est en avance, on force un push
+  // immédiat car MERGE_REMOTE ne change pas le state dans ce cas et le
+  // useEffect de push ne se redéclencherait pas.
   useEffect(() => {
-    if (!profile) { mergedRef.current = false; return }
+    if (!profile || !user) { mergedRef.current = false; return }
     if (mergedRef.current) return
     mergedRef.current = true
-    dispatch({
-      type: 'MERGE_REMOTE',
-      total_xp:       profile.total_xp ?? 0,
-      total_answered: profile.total_answered ?? 0,
-      total_correct:  profile.total_correct ?? 0,
-    })
-  }, [profile])
+    const remoteXP = profile.total_xp ?? 0
+    if (remoteXP < state.totalXP) {
+      // Local en avance → push immédiat pour aligner la DB
+      supabase.from('profiles').update({
+        total_xp:       state.totalXP,
+        total_answered: state.totalAnswered,
+        total_correct:  state.totalCorrect,
+      }).eq('id', user.id)
+    } else {
+      dispatch({
+        type: 'MERGE_REMOTE',
+        total_xp:       remoteXP,
+        total_answered: profile.total_answered ?? 0,
+        total_correct:  profile.total_correct ?? 0,
+      })
+    }
+  }, [profile, user])
 
-  // Envoi (débauncé) de la progression locale vers le profil serveur.
+  // Envoi (débouncé court) de la progression locale vers le profil serveur.
+  // Délai court (400ms) pour minimiser le risque de perte si le user ferme
+  // l'onglet juste après une fin de partie multi.
   useEffect(() => {
     if (!user) return
     clearTimeout(pushTimer.current)
@@ -124,8 +138,32 @@ export function GameProvider({ children }) {
         total_answered: state.totalAnswered,
         total_correct:  state.totalCorrect,
       }).eq('id', user.id)
-    }, 1500)
+    }, 400)
     return () => clearTimeout(pushTimer.current)
+  }, [user, state.totalXP, state.totalAnswered, state.totalCorrect])
+
+  // Flush à la fermeture de l'onglet / changement de visibilité — garantit que
+  // les XP gagnés juste avant un départ ne sont pas perdus.
+  useEffect(() => {
+    if (!user) return
+    function flush() {
+      if (pushTimer.current) {
+        clearTimeout(pushTimer.current)
+        // Tir-et-oublie : la requête peut continuer même si la page se ferme
+        supabase.from('profiles').update({
+          total_xp:       state.totalXP,
+          total_answered: state.totalAnswered,
+          total_correct:  state.totalCorrect,
+        }).eq('id', user.id)
+      }
+    }
+    window.addEventListener('pagehide', flush)
+    window.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') flush()
+    })
+    return () => {
+      window.removeEventListener('pagehide', flush)
+    }
   }, [user, state.totalXP, state.totalAnswered, state.totalCorrect])
 
   // Auto-attribution de badges
