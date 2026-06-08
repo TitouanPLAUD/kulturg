@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
-import { useGame, levelFromXP, nextLevelThreshold } from '../context/GameContext.jsx'
+import { useGame, levelFromXP, nextLevelThreshold, LEVEL_THRESHOLDS } from '../context/GameContext.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { ChatWidgetProvider } from '../context/ChatWidgetContext.jsx'
 import ChatWidget from './ChatWidget.jsx'
@@ -40,6 +40,11 @@ export default function Layout() {
   const level = levelFromXP(xp)
   const next = nextLevelThreshold(xp)
   const progress = next > 0 ? Math.min(100, (xp / next) * 100) : 100
+  // Progression à l'intérieur du niveau courant (pour l'anneau autour de l'avatar)
+  const levelBase = LEVEL_THRESHOLDS[level - 1] ?? 0
+  const levelPct = next > levelBase
+    ? Math.min(100, Math.max(0, ((xp - levelBase) / (next - levelBase)) * 100))
+    : 100
 
   async function handleSignOut() {
     await signOut()
@@ -75,7 +80,9 @@ export default function Layout() {
               <NavLink to="/profil"
                 className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-white/5 transition">
                 <span className="font-sans font-bold text-sm text-white tracking-wide">{profile?.nickname ?? ''}</span>
-                <Avatar value={profile?.avatar} size={26} className="text-xl leading-none" />
+                <LevelRing pct={levelPct} level={level}>
+                  <Avatar value={profile?.avatar} size={28} className="text-xl leading-none" />
+                </LevelRing>
               </NavLink>
               <div className="hidden sm:block text-right">
                 <div className="text-xs text-slate-500">Niv. {level}</div>
@@ -83,7 +90,7 @@ export default function Layout() {
               </div>
               <button
                 onClick={handleSignOut}
-                className="px-3 py-1.5 rounded-lg text-xs text-slate-400 hover:bg-white/5 hover:text-white transition">
+                className="ml-3 sm:ml-6 px-3 py-1.5 rounded-lg text-xs text-slate-400 hover:bg-white/5 hover:text-white transition">
                 Déco
               </button>
             </div>
@@ -129,6 +136,23 @@ export default function Layout() {
       <FeedbackButton />
     </div>
     </ChatWidgetProvider>
+  )
+}
+
+// Anneau de progression de niveau autour de l'avatar
+function LevelRing({ pct, level, children }) {
+  const r = 17
+  const c = 2 * Math.PI * r
+  return (
+    <span className="relative grid place-items-center w-10 h-10 shrink-0" title={`Niveau ${level} · ${Math.round(pct)}% vers le niveau ${level + 1}`}>
+      <svg viewBox="0 0 40 40" className="absolute inset-0 -rotate-90 w-full h-full">
+        <circle cx="20" cy="20" r={r} fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="3" />
+        <circle cx="20" cy="20" r={r} fill="none" stroke="#4b8ef8" strokeWidth="3" strokeLinecap="round"
+          strokeDasharray={c} strokeDashoffset={c * (1 - pct / 100)}
+          style={{ transition: 'stroke-dashoffset 0.7s ease' }} />
+      </svg>
+      {children}
+    </span>
   )
 }
 
