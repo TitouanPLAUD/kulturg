@@ -5,7 +5,7 @@ import { useGame } from '../context/GameContext.jsx'
 import { useTvRoom, gainForAnswer, TV_REQUIRED_PLAYERS } from '../hooks/useTvRoom.js'
 import { JLRProvider, useJLR } from '../components/JLRAvatar.jsx'
 import Avatar from '../components/Avatar.jsx'
-import { awardXPOnce, tvXP } from '../utils/multiplayerXP.js'
+import { awardXPOnce, recordGameOnce, tvXP } from '../utils/multiplayerXP.js'
 import { isOpenQuestion } from '../data/questions.js'
 import { matchAnswer } from '../utils/answerMatch.js'
 import TextAnswerInput from '../components/TextAnswerInput.jsx'
@@ -1067,7 +1067,7 @@ function EtoileMysterieusePhase({ pd, participants, answers, myAnswers, isHost, 
 function FinishedPhase({ pd, participants, answers, roomId, myProfileId }) {
   const [show, setShow] = useState(false)
   const { trigger } = useJLR()
-  const { addXP } = useGame()
+  const { addXP, recordGame } = useGame()
 
   useEffect(() => {
     const t1 = setTimeout(() => setShow(true), 400)
@@ -1091,7 +1091,9 @@ function FinishedPhase({ pd, participants, answers, roomId, myProfileId }) {
     const amount = tvXP(isMaitre)
     const got = awardXPOnce(`tv:${roomId}:${myProfileId}`, amount, addXP)
     xpEarnedRef.current = got
-  }, [roomId, myProfileId, maitre_id, participants, addXP])
+    // Achievements : sacre de Maître de Midi (victoire = être le maître)
+    recordGameOnce(`tv:${roomId}:${myProfileId}`, 'tv', isMaitre, recordGame)
+  }, [roomId, myProfileId, maitre_id, participants, addXP, recordGame])
 
   // Ordre d'élimination (dernier éliminé = 2e, anté-dernier = 3e, etc.)
   const rankings = [

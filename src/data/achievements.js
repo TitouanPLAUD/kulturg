@@ -19,12 +19,12 @@ export const ACHIEVEMENTS = [
     metric: (s) => s.totalCorrect ?? 0,
   },
   {
-    id: 'duelliste',
-    baseName: 'Duelliste',
-    emoji: '⚔️',
-    desc: 'Record de points en Duel',
-    tiers: [5, 10, 20],
-    metric: (s) => s.bestDuel ?? 0,
+    id: 'maitre-midi',
+    baseName: 'Maître de Midi',
+    emoji: '👑',
+    desc: 'Sacres de Maître de Midi',
+    tiers: [1, 5, 15],
+    metric: (s) => s.games?.tvWon ?? 0,
   },
   {
     id: 'braise',

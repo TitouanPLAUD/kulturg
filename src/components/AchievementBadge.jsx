@@ -23,7 +23,7 @@ export default function AchievementBadge({ achievement, size = 52 }) {
     : `${baseName} ${tierLabel} · ${desc} : palier max atteint`
 
   return (
-    <div className="flex flex-col items-center gap-1 w-[60px]" title={title}>
+    <div className="flex flex-col items-center gap-1 w-[64px]" title={title}>
       <div className="relative" style={{ width: size, height: size }}>
         {/* Anneau de progression */}
         <svg width={size} height={size} className="absolute inset-0 -rotate-90">
@@ -57,7 +57,7 @@ export default function AchievementBadge({ achievement, size = 52 }) {
         )}
       </div>
 
-      <span className={`text-[10px] font-semibold leading-tight text-center truncate w-full ${unlocked ? 'text-slate-200' : 'text-slate-500'}`}>
+      <span className={`text-[10px] font-semibold leading-tight text-center w-full ${unlocked ? 'text-slate-200' : 'text-slate-500'}`}>
         {baseName}
       </span>
     </div>
