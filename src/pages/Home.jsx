@@ -134,7 +134,7 @@ export default function Home() {
             <SectionTitle className="mb-0">🏆 Podium</SectionTitle>
             <Link to="/classement" className="text-sm text-midi-accent hover:underline">Voir tout →</Link>
           </div>
-          <Podium currentUserId={user?.id} />
+          <Podium currentUserId={user?.id} myXP={state.totalXP} />
         </section>
       </div>
 
@@ -204,11 +204,16 @@ function PublicSalonButton({ user, useHook, route, highlight, highlightSubtle, l
 }
 
 // ─── Podium : top 3 joueurs du site (par XP) ──────────────────
-function Podium({ currentUserId }) {
+function Podium({ currentUserId, myXP = 0 }) {
   const [top, setTop]         = useState([])
   const [loading, setLoading] = useState(true)
 
+  // Re-fetch quand l'XP du joueur courant change (après merge DB, après partie)
+  // OU au montage, OU quand le tab redevient visible (synchro multi-onglet).
+  // Filet de sécurité : re-fetch à 1.5s pour rattraper le push DB asynchrone
+  // du GameContext (qui peut finir après le premier fetch).
   useEffect(() => {
+    let cancelled = false
     async function load() {
       const { data } = await supabase
         .from('profiles')
@@ -216,11 +221,20 @@ function Podium({ currentUserId }) {
         .gt('total_xp', 0)
         .order('total_xp', { ascending: false })
         .limit(3)
+      if (cancelled) return
       setTop(data ?? [])
       setLoading(false)
     }
     load()
-  }, [])
+    const t = setTimeout(load, 1500)
+    function onVisible() { if (document.visibilityState === 'visible') load() }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      cancelled = true
+      clearTimeout(t)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
+  }, [myXP, currentUserId])
 
   if (loading) {
     return (
