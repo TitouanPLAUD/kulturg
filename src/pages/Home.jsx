@@ -106,12 +106,14 @@ export default function Home() {
       )}
 
       {/* ── Bas : jeux à gauche · podium à droite ── */}
-      <div className="grid lg:grid-cols-2 gap-6 items-start">
+      <div className="grid lg:grid-cols-2 gap-6">
 
         {/* Jeux (colonne) */}
-        <section>
-          <SectionTitle>Jeux</SectionTitle>
-          <div className="space-y-4">
+        <section className="flex flex-col">
+          <div className="flex items-center mb-4" style={{ minHeight: '2.25rem' }}>
+            <SectionTitle className="mb-0">Jeux</SectionTitle>
+          </div>
+          <div className="flex-1 grid grid-rows-2 gap-4">
             <SplitGameCard
               user={user} emoji="📺" logo="/logos/jeu-tv.png" title="Jeu TV"
               desc="À 4 joueurs : reproduction de la mécanique télé en 4 phases."
@@ -130,12 +132,14 @@ export default function Home() {
         </section>
 
         {/* Podium (top 3 du site) */}
-        <section>
-          <div className="flex items-center justify-between mb-4">
+        <section className="flex flex-col">
+          <div className="flex items-center justify-between mb-4" style={{ minHeight: '2.25rem' }}>
             <SectionTitle className="mb-0">Podium</SectionTitle>
             <Link to="/classement" className="text-sm text-midi-accent hover:underline">Voir tout →</Link>
           </div>
-          <Podium currentUserId={user?.id} myXP={state.totalXP} />
+          <div className="flex-1 flex flex-col">
+            <Podium currentUserId={user?.id} myXP={state.totalXP} />
+          </div>
         </section>
       </div>
 
@@ -156,7 +160,7 @@ export default function Home() {
 // ─── Carte de jeu divisée : salon public · partie privée ──────
 function SplitGameCard({ user, emoji, logo, title, desc, tone, useHook, route, highlight, highlightSubtle }) {
   return (
-    <div className="card p-5">
+    <div className="card p-5 h-full flex flex-col">
       <div className="flex items-center gap-3 mb-4">
         {logo
           ? <img src={logo} alt={title} className="w-12 h-12 rounded-xl object-cover shadow-lg shrink-0" draggable={false} />
@@ -168,7 +172,7 @@ function SplitGameCard({ user, emoji, logo, title, desc, tone, useHook, route, h
           <div className="text-sm text-slate-400 leading-relaxed">{desc}</div>
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-2 gap-2 mt-auto">
         <PublicSalonButton user={user} useHook={useHook} route={route}
           highlight={highlight} highlightSubtle={highlightSubtle}
           label="Salon public" />
@@ -254,7 +258,7 @@ function Podium({ currentUserId, myXP = 0 }) {
 
   if (loading) {
     return (
-      <div className="card flex justify-center py-16">
+      <div className="card flex justify-center items-center py-16 h-full">
         <div className="w-6 h-6 rounded-full border-2 border-midi-accent border-t-transparent animate-spin" />
       </div>
     )
@@ -262,7 +266,7 @@ function Podium({ currentUserId, myXP = 0 }) {
 
   if (top.length === 0) {
     return (
-      <div className="card p-8 text-center text-slate-500">
+      <div className="card p-8 text-center text-slate-500 h-full flex flex-col justify-center">
         <div className="text-4xl mb-3">🏜️</div>
         <p className="text-sm">Aucun joueur classé pour l'instant.</p>
         <Link to="/multi" className="text-midi-accent hover:underline text-sm">Lance une partie →</Link>
@@ -280,8 +284,8 @@ function Podium({ currentUserId, myXP = 0 }) {
   const rankBySlot = [1, 0, 2] // index dans meta pour chaque slot affiché
 
   return (
-    <div className="card p-5">
-      <div className="grid grid-cols-3 gap-3 items-end">
+    <div className="card p-5 h-full flex flex-col">
+      <div className="flex-1 grid grid-cols-3 gap-3 items-end">
         {slots.map((p, i) => {
           const rank = rankBySlot[i]
           const m = meta[rank]
