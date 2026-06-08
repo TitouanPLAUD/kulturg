@@ -148,7 +148,8 @@ export function JLRProvider({ children }) {
   return (
     <JLRCtx.Provider value={{ trigger, hide }}>
       {children}
-      <JLROverlay state={state} />
+      {/* Avatar Jean-Luc désactivé (retiré du Jeu TV) */}
+      {/* <JLROverlay state={state} /> */}
     </JLRCtx.Provider>
   )
 }
