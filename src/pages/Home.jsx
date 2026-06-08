@@ -277,9 +277,9 @@ function Podium({ currentUserId, myXP = 0 }) {
   // Ordre d'affichage : 2e · 1er · 3e
   const slots = [top[1], top[0], top[2]]
   const meta = {
-    0: { medal: '🥇', h: 'h-28', ring: 'ring-yellow-400/60', grad: 'from-yellow-500/25 to-yellow-500/5',  txt: 'text-yellow-400' },
-    1: { medal: '🥈', h: 'h-20', ring: 'ring-slate-300/50',  grad: 'from-slate-400/20 to-slate-400/5',    txt: 'text-slate-300' },
-    2: { medal: '🥉', h: 'h-16', ring: 'ring-amber-700/50',  grad: 'from-amber-700/20 to-amber-700/5',    txt: 'text-amber-600' },
+    0: { medal: '/medals/gold.svg',   ms: 'h-12', h: 'h-28', ring: 'ring-yellow-400/60', grad: 'from-yellow-500/25 to-yellow-500/5',  txt: 'text-yellow-400' },
+    1: { medal: '/medals/silver.svg', ms: 'h-10', h: 'h-20', ring: 'ring-slate-300/50',  grad: 'from-slate-400/20 to-slate-400/5',    txt: 'text-slate-300' },
+    2: { medal: '/medals/bronze.svg', ms: 'h-9',  h: 'h-16', ring: 'ring-amber-700/50',  grad: 'from-amber-700/20 to-amber-700/5',    txt: 'text-amber-600' },
   }
   const rankBySlot = [1, 0, 2] // index dans meta pour chaque slot affiché
 
@@ -292,7 +292,7 @@ function Podium({ currentUserId, myXP = 0 }) {
           if (!p) {
             return (
               <div key={i} className="flex flex-col items-center gap-2 opacity-30">
-                <span className="text-3xl">👤</span>
+                <img src={m.medal} alt="" draggable={false} className={`${m.ms} w-auto grayscale opacity-40`} />
                 <div className={`w-full ${m.h} rounded-t-xl bg-white/5 border border-white/10`} />
               </div>
             )
@@ -301,7 +301,8 @@ function Podium({ currentUserId, myXP = 0 }) {
           const ecole = p.school ? findEcole(p.school) : null
           return (
             <div key={p.id} className="flex flex-col items-center gap-2 text-center">
-              <div className="text-2xl">{m.medal}</div>
+              <img src={m.medal} alt={`Rang ${rank + 1}`} title={`Rang ${rank + 1}`} draggable={false}
+                className={`${m.ms} w-auto drop-shadow-lg`} />
               <div className={`w-14 h-14 rounded-full overflow-hidden grid place-items-center text-3xl bg-white/5 ring-2 ${m.ring}`}>
                 <Avatar value={p.avatar} fill className="text-3xl" />
               </div>

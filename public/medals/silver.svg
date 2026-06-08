@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 84" fill="none">
+  <defs>
+    <linearGradient id="s-ribbon" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4b8ef8"/>
+      <stop offset="1" stop-color="#1d4ed8"/>
+    </linearGradient>
+    <radialGradient id="s-disc" cx="38%" cy="32%" r="75%">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.45" stop-color="#e4ebf3"/>
+      <stop offset="0.8" stop-color="#b4c0cf"/>
+      <stop offset="1" stop-color="#7e8b9c"/>
+    </radialGradient>
+    <linearGradient id="s-rim" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f5f8fc"/>
+      <stop offset="1" stop-color="#76828f"/>
+    </linearGradient>
+    <radialGradient id="s-face" cx="50%" cy="40%" r="65%">
+      <stop offset="0" stop-color="#f1f5fa"/>
+      <stop offset="1" stop-color="#9aa6b4"/>
+    </radialGradient>
+    <filter id="s-glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="1.5" stdDeviation="2.4" flood-color="#cfd9e6" flood-opacity="0.55"/>
+    </filter>
+  </defs>
+
+  <!-- Ruban -->
+  <path d="M21 34 L31 31 L23 5 L13 8 Z" fill="url(#s-ribbon)"/>
+  <path d="M43 34 L33 31 L41 5 L51 8 Z" fill="url(#s-ribbon)"/>
+  <path d="M13 8 L23 5 L20 11 L16 12 Z" fill="#173a8f" opacity="0.55"/>
+  <path d="M51 8 L41 5 L44 11 L48 12 Z" fill="#173a8f" opacity="0.55"/>
+
+  <!-- Disque -->
+  <g filter="url(#s-glow)">
+    <circle cx="32" cy="54" r="25" fill="url(#s-rim)"/>
+    <circle cx="32" cy="54" r="22.5" fill="url(#s-disc)"/>
+    <circle cx="32" cy="54" r="22.5" fill="none" stroke="#5e6b7a" stroke-width="0.8" opacity="0.45"/>
+  </g>
+
+  <!-- Cadran minuit -->
+  <circle cx="32" cy="54" r="16" fill="url(#s-face)" stroke="#6b7886" stroke-width="1"/>
+  <g fill="#566372">
+    <rect x="31" y="40" width="2" height="3.2" rx="1"/>
+    <rect x="31" y="64.8" width="2" height="3.2" rx="1"/>
+    <rect x="18" y="53" width="3.2" height="2" rx="1"/>
+    <rect x="42.8" y="53" width="3.2" height="2" rx="1"/>
+  </g>
+  <!-- Aiguilles à minuit (12:00) -->
+  <g stroke="#45525f" stroke-linecap="round">
+    <line x1="32" y1="54" x2="32" y2="44.5" stroke-width="2.2"/>
+    <line x1="32" y1="54" x2="32" y2="47" stroke-width="2.6"/>
+  </g>
+  <circle cx="32" cy="54" r="2" fill="#45525f"/>
+
+  <!-- Reflet -->
+  <path d="M20 42 Q26 36 36 38 Q28 40 24 47 Z" fill="#ffffff" opacity="0.45"/>
+</svg>
