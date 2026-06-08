@@ -39,7 +39,6 @@ export default function Home() {
                   <div className="text-slate-400 text-xs uppercase tracking-widest">Bienvenue,</div>
                   <div className="font-display text-2xl text-white leading-tight truncate">{profile.nickname}</div>
                   <div className={`flex items-center gap-1.5 text-sm font-semibold mt-0.5 ${grade.color}`}>
-                    <span>{grade.emoji}</span>
                     <span className="truncate">{grade.name}</span>
                     <span className="text-slate-500 font-normal text-xs shrink-0">· Niv. {level}</span>
                   </div>
@@ -71,7 +70,7 @@ export default function Home() {
           <StatCard label="Niveau" value={level} accent />
           <StatCard label="XP total" value={rankedXP.toLocaleString('fr-FR')} />
           <StatCard label="Réussite" value={`${accuracy} %`} />
-          <StatCard label="Série 🔥" value={`${state.streak.current} j`} />
+          <StatCard label="Série" value={`${state.streak.current} j`} />
         </div>
 
         {/* Badge d'école (si l'école a un logo) */}
@@ -84,8 +83,7 @@ export default function Home() {
 
       {/* ── Accueil nouveaux joueurs ── */}
       {(!user || state.totalXP === 0) && (
-        <section className="card p-4 sm:p-5 border border-midi-accent/20 bg-midi-accent/5 flex items-start gap-3">
-          <span className="text-2xl shrink-0">👋</span>
+        <section className="card p-4 sm:p-5 border border-midi-accent/20 bg-midi-accent/5">
           <div className="flex-1 text-sm leading-relaxed">
             <p className="text-white font-semibold mb-1">
               {user ? 'Bienvenue dans l\'arène !' : 'Pas encore de compte ?'}
@@ -93,8 +91,8 @@ export default function Home() {
             <p className="text-slate-400">
               {user ? (
                 <>
-                  Lance un <strong className="text-midi-accent">🌍 Salon public</strong> pour jouer instantanément avec d'autres,
-                  ou crée une <strong className="text-midi-accent">🔒 Partie privée</strong> à partager par code avec tes amis.
+                  Lance un <strong className="text-midi-accent">Salon public</strong> pour jouer instantanément avec d'autres,
+                  ou crée une <strong className="text-midi-accent">Partie privée</strong> à partager par code avec tes amis.
                   Tu gagnes des XP à chaque partie et tu débloques des grades !
                 </>
               ) : (
@@ -112,7 +110,7 @@ export default function Home() {
 
         {/* Jeux (colonne) */}
         <section>
-          <SectionTitle>🎮 Jeux</SectionTitle>
+          <SectionTitle>Jeux</SectionTitle>
           <div className="space-y-4">
             <SplitGameCard
               user={user} emoji="📺" logo="/logos/jeu-tv.png" title="Jeu TV"
@@ -134,7 +132,7 @@ export default function Home() {
         {/* Podium (top 3 du site) */}
         <section>
           <div className="flex items-center justify-between mb-4">
-            <SectionTitle className="mb-0">🏆 Podium</SectionTitle>
+            <SectionTitle className="mb-0">Podium</SectionTitle>
             <Link to="/classement" className="text-sm text-midi-accent hover:underline">Voir tout →</Link>
           </div>
           <Podium currentUserId={user?.id} myXP={state.totalXP} />
@@ -144,7 +142,6 @@ export default function Home() {
       {/* Invite à créer un compte si non connecté */}
       {!user && (
         <section className="card p-6 flex flex-col sm:flex-row items-center gap-4 border border-midi-accent/20 bg-midi-accent/5">
-          <div className="text-4xl">🔐</div>
           <div className="flex-1 text-center sm:text-left">
             <div className="font-semibold text-white">Sauvegarde ta progression</div>
             <div className="text-sm text-slate-400 mt-1">Crée un compte gratuit pour ne pas perdre tes stats, tes badges et tes amis.</div>
@@ -174,10 +171,10 @@ function SplitGameCard({ user, emoji, logo, title, desc, tone, useHook, route, h
       <div className="grid grid-cols-2 gap-2">
         <PublicSalonButton user={user} useHook={useHook} route={route}
           highlight={highlight} highlightSubtle={highlightSubtle}
-          label="🌍 Salon public" />
+          label="Salon public" />
         <Link to="/multi"
           className="w-full py-2.5 rounded-xl font-semibold text-sm text-center grid place-items-center bg-white/5 border border-white/10 text-slate-200 hover:bg-white/10 transition">
-          🔒 Partie privée
+          Partie privée
         </Link>
       </div>
     </div>
@@ -201,7 +198,7 @@ function PublicSalonButton({ user, useHook, route, highlight, highlightSubtle, l
   return (
     <ShinyButton onClick={handleClick} disabled={loading}
       className="w-full" highlight={highlight} highlightSubtle={highlightSubtle}>
-      {loading ? 'Recherche…' : (label ?? '🌍 Salon public')}
+      {loading ? 'Recherche…' : (label ?? 'Salon public')}
     </ShinyButton>
   )
 }
