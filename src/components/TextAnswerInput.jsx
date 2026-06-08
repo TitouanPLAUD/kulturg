@@ -20,6 +20,7 @@ export default function TextAnswerInput({
   onSubmit, disableAll = false, accent = 'border-midi-accent',
 }) {
   const [value,   setValue]   = useState(typed ?? '')
+  const [bounce,  setBounce]  = useState(false)
   const inputRef = useRef(null)
 
   // Focus auto à l'apparition
@@ -36,6 +37,7 @@ export default function TextAnswerInput({
     e.preventDefault()
     const v = value.trim()
     if (!v || revealed || disableAll || typed != null) return
+    setBounce(true) // petit rebond à la validation (Entrée ou clic ↵)
     onSubmit(v)
   }
 
@@ -75,7 +77,8 @@ export default function TextAnswerInput({
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-2">
-      <div className="flex gap-2">
+      <div className={`flex gap-2 ${bounce ? 'animate-bounce-press' : ''}`}
+        onAnimationEnd={() => setBounce(false)}>
         <input
           ref={inputRef}
           type="text"
