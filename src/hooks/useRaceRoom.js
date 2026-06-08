@@ -65,6 +65,8 @@ function pick(arr, n) {
 }
 
 // Sélectionne les questions selon les réglages (thèmes / difficulté / nombre)
+// Pour la Course aux Points, on force une parité QCM / réponse libre : moitié
+// de chaque, alternées (Q1 QCM, Q2 libre, Q3 QCM…) pour le rythme.
 function pickQuestions(settings) {
   const s = { ...DEFAULT_RACE_SETTINGS, ...(settings ?? {}) }
   let pool = ALL_QUESTIONS
@@ -81,8 +83,36 @@ function pickQuestions(settings) {
   }
 
   if (!pool.length) pool = ALL_QUESTIONS
-  const n = Math.min(s.count ?? Q_COUNT, pool.length)
-  return pick(pool, n)
+
+  const target  = Math.min(s.count ?? Q_COUNT, pool.length)
+  const isOpen  = (q) => q?.type === 'open' || !Array.isArray(q?.choices)
+  const mcqPool  = pool.filter(q => !isOpen(q))
+  const openPool = pool.filter(q =>  isOpen(q))
+
+  // Moitié de chaque (arrondi : moitié haute pour QCM si impair)
+  const halfOpen = Math.floor(target / 2)
+  const halfMcq  = target - halfOpen
+
+  const mcq  = pick(mcqPool,  Math.min(halfMcq,  mcqPool.length))
+  const open = pick(openPool, Math.min(halfOpen, openPool.length))
+
+  // Si pas assez d'un type, on complète avec l'autre
+  const missing = target - mcq.length - open.length
+  if (missing > 0) {
+    const used = new Set([...mcq, ...open].map(q => q.id))
+    const extra = pick(pool.filter(q => !used.has(q.id)), missing)
+    if (mcq.length < halfMcq) mcq.push(...extra)
+    else open.push(...extra)
+  }
+
+  // Alternance QCM / ouverte pour le rythme — on commence par QCM
+  const result = []
+  const maxLen = Math.max(mcq.length, open.length)
+  for (let i = 0; i < maxLen; i++) {
+    if (i < mcq.length)  result.push(mcq[i])
+    if (i < open.length) result.push(open[i])
+  }
+  return result.slice(0, target)
 }
 
 function generateCode() {
