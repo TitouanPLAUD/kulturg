@@ -310,15 +310,19 @@ export function useRaceRoom(code) {
     const { data: r } = await supabase
       .from('race_rooms').select('*').eq('code', roomCode.toUpperCase()).single()
     if (!r) return { error: 'Salle introuvable' }
+
+    // Si l'utilisateur fait déjà partie de la salle, il peut la rejoindre
+    // quelle que soit la phase (refresh / reconnexion en cours de partie).
+    const { data: existing } = await supabase
+      .from('race_participants').select('id').eq('room_id', r.id).eq('profile_id', user.id).maybeSingle()
+    if (existing) return { code: r.code }
+
+    // Nouveau participant : il faut que la partie soit encore en lobby
     if (r.phase !== 'lobby') return { error: 'Partie déjà commencée' }
 
     const { count } = await supabase
       .from('race_participants').select('id', { count: 'exact', head: true }).eq('room_id', r.id)
     if ((count ?? 0) >= RACE_MAX_PLAYERS) return { error: `Salle pleine (${RACE_MAX_PLAYERS}/${RACE_MAX_PLAYERS})` }
-
-    const { data: existing } = await supabase
-      .from('race_participants').select('id').eq('room_id', r.id).eq('profile_id', user.id).single()
-    if (existing) return { code: r.code }
 
     const { error } = await supabase
       .from('race_participants').insert({ room_id: r.id, profile_id: user.id })
@@ -326,11 +330,20 @@ export function useRaceRoom(code) {
     return { code: r.code }
   }
 
+  // Reprendre la main si l'hôte est inactif
+  async function claimHost() {
+    if (!user || !room) return { error: 'Non connecté' }
+    if (room.host_id === user.id) return {}
+    const { error } = await supabase.rpc('claim_race_host', { target_room_id: room.id })
+    if (error) return { error: error.message }
+    return {}
+  }
+
   const myAnswers = answers.filter(a => a.profile_id === user?.id)
 
   return {
     room, participants, answers, myAnswers, loading,
     isHost,
-    submitAnswer, hostAdvance, startGame, createRoom, joinRoom, joinPublicRoom,
+    submitAnswer, hostAdvance, startGame, createRoom, joinRoom, joinPublicRoom, claimHost,
   }
 }

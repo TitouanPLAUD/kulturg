@@ -54,10 +54,11 @@ export default function RaceGame() {
   const navigate   = useNavigate()
   const {
     room, participants, answers, myAnswers, loading,
-    isHost, submitAnswer, hostAdvance, startGame,
+    isHost, submitAnswer, hostAdvance, startGame, claimHost,
   } = useRaceRoom(code)
 
   const [confirmQuit, setConfirmQuit] = useState(false)
+  const [claiming,    setClaiming]    = useState(false)
 
   if (loading)  return <Shell><Centered><Spinner /><p className="text-slate-400 mt-4">Chargement…</p></Centered></Shell>
   if (!room)    return <Shell><Centered><p className="text-5xl mb-3">❓</p><p className="text-slate-400 mb-6">Salle introuvable.</p><Link to="/multi" className="rbtn">Retour</Link></Centered></Shell>
@@ -73,6 +74,17 @@ export default function RaceGame() {
         <button onClick={() => setConfirmQuit(true)}
           className="fixed top-4 right-4 z-40 px-3 py-1.5 rounded-lg bg-black/60 border border-white/10 text-slate-400 hover:text-white text-xs font-medium transition backdrop-blur-sm">
           ✕ Quitter
+        </button>
+      )}
+
+      {/* Bouton « Reprendre la main » pour les non-hôtes si l'hôte est inactif */}
+      {phase !== 'finished' && !isHost && (
+        <button
+          onClick={async () => { setClaiming(true); await claimHost(); setClaiming(false) }}
+          disabled={claiming}
+          title="L'hôte ne répond plus ? Reprends la main pour faire avancer la partie."
+          className="fixed top-4 right-28 z-40 px-3 py-1.5 rounded-lg bg-amber-600/80 hover:bg-amber-500 border border-amber-400/30 text-white text-xs font-medium transition backdrop-blur-sm disabled:opacity-60">
+          {claiming ? '…' : '🎮 Reprendre la main'}
         </button>
       )}
 

@@ -158,10 +158,16 @@ export function useDuelRoom(code) {
     const { data: r } = await supabase
       .from('duel_rooms').select('*').eq('code', roomCode.toUpperCase()).single()
     if (!r) return { error: 'Salle introuvable' }
-    if (r.phase !== 'lobby') return { error: 'Partie déjà commencée' }
+
+    // Si l'utilisateur fait déjà partie de la salle, il peut la rejoindre
+    // quelle que soit la phase (refresh / reconnexion en cours de partie).
     if (r.host_id === user.id) return { code: r.code }
     if (r.guest_id === user.id) return { code: r.code }
+
+    // Nouveau participant : il faut que la partie soit encore en lobby
+    if (r.phase !== 'lobby') return { error: 'Partie déjà commencée' }
     if (r.guest_id) return { error: 'Salle déjà pleine' }
+
     const { error } = await supabase
       .from('duel_rooms').update({ guest_id: user.id }).eq('id', r.id)
     if (error) return { error: 'Impossible de rejoindre.' }

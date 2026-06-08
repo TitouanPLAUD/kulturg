@@ -461,19 +461,36 @@ export function useTvRoom(code) {
     if (!user) return { error: 'Non connecté' }
     const { data: r } = await supabase.from('tv_rooms').select('*').eq('code', roomCode.toUpperCase()).single()
     if (!r) return { error: 'Salle introuvable' }
+
+    // Si l'utilisateur fait déjà partie de la salle, on l'autorise à la rejoindre
+    // quelle que soit la phase (cas du refresh / reconnexion en cours de partie).
+    const { data: existing } = await supabase.from('tv_participants').select('id').eq('room_id', r.id).eq('profile_id', user.id).maybeSingle()
+    if (existing) return { code: r.code }
+
+    // Nouveau participant : il faut que la partie soit encore en lobby
     if (r.phase !== 'lobby') return { error: 'Partie déjà commencée' }
-    const { data: existing } = await supabase.from('tv_participants').select('id').eq('room_id', r.id).eq('profile_id', user.id).single()
-    if (!existing) {
-      const { data: all } = await supabase.from('tv_participants').select('id').eq('room_id', r.id)
-      if ((all?.length ?? 0) >= 4) return { error: 'Salle pleine (4 joueurs max)' }
-      await supabase.from('tv_participants').insert({ room_id: r.id, profile_id: user.id })
-    }
+
+    const { data: all } = await supabase.from('tv_participants').select('id').eq('room_id', r.id)
+    if ((all?.length ?? 0) >= 4) return { error: 'Salle pleine (4 joueurs max)' }
+    await supabase.from('tv_participants').insert({ room_id: r.id, profile_id: user.id })
     return { code: r.code }
+  }
+
+  // Reprendre la main : n'importe quel participant peut devenir hôte (utile
+  // quand l'hôte se déconnecte et que la partie freeze). Via RPC pour
+  // contourner la RLS UPDATE qui restreint aux hôtes.
+  async function claimHost() {
+    if (!user || !room) return { error: 'Non connecté' }
+    if (room.host_id === user.id) return {}
+    const { error } = await supabase.rpc('claim_tv_host', { target_room_id: room.id })
+    if (error) return { error: error.message }
+    // setRoom sera mis à jour via le canal realtime
+    return {}
   }
 
   return {
     room, participants, answers, loading, isHost,
     myAnswers: answers.filter(a => a.profile_id === user?.id),
-    submitAnswer, hostAdvance, startGame, createRoom, joinRoom, joinPublicRoom,
+    submitAnswer, hostAdvance, startGame, createRoom, joinRoom, joinPublicRoom, claimHost,
   }
 }

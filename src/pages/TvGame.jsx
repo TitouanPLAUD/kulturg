@@ -54,12 +54,13 @@ function TvGameCore() {
   const { user } = useAuth()
   const navigate = useNavigate()
   const { room, participants, answers, myAnswers, isHost, loading,
-          submitAnswer, hostAdvance, startGame } = useTvRoom(code)
+          submitAnswer, hostAdvance, startGame, claimHost } = useTvRoom(code)
   const { trigger } = useJLR()
 
   const [showTransition, setShowTransition] = useState(false)
   const [transPhase, setTransPhase]         = useState(null)
   const [confirmQuit, setConfirmQuit]       = useState(false)
+  const [claiming,    setClaiming]          = useState(false)
   const prevPhase = useRef(null)
 
   useEffect(() => {
@@ -98,6 +99,17 @@ function TvGameCore() {
           onClick={() => setConfirmQuit(true)}
           className="fixed top-4 right-4 z-40 px-3 py-1.5 rounded-lg bg-black/60 border border-white/10 text-slate-400 hover:text-white hover:border-white/30 text-xs font-medium transition backdrop-blur-sm">
           ✕ Quitter
+        </button>
+      )}
+
+      {/* Bouton « Reprendre la main » pour les non-hôtes si l'hôte est inactif */}
+      {phase !== 'finished' && !isHost && (
+        <button
+          onClick={async () => { setClaiming(true); await claimHost(); setClaiming(false) }}
+          disabled={claiming}
+          title="L'hôte ne répond plus ? Reprends la main pour faire avancer la partie."
+          className="fixed top-4 right-28 z-40 px-3 py-1.5 rounded-lg bg-amber-600/80 hover:bg-amber-500 border border-amber-400/30 text-white text-xs font-medium transition backdrop-blur-sm disabled:opacity-60">
+          {claiming ? '…' : '🎮 Reprendre la main'}
         </button>
       )}
 
