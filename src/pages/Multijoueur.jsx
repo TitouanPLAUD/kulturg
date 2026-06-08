@@ -10,6 +10,7 @@ import {
   DIFFICULTY_OPTIONS,
 } from '../hooks/useRaceRoom.js'
 import { THEME_LIST } from '../data/themes.js'
+import ShinyButton from '../components/ShinyButton.jsx'
 
 export default function Multijoueur() {
   const { user } = useAuth()
@@ -47,6 +48,7 @@ export default function Multijoueur() {
           ]}
           accentClass="border-midi-accent/30 hover:border-midi-accent/60"
           btnClass="bg-midi-accent hover:bg-blue-400 text-white"
+          highlight="#4b8ef8" highlightSubtle="#a7c4ff"
           useHook={() => useTvRoom(null)}
           route="tv"
         />
@@ -65,6 +67,7 @@ export default function Multijoueur() {
           ]}
           accentClass="border-green-500/30 hover:border-green-500/60"
           btnClass="bg-green-500 hover:bg-green-400 text-black"
+          highlight="#4ade80" highlightSubtle="#bbf7d0"
           useHook={() => useRaceRoom(null)}
           route="race"
           customizable
@@ -74,7 +77,7 @@ export default function Multijoueur() {
   )
 }
 
-function ModeCard({ emoji, logo, title, subtitle, description, phases, accentClass, btnClass, useHook, route, customizable }) {
+function ModeCard({ emoji, logo, title, subtitle, description, phases, accentClass, btnClass, highlight, highlightSubtle, useHook, route, customizable }) {
   const navigate = useNavigate()
   const [joinCode, setJoinCode] = useState('')
   const [error,    setError]    = useState('')
@@ -134,10 +137,10 @@ function ModeCard({ emoji, logo, title, subtitle, description, phases, accentCla
 
       {/* Actions */}
       <div className="flex flex-col gap-3 mt-auto">
-        <button onClick={() => customizable ? setShowSettings(true) : handleCreate()} disabled={loading}
-          className={`w-full py-3 rounded-xl font-bold transition disabled:opacity-60 ${btnClass}`}>
+        <ShinyButton onClick={() => customizable ? setShowSettings(true) : handleCreate()} disabled={loading}
+          className="w-full" highlight={highlight} highlightSubtle={highlightSubtle}>
           {loading ? '…' : customizable ? '⚙️ Créer une partie personnalisée' : '🔒 Créer une partie privée'}
-        </button>
+        </ShinyButton>
 
         <form onSubmit={handleJoin} className="flex gap-2">
           <input
