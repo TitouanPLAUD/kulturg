@@ -6,9 +6,12 @@ const defaultState = {
   totalAnswered: 0,
   totalCorrect: 0,
   bestDuel: 0,
+  maxStreak: 0,              // meilleure série de jours atteinte
   streak: { current: 0, lastPlayedISO: null },
   byTheme: {}, // theme -> { answered, correct, xp }
   badges: [],  // ids
+  // Compteurs de parties multijoueur (pour les achievements)
+  games: { racePlayed: 0, raceWon: 0, tvPlayed: 0, tvWon: 0 },
   // Spaced-repetition cards: questionId -> { box: 1..5, dueISO }
   srs: {},
   history: [], // last 50 sessions { date, mode, score, total }

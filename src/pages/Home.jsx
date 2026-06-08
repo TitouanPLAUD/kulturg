@@ -9,11 +9,14 @@ import { findEcole } from '../data/ecoles.js'
 import Avatar from '../components/Avatar.jsx'
 import ShinyButton from '../components/ShinyButton.jsx'
 import SchoolBadge from '../components/SchoolBadge.jsx'
+import AchievementBadge from '../components/AchievementBadge.jsx'
+import { evalAchievements } from '../data/achievements.js'
 
 export default function Home() {
   const { state } = useGame()
   const { user, profile } = useAuth()
   const myEcole = profile?.school ? findEcole(profile.school) : null
+  const achievements = evalAchievements(state)
   // XP de classement (serveur) : identique au classement, n'augmente qu'en
   // partie publique. Pour les invités, on retombe sur la progression locale.
   const rankedXP   = user && profile ? (profile.total_xp ?? 0) : state.totalXP
@@ -73,12 +76,17 @@ export default function Home() {
           <StatCard label="Série" value={`${state.streak.current} j`} />
         </div>
 
-        {/* Badge d'école (si l'école a un logo) */}
-        {user && myEcole?.logo && (
-          <div className="relative mt-4 flex justify-center sm:justify-start">
+        {/* Badge d'école + achievements */}
+        <div className="relative mt-4 flex flex-wrap items-center justify-center sm:justify-start gap-x-5 gap-y-3">
+          {user && myEcole?.logo && (
             <SchoolBadge logo={myEcole.logo} label={myEcole.label} />
+          )}
+          <div className="flex flex-wrap gap-2.5">
+            {achievements.map(a => (
+              <AchievementBadge key={a.id} achievement={a} />
+            ))}
           </div>
-        )}
+        </div>
       </section>
 
       {/* ── Accueil nouveaux joueurs ── */}

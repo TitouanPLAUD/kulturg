@@ -45,7 +45,16 @@ function reducer(state, action) {
       const bestDuel = action.session.mode === 'duel'
         ? Math.max(state.bestDuel, action.session.score)
         : state.bestDuel
-      return { ...state, streak: { current, lastPlayedISO: today }, history, bestDuel }
+      const maxStreak = Math.max(state.maxStreak ?? 0, current)
+      return { ...state, streak: { current, lastPlayedISO: today }, history, bestDuel, maxStreak }
+    }
+    case 'RECORD_GAME': {
+      // Comptabilise une partie multijoueur terminée (pour les achievements)
+      const mode = action.mode // 'race' | 'tv'
+      const games = { racePlayed: 0, raceWon: 0, tvPlayed: 0, tvWon: 0, ...(state.games ?? {}) }
+      games[`${mode}Played`] = (games[`${mode}Played`] ?? 0) + 1
+      if (action.won) games[`${mode}Won`] = (games[`${mode}Won`] ?? 0) + 1
+      return { ...state, games }
     }
     case 'SRS_REVIEW': {
       // box increments on correct, resets on miss
@@ -175,6 +184,7 @@ export function GameProvider({ children }) {
     srsReview: (qid, correct) => dispatch({ type: 'SRS_REVIEW', qid, correct }),
     finishSession: (session) => dispatch({ type: 'FINISH_SESSION', session }),
     addXP: (amount) => dispatch({ type: 'ADD_XP', amount }),
+    recordGame: (mode, won) => dispatch({ type: 'RECORD_GAME', mode, won }),
     reset: () => dispatch({ type: 'RESET' }),
   }), [state])
 

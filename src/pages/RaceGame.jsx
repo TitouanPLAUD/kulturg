@@ -19,7 +19,7 @@ import {
 } from '../hooks/useRaceRoom.js'
 import { THEMES } from '../data/themes.js'
 import Avatar from '../components/Avatar.jsx'
-import { awardXPOnce, raceXP } from '../utils/multiplayerXP.js'
+import { awardXPOnce, recordGameOnce, raceXP } from '../utils/multiplayerXP.js'
 import { isOpenQuestion } from '../data/questions.js'
 import { matchAnswer } from '../utils/answerMatch.js'
 import TextAnswerInput from '../components/TextAnswerInput.jsx'
@@ -563,7 +563,7 @@ function RaceFinished({ participants, answers, q_count, questions, myAnswers, us
   const podium  = ranked.slice(0, 3)
   const rest    = ranked.slice(3)
   const winner  = ranked[0]
-  const { addXP } = useGame()
+  const { addXP, recordGame } = useGame()
 
   // Récompense XP — une fois, par room+user. Basé sur le rang et le score.
   const myEntry  = ranked.find(p => p.profile_id === userId)
@@ -574,7 +574,9 @@ function RaceFinished({ participants, answers, q_count, questions, myAnswers, us
     if (xpEarnedRef.current !== null || !roomId || !userId || !myRank) return
     const amount = raceXP(myRank, myScore)
     xpEarnedRef.current = awardXPOnce(`race:${roomId}:${userId}`, amount, addXP)
-  }, [roomId, userId, myRank, myScore, addXP])
+    // Achievements : comptabilise la partie (victoire = 1er)
+    recordGameOnce(`race:${roomId}:${userId}`, 'race', myRank === 1, recordGame)
+  }, [roomId, userId, myRank, myScore, addXP, recordGame])
 
   return (
     <div className="max-w-xl mx-auto px-4 py-10 space-y-6">

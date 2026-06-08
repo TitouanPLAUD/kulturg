@@ -34,6 +34,35 @@ export function awardXPOnce(key, amount, addXP) {
   return amount
 }
 
+// ── Enregistrement des parties (achievements), dédupliqué par room ──
+const GAMES_KEY = 'multi_games_recorded'
+
+function getGamesRecorded() {
+  try { return new Set(JSON.parse(localStorage.getItem(GAMES_KEY) ?? '[]')) }
+  catch { return new Set() }
+}
+function saveGamesRecorded(set) {
+  try { localStorage.setItem(GAMES_KEY, JSON.stringify([...set].slice(-500))) } catch {}
+}
+
+/**
+ * Enregistre une partie multijoueur terminée une seule fois (par key).
+ * @param {string} key  identifiant unique (mode + roomId + userId)
+ * @param {'race'|'tv'} mode
+ * @param {boolean} won
+ * @param {(mode: string, won: boolean) => void} recordGame  méthode du GameContext
+ * @returns {boolean} true si enregistré (première fois)
+ */
+export function recordGameOnce(key, mode, won, recordGame) {
+  if (!key || !recordGame) return false
+  const set = getGamesRecorded()
+  if (set.has(key)) return false
+  set.add(key)
+  saveGamesRecorded(set)
+  recordGame(mode, won)
+  return true
+}
+
 // ── Barèmes par mode ─────────────────────────────────────────────
 export const XP_RATES = {
   tv:    { maitre: 500, eliminated: 100 },
