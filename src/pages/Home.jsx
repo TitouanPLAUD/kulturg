@@ -208,12 +208,12 @@ function Podium({ currentUserId, myXP = 0 }) {
   const [top, setTop]         = useState([])
   const [loading, setLoading] = useState(true)
 
-  // Re-fetch quand l'XP du joueur courant change (après merge DB, après partie)
-  // OU au montage, OU quand le tab redevient visible (synchro multi-onglet).
-  // Filet de sécurité : re-fetch à 1.5s pour rattraper le push DB asynchrone
-  // du GameContext (qui peut finir après le premier fetch).
+  // Re-fetch : au montage, quand mon XP change, quand le tab redevient visible,
+  // à 1.5s (filet pour le push DB async), ET en temps réel via Supabase dès
+  // qu'un total_xp change en base (pour soi comme pour les autres joueurs).
   useEffect(() => {
     let cancelled = false
+    let debounce = null
     async function load() {
       const { data } = await supabase
         .from('profiles')
@@ -225,14 +225,30 @@ function Podium({ currentUserId, myXP = 0 }) {
       setTop(data ?? [])
       setLoading(false)
     }
+    // Refetch groupé (évite une rafale si plusieurs UPDATE arrivent ensemble)
+    function loadDebounced() {
+      clearTimeout(debounce)
+      debounce = setTimeout(load, 300)
+    }
+
     load()
     const t = setTimeout(load, 1500)
+
     function onVisible() { if (document.visibilityState === 'visible') load() }
     document.addEventListener('visibilitychange', onVisible)
+
+    // Abonnement temps réel aux changements de profils
+    const channel = supabase
+      .channel('podium-profiles')
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles' }, loadDebounced)
+      .subscribe()
+
     return () => {
       cancelled = true
       clearTimeout(t)
+      clearTimeout(debounce)
       document.removeEventListener('visibilitychange', onVisible)
+      supabase.removeChannel(channel)
     }
   }, [myXP, currentUserId])
 
