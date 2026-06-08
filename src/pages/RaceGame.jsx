@@ -402,10 +402,10 @@ function RacePlaying({ pd, participants, answers, myAnswers, isHost, submitAnswe
               else if (isSelected)  cls += 'border-red-500 bg-red-500/10 text-red-400'
               else                  cls += 'border-white/5 text-slate-600 opacity-30'
             } else if (isSelected) {
-              // Feedback immédiat au clic : vert si correct, rouge si faux + petit bounce
+              // Feedback immédiat au clic : vert + bounce si correct, rouge + shake "non" si faux
               cls += isCorrect
                 ? 'z-10 border-green-400 bg-green-500/15 text-green-300 animate-bounce-press'
-                : 'z-10 border-red-400 bg-red-500/15 text-red-300 animate-bounce-press'
+                : 'z-10 border-red-400 bg-red-500/15 text-red-300 animate-shake-no'
             } else if (selectedProp !== null) {
               cls += 'border-white/10 bg-white/5 text-slate-500 cursor-default opacity-50'
             } else {
@@ -414,7 +414,7 @@ function RacePlaying({ pd, participants, answers, myAnswers, isHost, submitAnswe
             }
             return (
               <button key={idx} className={cls} onClick={() => pick(idx)}>
-                {isSelected && <StarBurst color={isCorrect ? '#4ade80' : '#f87171'} />}
+                {isSelected && isCorrect && <StarBurst color="#4ade80" />}
                 <span className="relative z-[1]">
                   <span className="text-xs opacity-50 mr-2">{['A', 'B', 'C', 'D'][idx]}</span>
                   {choice}
