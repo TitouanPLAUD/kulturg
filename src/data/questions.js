@@ -3,6 +3,10 @@ import { BULK } from './questions.bulk.js'
 import { MORE } from './questions.more.js'
 import { NEW } from './questions.new.js'
 import { OPEN_QUESTIONS } from './questions.open.js'
+import { COMMUNITY } from './questions.community.js'
+
+// Les questions communautaires gardent leur type 'open' si défini, sinon QCM
+const COMMUNITY_TAGGED = COMMUNITY.map(q => q.type === 'open' ? { ...q, type: 'open' } : q)
 
 // Marque les questions à réponse libre avec type='open' (les autres sont 'mcq' par défaut)
 const OPEN_TAGGED = OPEN_QUESTIONS.map(q => ({ ...q, type: 'open' }))
@@ -215,7 +219,7 @@ const BASE = [
   { id: 'so10', theme: 'societe', difficulty: 2, q: "Qui est le secrétaire général de l'ONU (2024) ?", choices: ["Ban Ki-moon", "Kofi Annan", "António Guterres", "Boutros-Ghali"], answer: 2 },
 ]
 
-export const QUESTIONS = [...BASE, ...EXTRA, ...BULK, ...MORE, ...NEW, ...OPEN_TAGGED]
+export const QUESTIONS = [...BASE, ...EXTRA, ...BULK, ...MORE, ...NEW, ...OPEN_TAGGED, ...COMMUNITY_TAGGED]
 
 export const QUESTIONS_BY_THEME = QUESTIONS.reduce((acc, q) => {
   (acc[q.theme] ||= []).push(q)
