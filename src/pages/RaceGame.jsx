@@ -414,12 +414,9 @@ function RacePlaying({ pd, participants, answers, myAnswers, isHost, submitAnswe
             }
             return (
               <button key={idx} className={cls} onClick={() => pick(idx)}>
-                {isSelected && isCorrect && <StarBurst color="#4ade80" />}
-                <span className="relative z-[1]">
-                  <span className="text-xs opacity-50 mr-2">{['A', 'B', 'C', 'D'][idx]}</span>
-                  {choice}
-                  {revealed && isCorrect && <span className="ml-2 text-green-400">✓</span>}
-                </span>
+                <span className="text-xs opacity-50 mr-2">{['A', 'B', 'C', 'D'][idx]}</span>
+                {choice}
+                {revealed && isCorrect && <span className="ml-2 text-green-400">✓</span>}
               </button>
             )
           })}
@@ -763,53 +760,6 @@ function RecapCard({ q, idx, ans, status }) {
       </div>
       )}
     </div>
-  )
-}
-
-// ─── Effet « étoiles » au clic sur un choix ────────────────────
-// Les étoiles jaillissent du bouton après le clic. Couleur = vert (correct) / rouge (faux).
-const STAR_CONFIG = [
-  { s: { top: '20%', left: '20%' }, e: { top: '-80%', left: '-30%' }, w: 25, d: 1000, ease: 'cubic-bezier(0.05,0.83,0.43,0.96)' },
-  { s: { top: '45%', left: '45%' }, e: { top: '-25%', left: '10%'  }, w: 15, d: 1000, ease: 'cubic-bezier(0,0.4,0,1.01)' },
-  { s: { top: '40%', left: '40%' }, e: { top: '55%',  left: '25%'  }, w: 5,  d: 1000, ease: 'cubic-bezier(0,0.4,0,1.01)' },
-  { s: { top: '20%', left: '40%' }, e: { top: '30%',  left: '80%'  }, w: 8,  d: 800,  ease: 'cubic-bezier(0,0.4,0,1.01)' },
-  { s: { top: '25%', left: '45%' }, e: { top: '25%',  left: '115%' }, w: 15, d: 600,  ease: 'cubic-bezier(0,0.4,0,1.01)' },
-  { s: { top: '5%',  left: '50%' }, e: { top: '5%',   left: '60%'  }, w: 5,  d: 800,  ease: 'ease-in-out' },
-]
-
-function StarBurst({ color }) {
-  const [go, setGo] = useState(false)
-  useEffect(() => {
-    const raf = requestAnimationFrame(() => setGo(true))
-    return () => cancelAnimationFrame(raf)
-  }, [])
-  return (
-    <span className="pointer-events-none absolute inset-0" aria-hidden="true">
-      {STAR_CONFIG.map((st, i) => {
-        const pos = go ? st.e : st.s
-        return (
-          <span key={i} className="absolute block"
-            style={{
-              width: `${st.w}px`,
-              top: pos.top, left: pos.left,
-              zIndex: go ? 2 : -5,
-              opacity: go ? 1 : 0,
-              transition: `top ${st.d}ms ${st.ease}, left ${st.d}ms ${st.ease}, opacity ${st.d}ms ${st.ease}, filter ${st.d}ms ${st.ease}`,
-              filter: go ? `drop-shadow(0 0 10px ${color})` : 'drop-shadow(0 0 0 transparent)',
-            }}>
-            <StarSvg color={color} />
-          </span>
-        )
-      })}
-    </span>
-  )
-}
-
-function StarSvg({ color }) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 784.11 815.53" className="w-full h-auto" style={{ fill: color }}>
-      <path d="M392.05 0c-20.9,210.08-184.06,378.41-392.05,407.78 207.96,29.37 371.12,197.68 392.05,407.74 20.93-210.06 184.09-378.37 392.05-407.74-207.98-29.38-371.16-197.69-392.06-407.78z" />
-    </svg>
   )
 }
 
