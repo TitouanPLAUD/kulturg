@@ -18,14 +18,14 @@ const authLinks = [
   { to: '/amis', label: 'Amis', emoji: '👥' },
 ]
 
-function NavItem({ to, label, emoji, end = false }) {
+function NavItem({ to, label, end = false }) {
   return (
     <NavLink to={to} end={end}
       className={({ isActive }) =>
-        `px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition
+        `px-3 py-2 rounded-lg text-sm font-semibold uppercase tracking-wide whitespace-nowrap transition
         ${isActive ? 'bg-white/10 text-white' : 'text-slate-300 hover:bg-white/5 hover:text-white'}`
       }>
-      <span className="mr-1">{emoji}</span>{label}
+      {label}
     </NavLink>
   )
 }
@@ -110,9 +110,9 @@ export default function Layout() {
 
         {/* Nav mobile */}
         <nav className="md:hidden flex items-center gap-0.5 overflow-x-auto scrollbar-thin px-3 py-2 border-t border-white/5">
-          {navLinks.map(l => <MobileLink key={l.to} to={l.to} label={l.emoji} end={l.end} />)}
-          {user && authLinks.map(l => <MobileLink key={l.to} to={l.to} label={l.emoji} />)}
-          {isFounder && <MobileLink to="/admin" label="🛡️" />}
+          {navLinks.map(l => <MobileLink key={l.to} to={l.to} label={l.label} end={l.end} />)}
+          {user && authLinks.map(l => <MobileLink key={l.to} to={l.to} label={l.label} />)}
+          {isFounder && <MobileLink to="/admin" label="Admin" />}
         </nav>
       </header>
 
@@ -154,7 +154,8 @@ function MobileLink({ to, label, end }) {
   return (
     <NavLink to={to} end={end}
       className={({ isActive }) =>
-        `px-3 py-1.5 rounded-lg text-base whitespace-nowrap transition ${isActive ? 'bg-white/10' : 'hover:bg-white/5'}`
+        `px-3 py-1.5 rounded-lg text-xs font-semibold uppercase tracking-wide whitespace-nowrap transition
+        ${isActive ? 'bg-white/10 text-white' : 'text-slate-300 hover:bg-white/5'}`
       }>
       {label}
     </NavLink>
