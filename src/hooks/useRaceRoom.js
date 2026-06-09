@@ -65,9 +65,9 @@ function pick(arr, n) {
   return [...arr].sort(() => Math.random() - 0.5).slice(0, n)
 }
 
-// Sélectionne les questions selon les réglages (thèmes / difficulté / nombre)
-// Pour la Course aux Points, on force une parité QCM / réponse libre : moitié
-// de chaque, alternées (Q1 QCM, Q2 libre, Q3 QCM…) pour le rythme.
+// Sélectionne les questions selon les réglages (thèmes / difficulté / nombre).
+// Pour la Course aux Points, on équilibre les 3 types (QCM / réponse libre /
+// classement) et on les alterne pour varier le rythme.
 function pickQuestions(settings) {
   const s = { ...DEFAULT_RACE_SETTINGS, ...(settings ?? {}) }
   let pool = [...ALL_QUESTIONS, ...getCommunityQuestions()]
@@ -85,34 +85,39 @@ function pickQuestions(settings) {
 
   if (!pool.length) pool = ALL_QUESTIONS
 
-  const target  = Math.min(s.count ?? Q_COUNT, pool.length)
-  const isOpen  = (q) => q?.type === 'open' || !Array.isArray(q?.choices)
-  const mcqPool  = pool.filter(q => !isOpen(q))
-  const openPool = pool.filter(q =>  isOpen(q))
+  const target = Math.min(s.count ?? Q_COUNT, pool.length)
 
-  // Moitié de chaque (arrondi : moitié haute pour QCM si impair)
-  const halfOpen = Math.floor(target / 2)
-  const halfMcq  = target - halfOpen
-
-  const mcq  = pick(mcqPool,  Math.min(halfMcq,  mcqPool.length))
-  const open = pick(openPool, Math.min(halfOpen, openPool.length))
-
-  // Si pas assez d'un type, on complète avec l'autre
-  const missing = target - mcq.length - open.length
-  if (missing > 0) {
-    const used = new Set([...mcq, ...open].map(q => q.id))
-    const extra = pick(pool.filter(q => !used.has(q.id)), missing)
-    if (mcq.length < halfMcq) mcq.push(...extra)
-    else open.push(...extra)
+  // Réserves par type, déjà mélangées
+  const buckets = {
+    order: pick(pool.filter(q => q.type === 'order'), pool.length),
+    open:  pick(pool.filter(q => q.type === 'open'),  pool.length),
+    mcq:   pick(pool.filter(q => !q.type && Array.isArray(q.choices)), pool.length),
   }
+  // Curseurs de consommation
+  const idx = { order: 0, open: 0, mcq: 0 }
 
-  // Alternance QCM / ouverte pour le rythme — on commence par QCM
+  // Tirage round-robin équilibré, dans un ordre alterné mcq → open → order
+  const sequence = ['mcq', 'open', 'order']
   const result = []
-  const maxLen = Math.max(mcq.length, open.length)
-  for (let i = 0; i < maxLen; i++) {
-    if (i < mcq.length)  result.push(mcq[i])
-    if (i < open.length) result.push(open[i])
+  let guard = 0
+  while (result.length < target && guard < target * 4) {
+    const t = sequence[guard % sequence.length]
+    guard++
+    if (idx[t] < buckets[t].length) {
+      result.push(buckets[t][idx[t]++])
+    }
+    // Si les 3 types sont épuisés, on complète avec ce qui reste du pool
+    if (idx.order >= buckets.order.length && idx.open >= buckets.open.length && idx.mcq >= buckets.mcq.length) {
+      break
+    }
   }
+
+  // Complément si on n'a pas atteint la cible (pool restreint par filtres)
+  if (result.length < target) {
+    const used = new Set(result.map(q => q.id))
+    result.push(...pick(pool.filter(q => !used.has(q.id)), target - result.length))
+  }
+
   return result.slice(0, target)
 }
 

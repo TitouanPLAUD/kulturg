@@ -71,6 +71,13 @@ function levenshtein(a, b, max = 2) {
   return dp[a.length]
 }
 
+// ── Classement : l'ordre proposé correspond-il à l'ordre canonique ? ──
+export function checkOrder(proposed, canonical) {
+  if (!Array.isArray(proposed) || !Array.isArray(canonical)) return false
+  if (proposed.length !== canonical.length) return false
+  return proposed.every((x, i) => x === canonical[i])
+}
+
 // ── Match principal ──────────────────────────────────────────
 /**
  * Indique si `typed` correspond à `expected` ou l'une des `accepts`,

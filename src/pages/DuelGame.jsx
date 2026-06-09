@@ -5,9 +5,10 @@ import { useGame } from '../context/GameContext.jsx'
 import { useDuelRoom, computeDuelScores, TARGET_SCORE } from '../hooks/useDuelRoom.js'
 import Avatar from '../components/Avatar.jsx'
 import { awardXPOnce, duelXP } from '../utils/multiplayerXP.js'
-import { isOpenQuestion } from '../data/questions.js'
-import { matchAnswer } from '../utils/answerMatch.js'
+import { isOpenQuestion, isOrderQuestion } from '../data/questions.js'
+import { matchAnswer, checkOrder } from '../utils/answerMatch.js'
 import TextAnswerInput from '../components/TextAnswerInput.jsx'
+import OrderAnswer from '../components/OrderAnswer.jsx'
 
 const QUESTION_DURATION = 12000
 
@@ -223,6 +224,14 @@ function PlayingPhase({ room, profiles, answers, myAnswers, isHost, submitAnswer
     await submitAnswer({ q_idx, answer_idx: -1, is_correct: isCorrect, time_ms: Date.now() - startedAt, answer_text: text })
   }
 
+  async function submitOrder(ordered) {
+    if (myAnswer || revealed || selected !== null || !q) return
+    setSelected('ordered')
+    const isCorrect = checkOrder(ordered, q.items)
+    answer(q.theme ?? 'multi', q.difficulty ?? 1, isCorrect)
+    await submitAnswer({ q_idx, answer_idx: -1, is_correct: isCorrect, time_ms: Date.now() - startedAt, answer_text: JSON.stringify(ordered) })
+  }
+
   if (!q) return <Center><Spinner /></Center>
 
   const urgent = secs <= 3
@@ -307,8 +316,19 @@ function PlayingPhase({ room, profiles, answers, myAnswers, isHost, submitAnswer
           {q.theme && <p className="text-xs text-slate-600 mt-2 uppercase tracking-wider">{q.theme}</p>}
         </div>
 
-        {/* Réponse — texte libre OU choix multiples */}
-        {isOpenQuestion(q) ? (
+        {/* Réponse — classement OU texte libre OU choix multiples */}
+        {isOrderQuestion(q) ? (
+          <OrderAnswer
+            qid={q.id}
+            items={q.items}
+            hint={q.hint}
+            submitted={myAnswer?.answer_text ? JSON.parse(myAnswer.answer_text) : null}
+            revealed={revealed}
+            isCorrect={myAnswer?.is_correct ?? null}
+            onSubmit={submitOrder}
+            accent="blue"
+          />
+        ) : isOpenQuestion(q) ? (
           <TextAnswerInput
             answer={q.answer}
             typed={myAnswer?.answer_text ?? null}

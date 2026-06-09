@@ -20,9 +20,10 @@ import {
 import { THEMES } from '../data/themes.js'
 import Avatar from '../components/Avatar.jsx'
 import { awardXPOnce, recordGameOnce, raceXP } from '../utils/multiplayerXP.js'
-import { isOpenQuestion } from '../data/questions.js'
-import { matchAnswer } from '../utils/answerMatch.js'
+import { isOpenQuestion, isOrderQuestion } from '../data/questions.js'
+import { matchAnswer, checkOrder } from '../utils/answerMatch.js'
 import TextAnswerInput from '../components/TextAnswerInput.jsx'
+import OrderAnswer from '../components/OrderAnswer.jsx'
 
 const DIFF_LABELS = { all: 'Toutes', 1: 'Facile', 2: 'Moyen', 3: 'Difficile' }
 
@@ -331,6 +332,16 @@ function RacePlaying({ pd, participants, answers, myAnswers, isHost, submitAnswe
     await submitAnswer({ q_idx, answer_idx: -1, is_correct: isCorrect, answer_text: text })
   }
 
+  async function submitOrder(ordered) {
+    if (revealed || selected !== null || !q) return
+    const myAns = myAnswers.find(a => a.q_idx === q_idx)
+    if (myAns) return
+    setSelected('ordered')
+    const isCorrect = checkOrder(ordered, q.items)
+    answer(q.theme ?? 'multi', q.difficulty ?? 1, isCorrect, isPublic)
+    await submitAnswer({ q_idx, answer_idx: -1, is_correct: isCorrect, answer_text: JSON.stringify(ordered) })
+  }
+
   if (!q) return <Centered><Spinner /></Centered>
 
   const myAnswer     = myAnswers.find(a => a.q_idx === q_idx)
@@ -379,8 +390,21 @@ function RacePlaying({ pd, participants, answers, myAnswers, isHost, submitAnswe
           {q.theme && <p className="text-xs text-slate-600 uppercase tracking-wider mt-3">{q.theme}</p>}
         </div>
 
-        {/* Réponse — texte libre OU choix multiples */}
-        {isOpenQuestion(q) ? (
+        {/* Réponse — classement OU texte libre OU choix multiples */}
+        {isOrderQuestion(q) ? (
+          <div className="mb-5">
+            <OrderAnswer
+              qid={q.id}
+              items={q.items}
+              hint={q.hint}
+              submitted={myAnswer?.answer_text ? JSON.parse(myAnswer.answer_text) : null}
+              revealed={revealed}
+              isCorrect={myAnswer?.is_correct ?? null}
+              onSubmit={submitOrder}
+              accent="green"
+            />
+          </div>
+        ) : isOpenQuestion(q) ? (
           <div className="mb-5">
             <TextAnswerInput
               answer={q.answer}
@@ -724,7 +748,22 @@ function RecapCard({ q, idx, ans, status }) {
 
       <p className="font-semibold text-sm md:text-base mb-3">{q.q}</p>
 
-      {isOpenQuestion(q) ? (
+      {isOrderQuestion(q) ? (
+        <div className="space-y-1">
+          {q.hint && <p className="text-xs text-slate-500 mb-1">{q.hint}</p>}
+          {q.items.map((item, i) => {
+            const mine = ans?.answer_text ? (() => { try { return JSON.parse(ans.answer_text)[i] } catch { return null } })() : null
+            const ok = mine === item
+            return (
+              <div key={i} className={`flex items-center gap-2 text-sm rounded-lg px-3 py-1.5 ${ok ? 'bg-green-500/15 text-green-300' : 'bg-red-500/10 text-red-300'}`}>
+                <span className="text-xs opacity-50 w-4">{i + 1}.</span>
+                <span className="flex-1 break-words">{item}</span>
+                {ans && !ok && mine && <span className="text-red-400/60 text-xs">tu avais : {mine}</span>}
+              </div>
+            )
+          })}
+        </div>
+      ) : isOpenQuestion(q) ? (
         <div className="space-y-1.5">
           {ans?.answer_text && (
             <div className={`flex items-center gap-2 text-sm rounded-lg px-3 py-1.5 ${
