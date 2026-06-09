@@ -589,18 +589,30 @@ function RaceFinished({ participants, answers, q_count, questions, myAnswers, us
   const winner  = ranked[0]
   const { addXP, recordGame } = useGame()
 
-  // Récompense XP — une fois, par room+user. Basé sur le rang et le score.
-  const myEntry  = ranked.find(p => p.profile_id === userId)
-  const myRank   = myEntry ? ranked.indexOf(myEntry) + 1 : null
-  const myScore  = myEntry?.score ?? 0
+  // Récompense XP — une fois, par room+user. Robuste : on calcule le rang du
+  // joueur à partir de TOUS les ids présents (participants + auteurs de
+  // réponses), pour ne pas dépendre d'une liste `participants` complète.
+  const allIds = [...new Set([
+    ...participants.map(p => p.profile_id),
+    ...answers.map(a => a.profile_id),
+  ])]
+  const fullRanked = allIds
+    .map(id => ({ id, score: scores[id] ?? 0 }))
+    .sort((a, b) => b.score - a.score)
+  const myIdx   = fullRanked.findIndex(r => r.id === userId)
+  const myRank  = myIdx >= 0 ? myIdx + 1 : null
+  const myScore = myIdx >= 0 ? fullRanked[myIdx].score : 0
+
   const xpEarnedRef = useRef(null)
   useEffect(() => {
-    if (xpEarnedRef.current !== null || !roomId || !userId || !myRank) return
+    if (xpEarnedRef.current !== null) return
+    if (!roomId || !userId || !myRank) return
     const amount = raceXP(myRank, myScore)
     xpEarnedRef.current = awardXPOnce(`race:${roomId}:${userId}`, amount, addXP)
     // Achievements : comptabilise la partie (victoire = 1er)
     recordGameOnce(`race:${roomId}:${userId}`, 'race', myRank === 1, recordGame)
-  }, [roomId, userId, myRank, myScore, addXP, recordGame])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [roomId, userId, myRank, myScore])
 
   return (
     <div className="max-w-xl mx-auto px-4 py-10 space-y-6">
