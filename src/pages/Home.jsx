@@ -9,6 +9,7 @@ import { findEcole } from '../data/ecoles.js'
 import Avatar from '../components/Avatar.jsx'
 import ShinyButton from '../components/ShinyButton.jsx'
 import SchoolBadge from '../components/SchoolBadge.jsx'
+import SchoolLogo from '../components/SchoolLogo.jsx'
 import AchievementBadge from '../components/AchievementBadge.jsx'
 import { evalAchievements } from '../data/achievements.js'
 
@@ -78,8 +79,15 @@ export default function Home() {
 
         {/* Badge d'école + achievements */}
         <div className="relative mt-4 flex flex-col items-center sm:flex-row sm:items-start gap-x-6 gap-y-4">
-          {user && myEcole?.logo && (
-            <SchoolBadge logo={myEcole.logo} label={myEcole.label} />
+          {user && myEcole && myEcole.value !== 'aucune' && (
+            myEcole.logo
+              ? <SchoolBadge logo={myEcole.logo} label={myEcole.label} />
+              : (
+                <span className="inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-3 py-2" title={myEcole.label}>
+                  <SchoolLogo ecole={myEcole} size={28} />
+                  <span className="text-sm font-semibold text-slate-200">{myEcole.label}</span>
+                </span>
+              )
           )}
           <div className="flex flex-wrap justify-center sm:justify-start gap-3">
             {achievements.map(a => (
@@ -324,9 +332,10 @@ function Podium({ currentUserId, myXP = 0 }) {
                       <img src={ecole.logo} alt={ecole.label} title={ecole.label} draggable={false} className="h-3.5 w-auto" />
                     </span>
                   ) : (
-                    <div className="text-[11px] text-slate-500 truncate max-w-full" title={ecole.label}>
-                      🎓 {ecole.short}
-                    </div>
+                    <span className="inline-flex items-center gap-1.5 max-w-full" title={ecole.label}>
+                      <SchoolLogo ecole={ecole} size={18} />
+                      <span className="text-[11px] text-slate-500 truncate">{ecole.short}</span>
+                    </span>
                   )
                 )}
               </div>

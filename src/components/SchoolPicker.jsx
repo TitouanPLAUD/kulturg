@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState, useEffect } from 'react'
 import { ECOLES, ECOLES_CATEGORIES, findEcole } from '../data/ecoles.js'
+import SchoolLogo from './SchoolLogo.jsx'
 
 /**
  * Combobox d'écoles françaises avec recherche.
@@ -97,9 +98,12 @@ export default function SchoolPicker({ value, onChange, placeholder = "Choisis t
                       key={e.value}
                       type="button"
                       onClick={() => pick(e.value)}
-                      className={`w-full text-left px-3 py-2 text-sm flex items-center justify-between gap-2 hover:bg-white/5 transition ${value === e.value ? 'bg-midi-accent/10 text-midi-accent' : ''}`}
+                      className={`w-full text-left px-3 py-2 text-sm flex items-center gap-2.5 hover:bg-white/5 transition ${value === e.value ? 'bg-midi-accent/10 text-midi-accent' : ''}`}
                     >
-                      <span className="truncate">{e.label}</span>
+                      {e.value !== 'aucune' && e.value !== 'autre'
+                        ? <SchoolLogo ecole={e} size={22} />
+                        : <span className="w-[22px] shrink-0" />}
+                      <span className="truncate flex-1">{e.label}</span>
                       <span className="text-xs text-slate-500 shrink-0">{e.short}</span>
                     </button>
                   ))}
