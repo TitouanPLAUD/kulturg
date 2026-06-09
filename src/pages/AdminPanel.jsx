@@ -71,17 +71,20 @@ function QuestionsTab() {
     if (busy) return
     setBusy(fb.id)
     const qd = fb.question_data ?? {}
+    const fmt = qd.format ?? 'mcq'
     const { error } = await supabase.from('community_questions').insert({
       feedback_id: fb.id,
       proposed_by: fb.user_id,
       theme:       qd.theme ?? 'societe',
       difficulty:  qd.difficulty ?? 2,
-      format:      qd.format ?? 'mcq',
+      format:      fmt,
       q:           qd.q ?? '',
-      choices:     qd.format === 'open' ? null : (qd.choices ?? null),
-      answer_idx:  qd.format === 'open' ? null : (qd.answer ?? 0),
-      answer_text: qd.format === 'open' ? (qd.answer ?? '') : null,
-      accepts:     qd.format === 'open' ? (qd.accepts ?? []) : null,
+      choices:     fmt === 'mcq'  ? (qd.choices ?? null) : null,
+      answer_idx:  fmt === 'mcq'  ? (qd.answer ?? 0)     : null,
+      answer_text: fmt === 'open' ? (qd.answer ?? '')    : null,
+      accepts:     fmt === 'open' ? (qd.accepts ?? [])   : null,
+      items:       fmt === 'order' ? (qd.items ?? null)  : null,
+      hint:        fmt === 'order' ? (qd.hint ?? null)   : null,
       status:      'accepted',
     })
     if (!error) {
@@ -155,13 +158,23 @@ function QuestionCard({ fb, busy, onAccept, onReject }) {
         <div className="flex items-center gap-1.5">
           {theme && <span className="chip text-xs">{theme.emoji} {theme.label}</span>}
           <span className="chip text-xs">{diffLabel}</span>
-          <span className="chip text-xs">{qd.format === 'open' ? '✍️ Libre' : '🔘 QCM'}</span>
+          <span className="chip text-xs">{qd.format === 'open' ? '✍️ Libre' : qd.format === 'order' ? '🔢 Classement' : '🔘 QCM'}</span>
         </div>
       </div>
 
       <p className="font-semibold mb-2">{qd.q}</p>
 
-      {qd.format === 'open' ? (
+      {qd.format === 'order' ? (
+        <div className="text-sm space-y-1">
+          {qd.hint && <p className="text-xs text-slate-500 mb-1">↕ {qd.hint}</p>}
+          {(qd.items ?? []).map((it, i) => (
+            <div key={i} className="flex items-center gap-2 px-2 py-1 rounded-lg bg-white/5">
+              <span className="text-xs text-slate-500 w-4">{i + 1}.</span>
+              <span className="text-slate-300">{it}</span>
+            </div>
+          ))}
+        </div>
+      ) : qd.format === 'open' ? (
         <div className="text-sm space-y-1">
           <div className="text-green-300">✓ {qd.answer}</div>
           {qd.accepts?.length > 0 && (

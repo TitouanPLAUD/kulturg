@@ -13,6 +13,9 @@ function rowToQuestion(row) {
   if (row.format === 'open') {
     return { ...base, type: 'open', answer: row.answer_text ?? '', accepts: row.accepts ?? [] }
   }
+  if (row.format === 'order') {
+    return { ...base, type: 'order', items: row.items ?? [], hint: row.hint ?? '' }
+  }
   return { ...base, choices: row.choices ?? [], answer: row.answer_idx ?? 0 }
 }
 

@@ -26,26 +26,28 @@ export default function FeedbackButton() {
 
   // Champs de proposition de question
   const [qText,   setQText]   = useState('')
-  const [qFormat, setQFormat] = useState('mcq')      // 'mcq' | 'open'
+  const [qFormat, setQFormat] = useState('mcq')      // 'mcq' | 'open' | 'order'
   const [qTheme,  setQTheme]  = useState('histoire')
   const [qDiff,   setQDiff]   = useState(1)
   const [choices, setChoices] = useState(['', '', '', ''])
   const [correct, setCorrect] = useState(0)
   const [answer,  setAnswer]  = useState('')
   const [accepts, setAccepts] = useState('')
+  const [items,   setItems]   = useState(['', '', '', '']) // classement : dans le bon ordre
+  const [hint,    setHint]    = useState('')
 
   function resetAll() {
     setMessage(''); setQText(''); setQFormat('mcq'); setQTheme('histoire')
     setQDiff(1); setChoices(['', '', '', '']); setCorrect(0); setAnswer(''); setAccepts('')
+    setItems(['', '', '', '']); setHint('')
   }
 
   // Validation selon le type
   function isValid() {
     if (type !== 'question') return message.trim().length > 0
     if (!qText.trim()) return false
-    if (qFormat === 'mcq') {
-      return choices.every(c => c.trim()) // 4 choix remplis
-    }
+    if (qFormat === 'mcq')   return choices.every(c => c.trim())
+    if (qFormat === 'order') return hint.trim() && items.every(it => it.trim())
     return answer.trim().length > 0
   }
 
@@ -58,14 +60,17 @@ export default function FeedbackButton() {
     let msg = message.trim()
 
     if (type === 'question') {
-      question_data = qFormat === 'mcq'
-        ? { format: 'mcq', q: qText.trim(), theme: qTheme, difficulty: qDiff,
-            choices: choices.map(c => c.trim()), answer: correct }
-        : { format: 'open', q: qText.trim(), theme: qTheme, difficulty: qDiff,
-            answer: answer.trim(),
-            accepts: accepts.split(',').map(a => a.trim()).filter(Boolean) }
-      // On stocke aussi un résumé lisible dans message
-      msg = `[Proposition ${qFormat === 'mcq' ? 'QCM' : 'libre'}] ${qText.trim()}`
+      const base = { q: qText.trim(), theme: qTheme, difficulty: qDiff }
+      if (qFormat === 'mcq') {
+        question_data = { ...base, format: 'mcq', choices: choices.map(c => c.trim()), answer: correct }
+      } else if (qFormat === 'order') {
+        question_data = { ...base, format: 'order', items: items.map(it => it.trim()), hint: hint.trim() }
+      } else {
+        question_data = { ...base, format: 'open', answer: answer.trim(),
+          accepts: accepts.split(',').map(a => a.trim()).filter(Boolean) }
+      }
+      const fmtLabel = qFormat === 'mcq' ? 'QCM' : qFormat === 'order' ? 'classement' : 'libre'
+      msg = `[Proposition ${fmtLabel}] ${qText.trim()}`
     }
 
     const { error } = await supabase.from('feedbacks').insert({
@@ -153,14 +158,18 @@ export default function FeedbackButton() {
                     </div>
 
                     {/* Format */}
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-3 gap-2">
                       <button type="button" onClick={() => setQFormat('mcq')}
-                        className={`py-2 rounded-lg text-sm font-semibold border-2 transition ${qFormat === 'mcq' ? 'border-green-500/40 bg-green-500/10 text-green-300' : 'border-white/10 bg-white/5 text-slate-400'}`}>
-                        🔘 Choix multiples
+                        className={`py-2 rounded-lg text-xs font-semibold border-2 transition ${qFormat === 'mcq' ? 'border-green-500/40 bg-green-500/10 text-green-300' : 'border-white/10 bg-white/5 text-slate-400'}`}>
+                        🔘 QCM
                       </button>
                       <button type="button" onClick={() => setQFormat('open')}
-                        className={`py-2 rounded-lg text-sm font-semibold border-2 transition ${qFormat === 'open' ? 'border-green-500/40 bg-green-500/10 text-green-300' : 'border-white/10 bg-white/5 text-slate-400'}`}>
-                        ✍️ Réponse libre
+                        className={`py-2 rounded-lg text-xs font-semibold border-2 transition ${qFormat === 'open' ? 'border-green-500/40 bg-green-500/10 text-green-300' : 'border-white/10 bg-white/5 text-slate-400'}`}>
+                        ✍️ Libre
+                      </button>
+                      <button type="button" onClick={() => setQFormat('order')}
+                        className={`py-2 rounded-lg text-xs font-semibold border-2 transition ${qFormat === 'order' ? 'border-green-500/40 bg-green-500/10 text-green-300' : 'border-white/10 bg-white/5 text-slate-400'}`}>
+                        🔢 Classement
                       </button>
                     </div>
 
@@ -198,6 +207,30 @@ export default function FeedbackButton() {
                           <input value={accepts} onChange={e => setAccepts(e.target.value)} maxLength={200}
                             placeholder="Ex : Roma, la ville de Rome" className="input w-full text-sm" />
                         </div>
+                      </div>
+                    )}
+
+                    {/* Classement : sens + 4 items dans le bon ordre */}
+                    {qFormat === 'order' && (
+                      <div className="space-y-2">
+                        <div>
+                          <label className="block text-xs text-slate-400 mb-1 uppercase tracking-widest">Sens du classement</label>
+                          <input value={hint} onChange={e => setHint(e.target.value)} maxLength={80}
+                            placeholder="Ex : du plus ancien au plus récent" className="input w-full text-sm" />
+                        </div>
+                        <label className="block text-xs text-slate-400 uppercase tracking-widest">
+                          Items <span className="text-slate-600">(dans le BON ordre : 1 = premier)</span>
+                        </label>
+                        {items.map((it, i) => (
+                          <div key={i} className="flex items-center gap-2">
+                            <span className="w-7 h-7 shrink-0 rounded-full border-2 border-white/20 flex items-center justify-center text-xs font-bold text-slate-400">{i + 1}</span>
+                            <input value={it} maxLength={80}
+                              onChange={e => { const next = [...items]; next[i] = e.target.value; setItems(next) }}
+                              placeholder={`${i + 1}${i === 0 ? 'er' : 'e'} de la liste`}
+                              className="input flex-1 text-sm" />
+                          </div>
+                        ))}
+                        <p className="text-xs text-slate-600">Les items seront mélangés aux joueurs ; c'est cet ordre qui fait foi.</p>
                       </div>
                     )}
 
