@@ -40,6 +40,7 @@ export default function OrderAnswer({
   useEffect(() => { if (submitted) setOrder(submitted) }, [submitted])
 
   const locked = disableAll || revealed || submitted != null
+  const [dragIndex, setDragIndex] = useState(null)
 
   function move(i, dir) {
     if (locked) return
@@ -48,6 +49,26 @@ export default function OrderAnswer({
     const next = [...order]
     ;[next[i], next[j]] = [next[j], next[i]]
     setOrder(next)
+  }
+
+  // ── Glisser-déposer à la souris ──
+  function handleDragStart(i) {
+    if (locked) return
+    setDragIndex(i)
+  }
+  function handleDragOver(e, j) {
+    if (locked || dragIndex === null || dragIndex === j) return
+    e.preventDefault()
+    setOrder(prev => {
+      const next = [...prev]
+      const [moved] = next.splice(dragIndex, 1)
+      next.splice(j, 0, moved)
+      return next
+    })
+    setDragIndex(j)
+  }
+  function handleDragEnd() {
+    setDragIndex(null)
   }
 
   const accentBtn = {
@@ -90,8 +111,19 @@ export default function OrderAnswer({
 
       <div className="space-y-1.5">
         {order.map((item, i) => (
-          <div key={item} className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border-2 transition
-            ${locked ? 'border-white/10 bg-white/5 opacity-70' : 'border-white/10 bg-white/5'}`}>
+          <div key={item}
+            draggable={!locked}
+            onDragStart={() => handleDragStart(i)}
+            onDragOver={e => handleDragOver(e, i)}
+            onDrop={e => e.preventDefault()}
+            onDragEnd={handleDragEnd}
+            className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border-2 transition select-none
+              ${locked ? 'border-white/10 bg-white/5 opacity-70'
+                       : 'border-white/10 bg-white/5 cursor-grab active:cursor-grabbing hover:border-white/20'}
+              ${dragIndex === i ? 'opacity-60 ring-2 ring-midi-accent/50 scale-[1.02]' : ''}`}>
+            {!locked && (
+              <span className="shrink-0 text-slate-500 leading-none" title="Glisser pour réordonner" aria-hidden="true">⠿</span>
+            )}
             <span className="w-6 h-6 shrink-0 rounded-lg bg-white/10 grid place-items-center text-xs font-bold text-slate-300">{i + 1}</span>
             <span className="flex-1 text-sm font-medium break-words">{item}</span>
             {!locked && (
@@ -105,6 +137,10 @@ export default function OrderAnswer({
           </div>
         ))}
       </div>
+
+      {!locked && (
+        <p className="text-center text-[11px] text-slate-600">Glisse les réponses ou utilise les flèches</p>
+      )}
 
       {!locked && (
         <button type="button" onClick={() => onSubmit(order)}
