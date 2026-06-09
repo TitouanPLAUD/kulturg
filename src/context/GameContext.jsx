@@ -114,13 +114,15 @@ export function GameProvider({ children }) {
   // immédiat car MERGE_REMOTE ne change pas le state dans ce cas et le
   // useEffect de push ne se redéclencherait pas.
   // Push serveur via RPC sync_progress (SECURITY DEFINER + GREATEST côté serveur).
+  // IMPORTANT : un appel supabase-js n'est exécuté que si on consomme la
+  // promesse (.then/await). Sans ça, la requête n'est JAMAIS envoyée.
   function pushProgress() {
     if (!user) return
     supabase.rpc('sync_progress', {
       xp:       state.totalXP,
       answered: state.totalAnswered,
       correct:  state.totalCorrect,
-    })
+    }).then(() => {}, () => {})  // déclenche réellement l'envoi
   }
 
   // Au login : merge de la valeur serveur dans le state local (le plus haut
