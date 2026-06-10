@@ -7,8 +7,13 @@ import { ELO_START } from '../utils/elo.js'
 
 export const RACE_MAX_PLAYERS = 15
 export const RACE_MIN_PLAYERS = 2
-export const Q_COUNT          = 10      // nombre de questions par défaut
+export const Q_COUNT          = 15      // nombre de questions par défaut
 export const TIMER_MS         = 20000   // durée par question par défaut (ms)
+
+// ── Questions « liste » (citer le plus de réponses) ──
+export const LIST_TIMER_MS    = 30000   // 30 s pour ce type
+export const LIST_POINT_PER   = 2       // points par bonne réponse citée
+export const LIST_RANK_BONUS  = [10, 5, 3] // bonus pour les 3 joueurs avec le plus de bonnes réponses
 
 // Réglages personnalisables d'une partie
 export const Q_COUNT_OPTIONS = [5, 10, 15, 20]      // nombre de questions
@@ -24,7 +29,7 @@ export const DEFAULT_RACE_SETTINGS = {
   themes:     [],     // [] = tous les thèmes
   difficulty: 'all',  // 'all' | 1 | 2 | 3
   duration:   20,     // secondes par question
-  count:      10,     // nombre de questions
+  count:      15,     // nombre de questions
 }
 
 // Points par rang de réponse correcte
@@ -140,13 +145,48 @@ export function computeQuestionPoints(answers, q_idx) {
   return map
 }
 
-// Scores totaux { [profile_id]: total }, bonus de série inclus.
-export function computeScores(answers, q_count) {
-  const players = [...new Set(answers.map(a => a.profile_id))]
+// ── Question « liste » : résultat par joueur (nombre de bonnes réponses + rang) ──
+// On stocke le nombre de bonnes réponses dans answer_idx au moment du submit.
+export function computeListResult(answers, q_idx) {
+  const rows = answers
+    .filter(a => a.q_idx === q_idx)
+    .map(a => ({
+      profile_id: a.profile_id,
+      count: Math.max(0, a.answer_idx ?? 0),
+      at: a.answered_at,
+    }))
+  const ranked = rows
+    .filter(r => r.count > 0)
+    .sort((a, b) => b.count - a.count || new Date(a.at) - new Date(b.at))
+  return { rows, ranked }
+}
 
-  // Points de base (par rang de rapidité) pour chaque question
+// Points d'une question « liste » : 2 par bonne réponse + bonus de rang (10/5/3)
+export function computeListPoints(answers, q_idx) {
+  const { rows, ranked } = computeListResult(answers, q_idx)
+  const map = {}
+  for (const r of rows) {
+    if (r.count > 0) map[r.profile_id] = r.count * LIST_POINT_PER
+  }
+  ranked.forEach((r, i) => {
+    if (i < LIST_RANK_BONUS.length) map[r.profile_id] = (map[r.profile_id] ?? 0) + LIST_RANK_BONUS[i]
+  })
+  return map
+}
+
+// Scores totaux { [profile_id]: total }, bonus de série inclus.
+// `questions` permet de gérer le scoring spécifique des questions « liste ».
+export function computeScores(answers, q_count, questions = []) {
+  const players = [...new Set(answers.map(a => a.profile_id))]
+  const isList = (q) => questions[q]?.type === 'list'
+
+  // Points de base (par rang de rapidité) pour chaque question normale
   const baseByQ = []
-  for (let q = 0; q < q_count; q++) baseByQ[q] = computeQuestionPoints(answers, q)
+  const listByQ = {}
+  for (let q = 0; q < q_count; q++) {
+    if (isList(q)) { baseByQ[q] = {}; listByQ[q] = computeListPoints(answers, q) }
+    else baseByQ[q] = computeQuestionPoints(answers, q)
+  }
 
   // Lookup rapide des bonnes réponses : "pid:q_idx"
   const correct = new Set(
@@ -158,6 +198,10 @@ export function computeScores(answers, q_count) {
     let streak = 0
     let total  = 0
     for (let q = 0; q < q_count; q++) {
+      if (isList(q)) {
+        total += listByQ[q]?.[pid] ?? 0   // la série n'est pas affectée
+        continue
+      }
       if (correct.has(`${pid}:${q}`)) {
         streak += 1
         total += (baseByQ[q][pid] ?? 0) + streakBonus(streak)
@@ -168,6 +212,23 @@ export function computeScores(answers, q_count) {
     if (total) scores[pid] = total
   }
   return scores
+}
+
+// ── Fetch (caché) des questions « liste » depuis Supabase ──
+let _listCache = null
+export async function getListQuestions() {
+  if (_listCache) return _listCache
+  const { data } = await supabase.from('list_questions').select('*')
+  _listCache = (data ?? []).map(r => ({
+    id:         r.id,
+    type:       'list',
+    theme:      r.theme,
+    difficulty: r.difficulty ?? 2,
+    q:          r.prompt,
+    answers:    Array.isArray(r.answers) ? r.answers : [],
+    timer_ms:   LIST_TIMER_MS,
+  }))
+  return _listCache
 }
 
 export function useRaceRoom(code) {
@@ -260,6 +321,15 @@ export function useRaceRoom(code) {
     if (!isHost || participants.length < minPlayers) return
     const settings  = { ...DEFAULT_RACE_SETTINGS, ...(room.phase_data?.settings ?? {}) }
     const questions = pickQuestions(settings)
+    // Injecte UNE question « liste » à une position aléatoire (une seule par partie)
+    try {
+      const listPool = await getListQuestions()
+      if (listPool.length && questions.length) {
+        const listQ = listPool[Math.floor(Math.random() * listPool.length)]
+        const pos   = Math.floor(Math.random() * questions.length)
+        questions[pos] = { ...listQ }
+      }
+    } catch { /* si l'échec, on garde une partie 100% normale */ }
     await supabase.from('race_answers').delete().eq('room_id', room.id)
     setAnswers([])
     return updateRoom({

@@ -16,15 +16,19 @@ import {
   Q_COUNT,
   TIMER_MS,
   POINTS,
+  computeListResult,
+  LIST_POINT_PER,
+  LIST_RANK_BONUS,
 } from '../hooks/useRaceRoom.js'
 import { THEMES } from '../data/themes.js'
 import Avatar from '../components/Avatar.jsx'
 import { awardXPOnce, recordGameOnce, raceXP } from '../utils/multiplayerXP.js'
 import { eloDeltas, applyEloOnce, ELO_START } from '../utils/elo.js'
-import { isOpenQuestion, isOrderQuestion } from '../data/questions.js'
+import { isOpenQuestion, isOrderQuestion, isListQuestion } from '../data/questions.js'
 import { matchAnswer, checkOrder } from '../utils/answerMatch.js'
 import TextAnswerInput from '../components/TextAnswerInput.jsx'
 import OrderAnswer from '../components/OrderAnswer.jsx'
+import ListAnswer from '../components/ListAnswer.jsx'
 
 const DIFF_LABELS = { all: 'Toutes', 1: 'Facile', 2: 'Moyen', 3: 'Difficile' }
 
@@ -290,20 +294,43 @@ function RacePlaying({ pd, participants, answers, myAnswers, isHost, submitAnswe
   const questions  = pd.questions ?? []
   const q_idx      = pd.q_idx ?? 0
   const q          = questions[q_idx]
-  const { secs, pct, expired } = useTimer(pd.q_start_at, pd.timer_ms ?? TIMER_MS)
+  const isList     = isListQuestion(q)
+  // Timer par question (la question « liste » dure plus longtemps : 30 s)
+  const timerMs    = q?.timer_ms ?? pd.timer_ms ?? TIMER_MS
+  const { secs, pct, expired } = useTimer(pd.q_start_at, timerMs)
 
   const { answer } = useGame()
   const [selected, setSelected] = useState(null)
+  const [listAccepted, setListAccepted] = useState([]) // réponses validées pour la question liste
   const startedAt = pd.q_start_at ? new Date(pd.q_start_at).getTime() : Date.now()
 
   // ── Révélation : dérivée (identique pour TOUS les clients) ─────
   const qAnswers = answers.filter(a => a.q_idx === q_idx)
   const allAnswered = participants.length > 0 &&
     participants.every(p => qAnswers.some(a => a.profile_id === p.profile_id))
-  const revealed = expired || allAnswered
+  // La question liste se révèle uniquement au temps écoulé (tout le monde tape 30 s)
+  const revealed = isList ? expired : (expired || allAnswered)
 
   // Reset sélection à chaque nouvelle question
-  useEffect(() => { setSelected(null) }, [q_idx])
+  useEffect(() => { setSelected(null); setListAccepted([]) }, [q_idx])
+
+  // Question liste : soumission auto au temps écoulé (une fois)
+  const listSubmitRef = useRef(false)
+  useEffect(() => { listSubmitRef.current = false }, [q_idx])
+  useEffect(() => {
+    if (!isList || !expired || listSubmitRef.current) return
+    if (myAnswers.some(a => a.q_idx === q_idx)) { listSubmitRef.current = true; return }
+    listSubmitRef.current = true
+    const count = listAccepted.length
+    answer(q.theme ?? 'multi', q.difficulty ?? 2, count > 0, isPublic)
+    submitAnswer({
+      q_idx,
+      answer_idx: count,                                   // on stocke le nombre de bonnes réponses
+      is_correct: count > 0,
+      answer_text: JSON.stringify(listAccepted.map(a => a.label)),
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isList, expired, q_idx])
 
   // ── Auto-avance après révélation (host only) ───────────────────
   // hostAdvance n'est pas memoized → on garde la dernière ref dans un ref
@@ -351,7 +378,7 @@ function RacePlaying({ pd, participants, answers, myAnswers, isHost, submitAnswe
 
   const myAnswer     = myAnswers.find(a => a.q_idx === q_idx)
   const qPoints      = revealed ? computeQuestionPoints(answers, q_idx) : {}
-  const totalScores  = computeScores(answers, q_idx + (revealed ? 1 : 0))
+  const totalScores  = computeScores(answers, q_idx + (revealed ? 1 : 0), questions)
   const myBase       = qPoints[userId] ?? 0
   // Série de bonnes réponses du joueur après cette question (si correcte)
   const myStreak     = revealed && myAnswer?.is_correct
@@ -391,12 +418,29 @@ function RacePlaying({ pd, participants, answers, myAnswers, isHost, submitAnswe
 
         {/* Question */}
         <div className="bg-white/5 border border-white/10 rounded-2xl p-5 md:p-7 text-center mb-5 flex-none">
+          {isList && (
+            <p className="inline-flex items-center gap-1.5 text-xs font-bold bg-green-500/15 text-green-400 px-3 py-1 rounded-full mb-3">
+              📝 Cite-en le plus possible · +2 pts chacune · 30 s
+            </p>
+          )}
           <p className="text-xl md:text-2xl font-bold leading-relaxed">{q.q}</p>
           {q.theme && <p className="text-xs text-slate-600 uppercase tracking-wider mt-3">{q.theme}</p>}
         </div>
 
-        {/* Réponse — classement OU texte libre OU choix multiples */}
-        {isOrderQuestion(q) ? (
+        {/* Réponse — liste OU classement OU texte libre OU choix multiples */}
+        {isList ? (
+          <div className="mb-5 space-y-4">
+            <ListAnswer
+              pool={q.answers ?? []}
+              accepted={listAccepted}
+              onChange={setListAccepted}
+              locked={revealed || expired}
+            />
+            {revealed && (
+              <ListResults answers={answers} q_idx={q_idx} participants={participants} userId={userId} pool={q.answers ?? []} />
+            )}
+          </div>
+        ) : isOrderQuestion(q) ? (
           <div className="mb-5">
             <OrderAnswer
               qid={q.id}
@@ -453,7 +497,7 @@ function RacePlaying({ pd, participants, answers, myAnswers, isHost, submitAnswe
         )}
 
         {/* Feedback après révélation */}
-        {revealed && (
+        {revealed && !isList && (
           <div className="animate-pop">
             {myAnswer ? (
               myAnswer.is_correct ? (
@@ -482,7 +526,7 @@ function RacePlaying({ pd, participants, answers, myAnswers, isHost, submitAnswe
         )}
 
         {/* Mini podium de la question */}
-        {revealed && (
+        {revealed && !isList && (
           <div className="mt-3 bg-white/5 border border-white/10 rounded-xl p-3">
             <p className="text-xs text-slate-500 uppercase tracking-widest mb-2">Cette question</p>
             <QuestionPodium answers={qAnswers} participants={participants} q_idx={q_idx} />
@@ -490,7 +534,7 @@ function RacePlaying({ pd, participants, answers, myAnswers, isHost, submitAnswe
         )}
 
         {/* Réponses reçues en temps réel */}
-        {!revealed && (
+        {!revealed && !isList && (
           <div className="flex items-center gap-2 text-xs text-slate-600 mt-auto pt-2">
             <div className="flex gap-1">
               {participants.map(p => {
@@ -510,7 +554,7 @@ function RacePlaying({ pd, participants, answers, myAnswers, isHost, submitAnswe
       {/* ── Sidebar classement ── */}
       <aside className="lg:w-72 lg:min-h-screen border-t border-white/10 lg:border-t-0 lg:border-l px-4 py-4 lg:py-8 shrink-0">
         <p className="text-xs text-slate-500 uppercase tracking-widest mb-3">📊 Classement</p>
-        <Scoreboard participants={participants} answers={answers} q_count={q_idx + (revealed ? 1 : 0)} currentUserId={userId} />
+        <Scoreboard participants={participants} answers={answers} q_count={q_idx + (revealed ? 1 : 0)} currentUserId={userId} questions={questions} />
       </aside>
     </div>
   )
@@ -545,9 +589,65 @@ function QuestionPodium({ answers, participants, q_idx }) {
   )
 }
 
+// ─── Résultats d'une question « liste » ────────────────────────
+function ListResults({ answers, q_idx, participants, userId, pool = [] }) {
+  const { ranked, rows } = computeListResult(answers, q_idx)
+  const byId    = Object.fromEntries(rows.map(r => [r.profile_id, r]))
+  const profOf  = (pid) => participants.find(p => p.profile_id === pid)?.profile
+  const myRow   = byId[userId]
+  const myCount = myRow?.count ?? 0
+  const myRankIdx = ranked.findIndex(r => r.profile_id === userId)
+  const myBonus = myRankIdx >= 0 && myRankIdx < LIST_RANK_BONUS.length ? LIST_RANK_BONUS[myRankIdx] : 0
+  const myPts   = myCount * LIST_POINT_PER + myBonus
+  const medals  = ['🥇', '🥈', '🥉']
+
+  return (
+    <div className="space-y-3 animate-pop">
+      {/* Mon résultat */}
+      <div className={`rounded-xl p-4 text-center border ${myCount > 0 ? 'bg-green-500/10 border-green-500/30' : 'bg-white/5 border-white/10'}`}>
+        <p className={`font-bold ${myCount > 0 ? 'text-green-400' : 'text-slate-400'}`}>
+          {myCount > 0 ? `Tu as cité ${myCount} bonne${myCount > 1 ? 's' : ''} réponse${myCount > 1 ? 's' : ''} / ${pool.length}` : 'Aucune bonne réponse'}
+        </p>
+        {myCount > 0 && (
+          <p className="text-2xl font-display text-green-300 mt-1">
+            +{myPts} points
+            {myBonus > 0 && <span className="text-orange-400 text-sm font-semibold ml-2">🏆 +{myBonus} bonus rang</span>}
+          </p>
+        )}
+      </div>
+
+      {/* Classement de la question */}
+      <div className="bg-white/5 border border-white/10 rounded-xl p-3">
+        <p className="text-xs text-slate-500 uppercase tracking-widest mb-2">Classement de la question</p>
+        {ranked.length === 0 ? (
+          <p className="text-slate-600 text-xs italic text-center">Personne n'a trouvé de réponse…</p>
+        ) : (
+          <div className="space-y-1.5">
+            {ranked.map((r, i) => {
+              const prof  = profOf(r.profile_id)
+              const bonus = i < LIST_RANK_BONUS.length ? LIST_RANK_BONUS[i] : 0
+              const pts   = r.count * LIST_POINT_PER + bonus
+              const isMe  = r.profile_id === userId
+              return (
+                <div key={r.profile_id} className={`flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm ${isMe ? 'bg-green-500/10 border border-green-500/20' : 'bg-white/3'}`}>
+                  <span className="w-5 text-center">{i < 3 ? medals[i] : <span className="text-xs text-slate-500 font-mono">{i + 1}</span>}</span>
+                  <Avatar value={prof?.avatar} size={20} className="text-sm" />
+                  <span className={`flex-1 truncate text-xs font-medium ${isMe ? 'text-green-400' : 'text-slate-300'}`}>{prof?.nickname ?? '?'}</span>
+                  <span className="text-xs text-slate-500">{r.count} bonnes</span>
+                  <span className="font-bold text-green-400 text-sm">+{pts}</span>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // ─── Scoreboard sidebar ────────────────────────────────────────
-function Scoreboard({ participants, answers, q_count, currentUserId }) {
-  const scores  = computeScores(answers, q_count)
+function Scoreboard({ participants, answers, q_count, currentUserId, questions = [] }) {
+  const scores  = computeScores(answers, q_count, questions)
   const streaks = computeStreaks(answers, q_count)
   const ranked = [...participants]
     .map(p => ({ ...p, score: scores[p.profile_id] ?? 0 }))
@@ -584,7 +684,7 @@ function Scoreboard({ participants, answers, q_count, currentUserId }) {
 // ─── Écran final ───────────────────────────────────────────────
 function RaceFinished({ participants, answers, q_count, questions, myAnswers, userId, roomId, isPublic, isRanked }) {
   const { profile } = useAuth()
-  const scores = computeScores(answers, q_count)
+  const scores = computeScores(answers, q_count, questions)
   const ranked = [...participants]
     .map(p => ({ ...p, score: scores[p.profile_id] ?? 0 }))
     .sort((a, b) => b.score - a.score)
@@ -786,7 +886,9 @@ function RecapCard({ q, idx, ans, status }) {
 
       <p className="font-semibold text-sm md:text-base mb-3">{q.q}</p>
 
-      {isOrderQuestion(q) ? (
+      {isListQuestion(q) ? (
+        <ListRecap q={q} ans={ans} />
+      ) : isOrderQuestion(q) ? (
         <div className="space-y-1">
           {q.hint && <p className="text-xs text-slate-500 mb-1">{q.hint}</p>}
           {q.items.map((item, i) => {
@@ -838,6 +940,33 @@ function RecapCard({ q, idx, ans, status }) {
         })}
       </div>
       )}
+    </div>
+  )
+}
+
+// Récap d'une question « liste » : réponses citées vs pool complet
+function ListRecap({ q, ans }) {
+  let cited = []
+  try { cited = ans?.answer_text ? JSON.parse(ans.answer_text) : [] } catch { cited = [] }
+  const citedSet = new Set(cited)
+  const pool = q.answers ?? []
+  return (
+    <div className="space-y-2">
+      <p className="text-xs text-slate-400">
+        Tu as cité <strong className="text-green-400">{cited.length}</strong> / {pool.length} réponses possibles
+      </p>
+      <div className="flex flex-wrap gap-1.5">
+        {pool.map((a, i) => {
+          const found = citedSet.has(a)
+          return (
+            <span key={i} className={`rounded-lg px-2 py-0.5 text-xs border ${
+              found ? 'bg-green-500/15 text-green-300 border-green-500/30 font-medium'
+                    : 'bg-white/3 text-slate-500 border-white/10'}`}>
+              {a}
+            </span>
+          )
+        })}
+      </div>
     </div>
   )
 }

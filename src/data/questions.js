@@ -16,6 +16,7 @@ const ORDER_TAGGED = ORDER_QUESTIONS.map(q => ({ ...q, type: 'order' }))
 // Détecteurs de type
 export const isOpenQuestion  = (q) => q?.type === 'open'
 export const isOrderQuestion = (q) => q?.type === 'order'
+export const isListQuestion  = (q) => q?.type === 'list'
 export const isMcqQuestion   = (q) => !q?.type && Array.isArray(q?.choices)
 
 // Banque de questions — format: { id, theme, difficulty (1-3), q, choices: [a,b,c,d], answer (index), explain? }
