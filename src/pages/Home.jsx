@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useGame, levelFromXP, gradeFromLevel } from '../context/GameContext.jsx'
+import { ELO_START } from '../utils/elo.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useRaceRoom } from '../hooks/useRaceRoom.js'
 import { useTvRoom } from '../hooks/useTvRoom.js'
@@ -71,10 +72,10 @@ export default function Home() {
 
         {/* Stats */}
         <div className="relative mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <StatCard label="Niveau" value={level} accent />
+          <StatCard label="ELO" value={(user && profile ? (profile.elo ?? ELO_START) : ELO_START).toLocaleString('fr-FR')} accent />
+          <StatCard label="Niveau" value={level} />
           <StatCard label="XP total" value={rankedXP.toLocaleString('fr-FR')} />
           <StatCard label="Réussite" value={`${accuracy} %`} />
-          <StatCard label="Série" value={`${state.streak.current} j`} />
         </div>
 
         {/* Badge d'école + achievements */}
@@ -154,7 +155,7 @@ export default function Home() {
             <Link to="/classement" className="absolute right-0 text-sm text-midi-accent hover:underline">Voir tout →</Link>
           </div>
           <div className="flex-1 flex flex-col">
-            <Podium currentUserId={user?.id} myXP={state.totalXP} />
+            <Podium currentUserId={user?.id} myElo={user && profile ? (profile.elo ?? ELO_START) : 0} />
           </div>
         </section>
       </div>
@@ -189,42 +190,48 @@ function SplitGameCard({ user, emoji, logo, title, desc, tone, useHook, route, h
         </div>
       </div>
       <div className="grid grid-cols-2 gap-2 mt-auto">
-        <PublicSalonButton user={user} useHook={useHook} route={route}
-          highlight={highlight} highlightSubtle={highlightSubtle}
-          label="Salon public" />
-        <Link to="/multi"
-          className="w-full py-2.5 rounded-xl font-semibold text-sm text-center grid place-items-center bg-white/5 border border-white/10 text-slate-200 hover:bg-white/10 transition">
-          Partie privée
-        </Link>
+        <MatchmakeButton user={user} useHook={useHook} route={route} action="ranked"
+          highlight={highlight} highlightSubtle={highlightSubtle} label="🏆 RANKED" />
+        <MatchmakeButton user={user} useHook={useHook} route={route} action="public"
+          label="Salon public" plain />
       </div>
     </div>
   )
 }
 
-// ─── Bouton « Salon public » (matchmaking sans code) ──────────
-function PublicSalonButton({ user, useHook, route, highlight, highlightSubtle, label }) {
+// ─── Bouton de matchmaking (RANKED ou Salon public, sans code) ─
+function MatchmakeButton({ user, useHook, route, action, highlight, highlightSubtle, label, plain }) {
   const navigate = useNavigate()
-  const { joinPublicRoom } = useHook()
+  const hook = useHook()
+  const join = action === 'ranked' ? hook.joinRankedRoom : hook.joinPublicRoom
   const [loading, setLoading] = useState(false)
 
   async function handleClick() {
     if (!user) { navigate('/auth'); return }
     setLoading(true)
-    const { code, error } = await joinPublicRoom()
+    const { code, error } = await join()
     if (code) navigate(`/${route}/${code}`)
-    else { setLoading(false); alert(error ?? 'Impossible de rejoindre le salon public.') }
+    else { setLoading(false); alert(error ?? 'Impossible de rejoindre le salon.') }
   }
 
+  if (plain) {
+    return (
+      <button onClick={handleClick} disabled={loading}
+        className="w-full py-2.5 rounded-xl font-semibold text-sm text-center bg-white/5 border border-white/10 text-slate-200 hover:bg-white/10 transition disabled:opacity-60">
+        {loading ? 'Recherche…' : label}
+      </button>
+    )
+  }
   return (
     <ShinyButton onClick={handleClick} disabled={loading}
       className="w-full" highlight={highlight} highlightSubtle={highlightSubtle}>
-      {loading ? 'Recherche…' : (label ?? 'Salon public')}
+      {loading ? 'Recherche…' : label}
     </ShinyButton>
   )
 }
 
 // ─── Podium : top 3 joueurs du site (par XP) ──────────────────
-function Podium({ currentUserId, myXP = 0 }) {
+function Podium({ currentUserId, myElo = 0 }) {
   const [top, setTop]         = useState([])
   const [loading, setLoading] = useState(true)
 
@@ -237,9 +244,8 @@ function Podium({ currentUserId, myXP = 0 }) {
     async function load() {
       const { data } = await supabase
         .from('profiles')
-        .select('id, nickname, avatar, total_xp, school')
-        .gt('total_xp', 0)
-        .order('total_xp', { ascending: false })
+        .select('id, nickname, avatar, elo, school')
+        .order('elo', { ascending: false })
         .limit(3)
       if (cancelled) return
       setTop(data ?? [])
@@ -270,7 +276,7 @@ function Podium({ currentUserId, myXP = 0 }) {
       document.removeEventListener('visibilitychange', onVisible)
       supabase.removeChannel(channel)
     }
-  }, [myXP, currentUserId])
+  }, [myElo, currentUserId])
 
   if (loading) {
     return (
@@ -340,14 +346,14 @@ function Podium({ currentUserId, myXP = 0 }) {
                 )}
               </div>
               <div className={`w-full ${m.h} rounded-t-xl bg-gradient-to-b ${m.grad} border border-white/10 flex flex-col items-center justify-center`}>
-                <div className={`font-display text-xl ${m.txt}`}>{(p.total_xp ?? 0).toLocaleString('fr-FR')}</div>
-                <div className="text-[10px] text-slate-500 uppercase tracking-wider">XP · Niv. {levelFromXP(p.total_xp ?? 0)}</div>
+                <div className={`font-display text-xl ${m.txt}`}>{(p.elo ?? ELO_START).toLocaleString('fr-FR')}</div>
+                <div className="text-[10px] text-slate-500 uppercase tracking-wider">ELO</div>
               </div>
             </div>
           )
         })}
       </div>
-      <p className="text-xs text-slate-600 text-center mt-3">Classé par XP total</p>
+      <p className="text-xs text-slate-600 text-center mt-3">Classé par ELO</p>
     </div>
   )
 }

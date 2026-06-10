@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import { QUESTIONS as ALL_QUESTIONS } from '../data/questions.js'
 import { getCommunityQuestions } from '../data/communityQuestions.js'
+import { ELO_START } from '../utils/elo.js'
 
 export const RACE_MAX_PLAYERS = 15
 export const RACE_MIN_PLAYERS = 2
@@ -170,7 +171,7 @@ export function computeScores(answers, q_count) {
 }
 
 export function useRaceRoom(code) {
-  const { user } = useAuth()
+  const { user, profile } = useAuth()
   const [room,         setRoom]         = useState(null)
   const [participants, setParticipants] = useState([])
   const [answers,      setAnswers]      = useState([])
@@ -286,30 +287,33 @@ export function useRaceRoom(code) {
     })
   }
 
-  async function createRoom({ isPublic = false, settings } = {}) {
+  async function createRoom({ isPublic = false, ranked = false, roomElo = null, settings } = {}) {
     if (!user) return null
     const code = generateCode()
     const phase_data = settings
       ? { settings: { ...DEFAULT_RACE_SETTINGS, ...settings } }
       : {}
     const { data, error } = await supabase
-      .from('race_rooms').insert({ code, host_id: user.id, is_public: isPublic, phase_data }).select().single()
+      .from('race_rooms').insert({
+        code, host_id: user.id, is_public: isPublic, ranked, room_elo: roomElo, phase_data,
+      }).select().single()
     if (error || !data) return null
     await supabase.from('race_participants').insert({ room_id: data.id, profile_id: user.id })
     return data.code
   }
 
-  // Matchmaking : rejoint un salon public ouvert, ou en crée un si aucun n'est dispo.
-  // Aucun code n'est requis — n'importe quel joueur connecté peut entrer.
-  async function joinPublicRoom() {
+  // Matchmaking générique : rejoint une salle publique ouverte (ranked ou non),
+  // ou en crée une. En ranked, on essaie d'apparier des ELO proches.
+  async function matchmake({ ranked }) {
     if (!user) return { error: 'Non connecté' }
-
-    // Salons publics encore en lobby, créés il y a moins de 30 min
+    const myElo = profile?.elo ?? ELO_START
     const since = new Date(Date.now() - 30 * 60 * 1000).toISOString()
+
     const { data: rooms } = await supabase
       .from('race_rooms')
       .select('*')
       .eq('is_public', true)
+      .eq('ranked', ranked)
       .eq('phase', 'lobby')
       .gte('created_at', since)
       .order('created_at', { ascending: true })
@@ -324,24 +328,33 @@ export function useRaceRoom(code) {
       const byRoom = {}
       for (const p of (parts ?? [])) (byRoom[p.room_id] ??= []).push(p.profile_id)
 
-      for (const r of rooms) {
-        const members = byRoom[r.id] ?? []
-        if (members.includes(user.id)) return { code: r.code }        // déjà dedans
-        // L'hôte doit toujours être présent (seul lui peut lancer/avancer via RLS)
-        const hostPresent = members.includes(r.host_id)
-        if (hostPresent && members.length < RACE_MAX_PLAYERS) {
-          const { error } = await supabase
-            .from('race_participants').insert({ room_id: r.id, profile_id: user.id })
-          if (!error) return { code: r.code }
+      // En ranked : bandes d'ELO croissantes. En casual : une seule passe (band ∞).
+      const bands = ranked ? [120, 300, Infinity] : [Infinity]
+      for (const band of bands) {
+        for (const r of rooms) {
+          const members = byRoom[r.id] ?? []
+          if (members.includes(user.id)) return { code: r.code }
+          const hostPresent = members.includes(r.host_id)
+          const eloOk = !ranked || Math.abs((r.room_elo ?? myElo) - myElo) <= band
+          if (hostPresent && eloOk && members.length < RACE_MAX_PLAYERS) {
+            const { error } = await supabase
+              .from('race_participants').insert({ room_id: r.id, profile_id: user.id })
+            if (!error) return { code: r.code }
+          }
         }
       }
     }
 
-    // Aucun salon dispo → on en crée un (le joueur en devient l'hôte)
-    const code = await createRoom({ isPublic: true })
+    // Aucune salle dispo → on en crée une
+    const code = await createRoom({ isPublic: true, ranked, roomElo: ranked ? myElo : null })
     if (!code) return { error: 'Erreur lors de la création du salon.' }
     return { code }
   }
+
+  // Salon public (casual) : tout le monde, sans ELO.
+  const joinPublicRoom = () => matchmake({ ranked: false })
+  // RANKED : appariement par ELO, gains/pertes d'ELO.
+  const joinRankedRoom = () => matchmake({ ranked: true })
 
   async function joinRoom(roomCode) {
     if (!user) return { error: 'Non connecté' }
@@ -382,6 +395,6 @@ export function useRaceRoom(code) {
   return {
     room, participants, answers, myAnswers, loading,
     isHost,
-    submitAnswer, hostAdvance, startGame, createRoom, joinRoom, joinPublicRoom, claimHost,
+    submitAnswer, hostAdvance, startGame, createRoom, joinRoom, joinPublicRoom, joinRankedRoom, claimHost,
   }
 }

@@ -20,6 +20,7 @@ import {
 import { THEMES } from '../data/themes.js'
 import Avatar from '../components/Avatar.jsx'
 import { awardXPOnce, recordGameOnce, raceXP } from '../utils/multiplayerXP.js'
+import { eloDeltas, applyEloOnce, ELO_START } from '../utils/elo.js'
 import { isOpenQuestion, isOrderQuestion } from '../data/questions.js'
 import { matchAnswer, checkOrder } from '../utils/answerMatch.js'
 import TextAnswerInput from '../components/TextAnswerInput.jsx'
@@ -113,7 +114,7 @@ export default function RaceGame() {
 
       {phase === 'lobby'    && <RaceLobby room={room} participants={participants} isHost={isHost} code={code} onStart={startGame} />}
       {phase === 'playing'  && <RacePlaying pd={pd} participants={participants} answers={answers} myAnswers={myAnswers} isHost={isHost} submitAnswer={submitAnswer} hostAdvance={hostAdvance} userId={user.id} isPublic={room.is_public} />}
-      {phase === 'finished' && <RaceFinished participants={participants} answers={answers} q_count={pd.q_count ?? Q_COUNT} questions={pd.questions ?? []} myAnswers={myAnswers} userId={user.id} roomId={room.id} isPublic={room.is_public} />}
+      {phase === 'finished' && <RaceFinished participants={participants} answers={answers} q_count={pd.q_count ?? Q_COUNT} questions={pd.questions ?? []} myAnswers={myAnswers} userId={user.id} roomId={room.id} isPublic={room.is_public} isRanked={room.ranked} />}
     </Shell>
   )
 }
@@ -167,7 +168,11 @@ function RaceLobby({ room, participants, isHost, code, onStart }) {
       <div className="text-center space-y-2">
         <img src="/logos/course-points.png" alt="Course aux Points" className="w-20 h-20 rounded-2xl object-cover mx-auto shadow-lg" draggable={false} />
         <h1 className="font-display text-4xl md:text-5xl tracking-wider">Course aux Points</h1>
-        {isPublic && (
+        {room.ranked ? (
+          <span className="inline-flex items-center gap-1.5 text-xs font-bold bg-yellow-500/15 text-yellow-400 px-3 py-1 rounded-full">
+            🏆 RANKED · gains et pertes d'ELO
+          </span>
+        ) : isPublic && (
           <span className="inline-flex items-center gap-1.5 text-xs font-semibold bg-green-500/15 text-green-400 px-3 py-1 rounded-full">
             🌍 Salon public · tout le monde peut rejoindre
           </span>
@@ -577,7 +582,8 @@ function Scoreboard({ participants, answers, q_count, currentUserId }) {
 }
 
 // ─── Écran final ───────────────────────────────────────────────
-function RaceFinished({ participants, answers, q_count, questions, myAnswers, userId, roomId, isPublic }) {
+function RaceFinished({ participants, answers, q_count, questions, myAnswers, userId, roomId, isPublic, isRanked }) {
+  const { profile } = useAuth()
   const scores = computeScores(answers, q_count)
   const ranked = [...participants]
     .map(p => ({ ...p, score: scores[p.profile_id] ?? 0 }))
@@ -615,6 +621,17 @@ function RaceFinished({ participants, answers, q_count, questions, myAnswers, us
     recordGameOnce(`race:${roomId}:${userId}`, 'race', myRank === 1, recordGame)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roomId, userId, myRank, myScore, isPublic])
+
+  // ── ELO (ranked uniquement) ──
+  const myEloDelta = (isRanked && myRank) ? (eloDeltas(fullRanked.length)[myIdx] ?? 0) : null
+  const eloRef = useRef(false)
+  useEffect(() => {
+    if (eloRef.current) return
+    if (!isRanked || !roomId || !userId || myRank == null) return
+    eloRef.current = true
+    applyEloOnce({ roomId, userId, currentElo: profile?.elo ?? ELO_START, delta: myEloDelta ?? 0 })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isRanked, roomId, userId, myRank])
 
   return (
     <div className="max-w-xl mx-auto px-4 py-10 space-y-6">
@@ -661,6 +678,13 @@ function RaceFinished({ participants, answers, q_count, questions, myAnswers, us
 
       {/* Récapitulatif des questions */}
       <RaceRecap questions={questions} myAnswers={myAnswers} q_count={q_count} />
+
+      {myEloDelta !== null && (
+        <div className={`text-center font-display text-2xl tracking-wider animate-pop ${
+          myEloDelta > 0 ? 'text-yellow-400' : myEloDelta < 0 ? 'text-red-400' : 'text-slate-400'}`}>
+          {myEloDelta > 0 ? `+${myEloDelta} ELO 🏆` : myEloDelta < 0 ? `${myEloDelta} ELO 📉` : '± 0 ELO'}
+        </div>
+      )}
 
       {xpEarnedRef.current > 0 && (
         <div className="text-center text-midi-accent font-bold text-lg animate-pop">

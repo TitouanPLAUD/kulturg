@@ -6,6 +6,7 @@ import { useTvRoom, gainForAnswer, TV_REQUIRED_PLAYERS } from '../hooks/useTvRoo
 import { JLRProvider, useJLR } from '../components/JLRAvatar.jsx'
 import Avatar from '../components/Avatar.jsx'
 import { awardXPOnce, recordGameOnce, tvXP } from '../utils/multiplayerXP.js'
+import { eloDeltas, applyEloOnce, ELO_START } from '../utils/elo.js'
 import { isOpenQuestion, isOrderQuestion } from '../data/questions.js'
 import { matchAnswer, checkOrder } from '../utils/answerMatch.js'
 import TextAnswerInput from '../components/TextAnswerInput.jsx'
@@ -155,7 +156,7 @@ function TvGameCore() {
         {phase === 'coup_fatal'         && <CoupFatalPhase {...props} />}
         {phase === 'coup_de_maitre'     && <CoupDeMaitrePhase {...props} />}
         {phase === 'etoile_mysterieuse' && <EtoileMysterieusePhase {...props} />}
-        {phase === 'finished'           && <FinishedPhase pd={pd} participants={participants} answers={answers} roomId={room.id} myProfileId={myProfileId} isPublic={room.is_public} />}
+        {phase === 'finished'           && <FinishedPhase pd={pd} participants={participants} answers={answers} roomId={room.id} myProfileId={myProfileId} isPublic={room.is_public} isRanked={room.ranked} />}
       </div>
     </TV>
   )
@@ -278,9 +279,11 @@ function LobbyPhase({ room, participants, isHost, onStart, code }) {
         <div className="text-center space-y-2">
           <img src="/logos/jeu-tv.png" alt="Jeu TV" className="w-20 h-20 rounded-2xl object-cover mx-auto shadow-lg" draggable={false} />
           <h1 className="font-display text-4xl md:text-5xl tracking-wider">Les 12 Coups de Midi</h1>
-          {isPublic
-            ? <span className="inline-flex items-center gap-1.5 text-xs font-semibold bg-yellow-500/15 text-yellow-400 px-3 py-1 rounded-full">🌍 Salon public · tout le monde peut rejoindre</span>
-            : <p className="text-slate-500 text-sm">Salle d'attente</p>}
+          {room.ranked
+            ? <span className="inline-flex items-center gap-1.5 text-xs font-bold bg-yellow-500/15 text-yellow-400 px-3 py-1 rounded-full">🏆 RANKED · gains et pertes d'ELO</span>
+            : isPublic
+              ? <span className="inline-flex items-center gap-1.5 text-xs font-semibold bg-green-500/15 text-green-400 px-3 py-1 rounded-full">🌍 Salon public · tout le monde peut rejoindre</span>
+              : <p className="text-slate-500 text-sm">Salle d'attente</p>}
         </div>
 
         {!isPublic && (
@@ -1093,10 +1096,11 @@ function EtoileMysterieusePhase({ pd, participants, answers, myAnswers, isHost, 
 }
 
 // ─── Finished ─────────────────────────────────────────────────
-function FinishedPhase({ pd, participants, answers, roomId, myProfileId, isPublic }) {
+function FinishedPhase({ pd, participants, answers, roomId, myProfileId, isPublic, isRanked }) {
   const [show, setShow] = useState(false)
   const { trigger } = useJLR()
   const { addXP, recordGame } = useGame()
+  const { profile } = useAuth()
 
   useEffect(() => {
     const t1 = setTimeout(() => setShow(true), 400)
@@ -1131,6 +1135,18 @@ function FinishedPhase({ pd, participants, answers, roomId, myProfileId, isPubli
     ...[...eliminated].reverse().map((pid, i) => ({ pid, rank: i + 2 })),
     { pid: maitre_id, rank: 1 },
   ].sort((a, b) => a.rank - b.rank)
+
+  // ── ELO (ranked uniquement) ──
+  const myRankEntry = rankings.find(r => r.pid === myProfileId)
+  const myEloDelta = (isRanked && myRankEntry) ? (eloDeltas(rankings.length)[myRankEntry.rank - 1] ?? 0) : null
+  const eloRef = useRef(false)
+  useEffect(() => {
+    if (eloRef.current) return
+    if (!isRanked || !roomId || !myProfileId || !myRankEntry) return
+    eloRef.current = true
+    applyEloOnce({ roomId, userId: myProfileId, currentElo: profile?.elo ?? ELO_START, delta: myEloDelta ?? 0 })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isRanked, roomId, myProfileId])
 
   const medals = ['🥇', '🥈', '🥉', '4️⃣']
 
@@ -1170,6 +1186,13 @@ function FinishedPhase({ pd, participants, answers, roomId, myProfileId, isPubli
             )
           })}
         </div>
+
+        {myEloDelta !== null && (
+          <div className={`text-center font-display text-2xl tracking-wider animate-pop ${
+            myEloDelta > 0 ? 'text-yellow-400' : myEloDelta < 0 ? 'text-red-400' : 'text-slate-400'}`}>
+            {myEloDelta > 0 ? `+${myEloDelta} ELO 🏆` : myEloDelta < 0 ? `${myEloDelta} ELO 📉` : '± 0 ELO'}
+          </div>
+        )}
 
         {xpEarnedRef.current > 0 && (
           <div className="text-center text-midi-accent font-bold text-lg animate-pop">

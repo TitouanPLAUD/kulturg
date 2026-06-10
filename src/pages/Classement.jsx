@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import { levelFromXP } from '../context/GameContext.jsx'
+import { ELO_START } from '../utils/elo.js'
 import { findEcole } from '../data/ecoles.js'
 import Avatar from '../components/Avatar.jsx'
 import SchoolBadge from '../components/SchoolBadge.jsx'
@@ -25,7 +26,7 @@ export default function Classement() {
 
       const { data: profiles } = await supabase
         .from('profiles')
-        .select('id, nickname, avatar, country, city, is_icam, school, total_xp, total_answered, total_correct')
+        .select('id, nickname, avatar, country, city, is_icam, school, elo, total_xp, total_answered, total_correct')
 
       if (!profiles) { setLoading(false); return }
 
@@ -38,11 +39,12 @@ export default function Classement() {
             ...p,
             school:   p.school || (p.is_icam ? 'icam' : null),
             xp,
+            elo:      p.elo ?? ELO_START,
             level:    levelFromXP(xp),
             accuracy: ans > 0 ? Math.round((cor / ans) * 100) : null,
           }
         })
-        .sort((a, b) => b.xp - a.xp)
+        .sort((a, b) => b.elo - a.elo)
 
       setRows(ranked)
       setLoading(false)
@@ -71,19 +73,21 @@ export default function Classement() {
       .sort((a, b) => a.ecole.label.localeCompare(b.ecole.label))
   }, [rows])
 
-  // Classement écoles : XP total cumulé par les membres
+  // Classement écoles : ELO moyen des membres
   const ecolesRanked = useMemo(() => {
     const m = {}
     for (const r of rows) {
-      if (!r.school || r.xp <= 0) continue
+      if (!r.school) continue
       const e = findEcole(r.school)
       if (!e) continue
-      if (!m[r.school]) m[r.school] = { ecole: e, xp: 0, count: 0, top: null }
-      m[r.school].xp    += r.xp
-      m[r.school].count += 1
-      if (!m[r.school].top || r.xp > m[r.school].top.xp) m[r.school].top = r
+      if (!m[r.school]) m[r.school] = { ecole: e, eloSum: 0, count: 0, top: null }
+      m[r.school].eloSum += r.elo
+      m[r.school].count  += 1
+      if (!m[r.school].top || r.elo > m[r.school].top.elo) m[r.school].top = r
     }
-    return Object.values(m).sort((a, b) => b.xp - a.xp)
+    return Object.values(m)
+      .map(g => ({ ...g, elo: Math.round(g.eloSum / g.count) }))
+      .sort((a, b) => b.elo - a.elo)
   }, [rows])
 
   const filtered = useMemo(() =>
@@ -105,7 +109,7 @@ export default function Classement() {
         <div>
           <h1 className="heading text-3xl">Classement</h1>
           <p className="text-slate-500 text-sm mt-1">
-            Classé par XP · {filtered.length} joueur{filtered.length !== 1 ? 's' : ''}
+            Classé par ELO · {filtered.length} joueur{filtered.length !== 1 ? 's' : ''}
           </p>
         </div>
         {user && (
@@ -185,7 +189,7 @@ export default function Classement() {
                 <span>Joueur</span>
                 <span className="hidden sm:block text-center">École</span>
                 <span className="hidden sm:block text-right">Réussite</span>
-                <span className="text-right">XP</span>
+                <span className="text-right">ELO</span>
               </div>
 
               {filtered.map((row, i) => {
@@ -199,7 +203,7 @@ export default function Classement() {
                       ${isMe ? 'bg-midi-accent/5 border-midi-accent/20' : 'hover:bg-white/3'}`}>
 
                     <span className="text-lg text-center w-8 shrink-0">
-                      {row.xp > 0 && i < 3
+                      {i < 3
                         ? medals[i]
                         : <span className="text-slate-500 text-sm font-mono">{i + 1}</span>}
                     </span>
@@ -227,10 +231,8 @@ export default function Classement() {
                       {row.accuracy !== null ? `${row.accuracy} %` : <span className="text-slate-600">—</span>}
                     </div>
 
-                    <div className="text-right tabular-nums font-bold min-w-[64px] text-midi-accent">
-                      {row.xp > 0
-                        ? row.xp.toLocaleString('fr-FR')
-                        : <span className="text-slate-600 font-normal text-sm">—</span>}
+                    <div className="text-right tabular-nums font-bold min-w-[64px] text-yellow-400">
+                      {row.elo.toLocaleString('fr-FR')}
                     </div>
                   </div>
                 )
@@ -249,7 +251,7 @@ export default function Classement() {
           ) : ecolesRanked.length === 0 ? (
             <div className="card p-10 text-center text-slate-500">
               <div className="text-4xl mb-3">🎓</div>
-              <p>Aucune école n'a encore marqué d'XP.</p>
+              <p>Aucune école classée pour l'instant.</p>
             </div>
           ) : (
             <div className="card overflow-hidden">
@@ -258,7 +260,7 @@ export default function Classement() {
                 <span>#</span>
                 <span>École</span>
                 <span className="hidden sm:block text-center">Joueurs</span>
-                <span className="text-right">XP</span>
+                <span className="text-right">ELO moy.</span>
               </div>
               {ecolesRanked.map((g, i) => (
                 <div key={g.ecole.value}
@@ -277,15 +279,15 @@ export default function Classement() {
                   <div className="hidden sm:block text-center text-slate-400 min-w-[60px] text-sm">
                     {g.count}
                   </div>
-                  <div className="text-right tabular-nums font-bold min-w-[64px] text-midi-accent">
-                    {g.xp.toLocaleString('fr-FR')}
+                  <div className="text-right tabular-nums font-bold min-w-[64px] text-yellow-400">
+                    {g.elo.toLocaleString('fr-FR')}
                   </div>
                 </div>
               ))}
             </div>
           )}
           <p className="text-xs text-slate-500 text-center">
-            XP total cumulé par les membres de l'école.
+            ELO moyen des membres de l'école.
           </p>
         </>
       )}
