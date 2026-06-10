@@ -113,7 +113,7 @@ export default function RaceGame() {
 
       {phase === 'lobby'    && <RaceLobby room={room} participants={participants} isHost={isHost} code={code} onStart={startGame} />}
       {phase === 'playing'  && <RacePlaying pd={pd} participants={participants} answers={answers} myAnswers={myAnswers} isHost={isHost} submitAnswer={submitAnswer} hostAdvance={hostAdvance} userId={user.id} isPublic={room.is_public} />}
-      {phase === 'finished' && <RaceFinished participants={participants} answers={answers} q_count={pd.q_count ?? Q_COUNT} questions={pd.questions ?? []} myAnswers={myAnswers} userId={user.id} roomId={room.id} />}
+      {phase === 'finished' && <RaceFinished participants={participants} answers={answers} q_count={pd.q_count ?? Q_COUNT} questions={pd.questions ?? []} myAnswers={myAnswers} userId={user.id} roomId={room.id} isPublic={room.is_public} />}
     </Shell>
   )
 }
@@ -577,7 +577,7 @@ function Scoreboard({ participants, answers, q_count, currentUserId }) {
 }
 
 // ─── Écran final ───────────────────────────────────────────────
-function RaceFinished({ participants, answers, q_count, questions, myAnswers, userId, roomId }) {
+function RaceFinished({ participants, answers, q_count, questions, myAnswers, userId, roomId, isPublic }) {
   const scores = computeScores(answers, q_count)
   const ranked = [...participants]
     .map(p => ({ ...p, score: scores[p.profile_id] ?? 0 }))
@@ -607,12 +607,14 @@ function RaceFinished({ participants, answers, q_count, questions, myAnswers, us
   useEffect(() => {
     if (xpEarnedRef.current !== null) return
     if (!roomId || !userId || !myRank) return
+    // XP uniquement en salon public (les parties privées ne rapportent rien)
+    if (!isPublic) { xpEarnedRef.current = 0; return }
     const amount = raceXP(myRank, myScore)
     xpEarnedRef.current = awardXPOnce(`race:${roomId}:${userId}`, amount, addXP)
     // Achievements : comptabilise la partie (victoire = 1er)
     recordGameOnce(`race:${roomId}:${userId}`, 'race', myRank === 1, recordGame)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [roomId, userId, myRank, myScore])
+  }, [roomId, userId, myRank, myScore, isPublic])
 
   return (
     <div className="max-w-xl mx-auto px-4 py-10 space-y-6">

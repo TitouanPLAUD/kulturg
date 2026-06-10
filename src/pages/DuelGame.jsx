@@ -415,14 +415,9 @@ function FinishedPhase({ room, profiles, answers, user }) {
   useEffect(() => { const t = setTimeout(() => setShow(true), 300); return () => clearTimeout(t) }, [])
 
   // Récompense XP — une seule fois, si le joueur a participé et qu'il y a un gagnant (pas d'égalité)
-  const xpEarnedRef = useRef(null)
-  useEffect(() => {
-    if (xpEarnedRef.current !== null || !room?.id || !user?.id) return
-    const wasParticipant = user.id === room.host_id || user.id === room.guest_id
-    if (!wasParticipant || winnerId == null) { xpEarnedRef.current = 0; return }
-    const amount = duelXP(isWinner)
-    xpEarnedRef.current = awardXPOnce(`duel:${room.id}:${user.id}`, amount, addXP)
-  }, [room?.id, user?.id, winnerId, isWinner, addXP])
+  // Pas de salon public en Frappe Express : aucune XP attribuée (parties
+  // 100 % privées par code → on garde l'XP réservée aux salons publics).
+  const xpEarnedRef = useRef(0)
 
   return (
     <div className="flex-1 flex flex-col items-center justify-center px-4 py-10 gap-8">

@@ -155,7 +155,7 @@ function TvGameCore() {
         {phase === 'coup_fatal'         && <CoupFatalPhase {...props} />}
         {phase === 'coup_de_maitre'     && <CoupDeMaitrePhase {...props} />}
         {phase === 'etoile_mysterieuse' && <EtoileMysterieusePhase {...props} />}
-        {phase === 'finished'           && <FinishedPhase pd={pd} participants={participants} answers={answers} roomId={room.id} myProfileId={myProfileId} />}
+        {phase === 'finished'           && <FinishedPhase pd={pd} participants={participants} answers={answers} roomId={room.id} myProfileId={myProfileId} isPublic={room.is_public} />}
       </div>
     </TV>
   )
@@ -1093,7 +1093,7 @@ function EtoileMysterieusePhase({ pd, participants, answers, myAnswers, isHost, 
 }
 
 // ─── Finished ─────────────────────────────────────────────────
-function FinishedPhase({ pd, participants, answers, roomId, myProfileId }) {
+function FinishedPhase({ pd, participants, answers, roomId, myProfileId, isPublic }) {
   const [show, setShow] = useState(false)
   const { trigger } = useJLR()
   const { addXP, recordGame } = useGame()
@@ -1111,18 +1111,20 @@ function FinishedPhase({ pd, participants, answers, roomId, myProfileId }) {
   const eliminated   = pd.eliminated ?? []
 
   // ── Récompense XP (une seule fois par partie / utilisateur) ──
+  // XP uniquement en salon public — les parties privées ne rapportent rien.
   const xpEarnedRef = useRef(null)
   useEffect(() => {
     if (!roomId || !myProfileId || xpEarnedRef.current !== null) return
     const wasParticipant = participants.some(p => p.profile_id === myProfileId)
     if (!wasParticipant) { xpEarnedRef.current = 0; return }
+    if (!isPublic)        { xpEarnedRef.current = 0; return }
     const isMaitre = myProfileId === maitre_id
     const amount = tvXP(isMaitre)
     const got = awardXPOnce(`tv:${roomId}:${myProfileId}`, amount, addXP)
     xpEarnedRef.current = got
     // Achievements : sacre de Maître de Midi (victoire = être le maître)
     recordGameOnce(`tv:${roomId}:${myProfileId}`, 'tv', isMaitre, recordGame)
-  }, [roomId, myProfileId, maitre_id, participants, addXP, recordGame])
+  }, [roomId, myProfileId, maitre_id, participants, addXP, recordGame, isPublic])
 
   // Ordre d'élimination (dernier éliminé = 2e, anté-dernier = 3e, etc.)
   const rankings = [
