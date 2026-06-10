@@ -185,11 +185,11 @@ export default function Classement() {
             <div className="card overflow-hidden">
               <div className="grid grid-cols-[2rem_1fr_auto_auto_auto] items-center gap-3 px-5 py-3
                 text-xs text-slate-500 uppercase tracking-wider border-b border-white/10">
-                <span>#</span>
+                <span className="w-8 text-center">#</span>
                 <span>Joueur</span>
-                <span className="hidden sm:block text-center">École</span>
-                <span className="hidden sm:block text-right">Réussite</span>
-                <span className="text-right">ELO</span>
+                <span className="hidden sm:block w-20 text-center">École</span>
+                <span className="hidden sm:block min-w-[60px] text-right">Réussite</span>
+                <span className="min-w-[64px] text-right">ELO</span>
               </div>
 
               {filtered.map((row, i) => {

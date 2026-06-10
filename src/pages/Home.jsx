@@ -90,11 +90,14 @@ export default function Home() {
                 </span>
               )
           )}
-          <div className="flex flex-wrap justify-center sm:justify-start gap-3">
-            {achievements.map(a => (
-              <AchievementBadge key={a.id} achievement={a} />
-            ))}
-          </div>
+          {/* Badges d'achievements masqués sur la version principale (code conservé) */}
+          {false && (
+            <div className="flex flex-wrap justify-center sm:justify-start gap-3">
+              {achievements.map(a => (
+                <AchievementBadge key={a.id} achievement={a} />
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
