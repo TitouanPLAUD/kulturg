@@ -94,37 +94,30 @@ function pickQuestions(settings) {
   const target = Math.min(s.count ?? Q_COUNT, pool.length)
 
   // Réserves par type, déjà mélangées
-  const buckets = {
-    order: pick(pool.filter(q => q.type === 'order'), pool.length),
-    open:  pick(pool.filter(q => q.type === 'open'),  pool.length),
-    mcq:   pick(pool.filter(q => !q.type && Array.isArray(q.choices)), pool.length),
-  }
-  // Curseurs de consommation
-  const idx = { order: 0, open: 0, mcq: 0 }
+  const orderQs = pick(pool.filter(q => q.type === 'order'), pool.length)
+  const openQs  = pick(pool.filter(q => q.type === 'open'),  pool.length)
+  const mcqQs   = pick(pool.filter(q => !q.type && Array.isArray(q.choices)), pool.length)
 
-  // Tirage round-robin équilibré, dans un ordre alterné mcq → open → order
-  const sequence = ['mcq', 'open', 'order']
   const result = []
-  let guard = 0
-  while (result.length < target && guard < target * 4) {
-    const t = sequence[guard % sequence.length]
-    guard++
-    if (idx[t] < buckets[t].length) {
-      result.push(buckets[t][idx[t]++])
-    }
-    // Si les 3 types sont épuisés, on complète avec ce qui reste du pool
-    if (idx.order >= buckets.order.length && idx.open >= buckets.open.length && idx.mcq >= buckets.mcq.length) {
-      break
-    }
-  }
+  // Peu de questions de classement (≈ 1 sur 10)
+  const orderTake = Math.min(orderQs.length, Math.floor(target / 10))
+  result.push(...orderQs.slice(0, orderTake))
+  // Une part de questions à réponse libre (≈ 30 %)
+  const openTake = Math.min(openQs.length, Math.round(target * 0.3))
+  result.push(...openQs.slice(0, openTake))
+  // Le reste en QCM
+  result.push(...mcqQs.slice(0, Math.max(0, target - result.length)))
 
   // Complément si on n'a pas atteint la cible (pool restreint par filtres)
   if (result.length < target) {
     const used = new Set(result.map(q => q.id))
-    result.push(...pick(pool.filter(q => !used.has(q.id)), target - result.length))
+    const rest = [...mcqQs, ...openQs, ...orderQs].filter(q => !used.has(q.id))
+    result.push(...rest.slice(0, target - result.length))
   }
 
-  return result.slice(0, target)
+  // Ordre des types ALÉATOIRE : on peut tomber sur plusieurs QCM d'affilée,
+  // puis plusieurs questions au clavier, etc.
+  return pick(result, target)
 }
 
 function generateCode() {
@@ -321,15 +314,15 @@ export function useRaceRoom(code) {
     if (!isHost || participants.length < minPlayers) return
     const settings  = { ...DEFAULT_RACE_SETTINGS, ...(room.phase_data?.settings ?? {}) }
     const questions = pickQuestions(settings)
-    // Injecte UNE question « liste » à une position aléatoire (une seule par partie)
+    // Injecte 2 questions « liste » (distinctes) à 2 positions aléatoires
     try {
       const listPool = await getListQuestions()
       if (listPool.length && questions.length) {
-        const listQ = listPool[Math.floor(Math.random() * listPool.length)]
-        const pos   = Math.floor(Math.random() * questions.length)
-        questions[pos] = { ...listQ }
+        const chosen    = pick(listPool, Math.min(2, listPool.length, questions.length))
+        const positions = pick(questions.map((_, i) => i), questions.length).slice(0, chosen.length)
+        positions.forEach((pos, k) => { questions[pos] = { ...chosen[k] } })
       }
-    } catch { /* si l'échec, on garde une partie 100% normale */ }
+    } catch { /* en cas d'échec, on garde une partie 100% normale */ }
     await supabase.from('race_answers').delete().eq('room_id', room.id)
     setAnswers([])
     return updateRoom({
