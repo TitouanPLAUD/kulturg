@@ -78,17 +78,18 @@ export default function Layout() {
           {user ? (
             <div className="flex items-center gap-2">
               <NavLink to="/profil"
-                className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-white/5 transition">
-                <span className="font-sans font-bold text-sm text-white tracking-wide">{profile?.nickname ?? ''}</span>
+                className="hidden sm:flex items-center gap-2.5 px-3 py-1.5 rounded-lg hover:bg-white/5 transition">
+                <div className="text-right leading-tight">
+                  <div className="font-sans font-bold text-sm text-white tracking-wide">{profile?.nickname ?? ''}</div>
+                  <div className="text-[11px] text-slate-500">
+                    Niv. {level} · <span className="font-semibold text-midi-accent">{xp} XP</span>
+                  </div>
+                </div>
                 <LevelRing pct={levelPct} level={level}>
                   <Avatar value={profile?.avatar} size={28} className="text-xl leading-none" />
                 </LevelRing>
               </NavLink>
-              <div className="hidden sm:block text-right">
-                <div className="text-xs text-slate-500">Niv. {level}</div>
-                <div className="text-xs font-semibold text-midi-accent">{xp} XP</div>
-              </div>
-              <ThemeToggle className="ml-3 sm:ml-6" />
+              <ThemeToggle className="ml-2 sm:ml-3" />
               <button
                 onClick={handleSignOut}
                 className="ml-2 px-3 py-1.5 rounded-lg text-xs text-slate-400 hover:bg-white/5 hover:text-white transition">
