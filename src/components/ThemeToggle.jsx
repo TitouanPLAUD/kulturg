@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useSettings } from '../context/SettingsContext.jsx'
 
 // Icônes (style lucide) en inline pour éviter une dépendance.
 function MoonIcon({ className = '' }) {
@@ -19,30 +19,28 @@ function SunIcon({ className = '' }) {
   )
 }
 
-function getInitial() {
-  try { return localStorage.getItem('theme') !== 'light' } // défaut : sombre
-  catch { return true }
-}
-
 export default function ThemeToggle({ className = '' }) {
-  const [isDark, setIsDark] = useState(getInitial)
+  const { settings, update } = useSettings()
 
-  useEffect(() => {
-    const root = document.documentElement
-    root.classList.toggle('dark', isDark)
-    root.classList.toggle('light', !isDark)
-    try { localStorage.setItem('theme', isDark ? 'dark' : 'light') } catch {}
-  }, [isDark])
+  // Thème effectif (gère le mode 'auto')
+  const effective = settings.theme === 'auto'
+    ? (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark')
+    : settings.theme
+  const isDark = effective === 'dark'
 
-  function toggle() { setIsDark(v => !v) }
+  function toggle() {
+    update({ theme: isDark ? 'light' : 'dark' })
+  }
 
   return (
     <div
       role="button"
       tabIndex={0}
       aria-label="Basculer le thème clair / sombre"
+      title={isDark ? 'Passer en mode clair' : 'Passer en mode sombre'}
       onClick={toggle}
       onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle() } }}
+      data-no-invert
       className={`flex w-16 h-8 p-1 rounded-full cursor-pointer transition-all duration-300 shrink-0 ${
         isDark ? 'bg-zinc-950 border border-zinc-800' : 'bg-white border border-zinc-200'
       } ${className}`}
