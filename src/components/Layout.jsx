@@ -6,6 +6,7 @@ import ChatWidget from './ChatWidget.jsx'
 import Avatar from './Avatar.jsx'
 import FeedbackButton from './FeedbackButton.jsx'
 import TestBanner from './TestBanner.jsx'
+import ThemeToggle from './ThemeToggle.jsx'
 
 const navLinks = [
   { to: '/',           label: 'Accueil',      emoji: '🏠', end: true },
@@ -87,9 +88,10 @@ export default function Layout() {
                 <div className="text-xs text-slate-500">Niv. {level}</div>
                 <div className="text-xs font-semibold text-midi-accent">{xp} XP</div>
               </div>
+              <ThemeToggle className="ml-3 sm:ml-6" />
               <button
                 onClick={handleSignOut}
-                className="ml-3 sm:ml-6 px-3 py-1.5 rounded-lg text-xs text-slate-400 hover:bg-white/5 hover:text-white transition">
+                className="ml-2 px-3 py-1.5 rounded-lg text-xs text-slate-400 hover:bg-white/5 hover:text-white transition">
                 Déco
               </button>
             </div>
