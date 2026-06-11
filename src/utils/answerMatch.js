@@ -78,6 +78,58 @@ export function checkOrder(proposed, canonical) {
   return proposed.every((x, i) => x === canonical[i])
 }
 
+// ── Matching pour les questions « liste » ────────────────────
+// En plus du match complet, on accepte un mot isolé (nom de famille ou prénom)
+// s'il identifie de façon UNIQUE un seul élément du pool (évite "Louis" ambigu).
+const PARTICLES = new Set([
+  'de', 'du', 'des', 'd', 'la', 'le', 'les', 'l', 'au', 'aux',
+  'von', 'van', 'der', 'di', 'da', 'del', 'el', 'al',
+])
+const isRoman = (t) => /^[ivxlcdm]+$/.test(t)
+
+function significantTokens(name) {
+  return normalize(name)
+    .split(' ')
+    .filter(t => t.length >= 3 && !PARTICLES.has(t) && !isRoman(t))
+}
+
+function tokenMatch(a, b) {
+  if (a === b) return true
+  const max = a.length <= 4 ? 0 : 1
+  return max > 0 && levenshtein(a, b, max) <= max
+}
+
+/**
+ * Renvoie l'index du pool correspondant à `typed`, ou -1.
+ *  1) match complet tolérant (matchAnswer)
+ *  2) sinon, mot isolé (nom/prénom) identifiant UN SEUL élément du pool
+ */
+export function matchListAnswer(typed, pool = []) {
+  if (typeof typed !== 'string' || !typed.trim()) return -1
+  const t = stripArticle(normalize(typed))
+  if (!t) return -1
+
+  // 1) Match exact (avec variantes pluriel/féminin) — pas de Levenshtein ici,
+  //    pour éviter qu'un prénom seul "comble" un numéro ("Charles" → "Charles V").
+  const tv = variants(t)
+  for (let i = 0; i < pool.length; i++) {
+    const c = stripArticle(normalize(pool[i]))
+    if (!c) continue
+    if (t === c) return i
+    const cv = variants(c)
+    for (const tx of tv) if (cv.has(tx)) return i
+  }
+
+  // 2) Mot isolé (nom de famille / prénom) identifiant UN SEUL élément du pool,
+  //    avec tolérance aux fautes au niveau du mot.
+  if (t.includes(' ')) return -1
+  const hits = []
+  for (let i = 0; i < pool.length; i++) {
+    if (significantTokens(pool[i]).some(tok => tokenMatch(t, tok))) hits.push(i)
+  }
+  return hits.length === 1 ? hits[0] : -1
+}
+
 // ── Match principal ──────────────────────────────────────────
 /**
  * Indique si `typed` correspond à `expected` ou l'une des `accepts`,

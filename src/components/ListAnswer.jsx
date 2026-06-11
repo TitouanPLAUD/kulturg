@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { matchAnswer } from '../utils/answerMatch.js'
+import { matchListAnswer } from '../utils/answerMatch.js'
 
 /**
  * Question « liste » : citer le plus de bonnes réponses possible en 30 s.
@@ -27,15 +27,14 @@ export default function ListAnswer({ pool = [], accepted = [], onChange, locked 
     setValue('')
 
     const taken = new Set(accepted.map(a => a.poolIdx))
-    // Première entrée du pool qui matche et pas encore prise
-    const idx = pool.findIndex((p, i) => !taken.has(i) && matchAnswer(v, p))
-    if (idx !== -1) {
+    const idx = matchListAnswer(v, pool)   // match complet OU nom isolé unique
+    if (idx === -1) {
+      setFlash('no')
+    } else if (taken.has(idx)) {
+      setFlash('dup')
+    } else {
       onChange([...accepted, { poolIdx: idx, label: pool[idx] }])
       setFlash('ok')
-    } else {
-      // Déjà trouvée ? (matche une entrée déjà prise) sinon fausse
-      const already = pool.some((p, i) => taken.has(i) && matchAnswer(v, p))
-      setFlash(already ? 'dup' : 'no')
     }
     setTimeout(() => setFlash(null), 800)
   }
