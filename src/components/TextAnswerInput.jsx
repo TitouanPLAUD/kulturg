@@ -28,10 +28,12 @@ export default function TextAnswerInput({
     if (!disableAll && !revealed && typed == null) inputRef.current?.focus()
   }, [disableAll, revealed, typed])
 
-  // Si on a déjà répondu, refléter la valeur transmise
+  // Si on a déjà répondu, refléter la valeur transmise.
+  // Sinon (nouvelle question), repartir d'un champ vide pour ne pas garder
+  // la réponse écrite à la question précédente.
   useEffect(() => {
-    if (typed != null) setValue(typed)
-  }, [typed])
+    setValue(typed ?? '')
+  }, [typed, answer])
 
   function handleSubmit(e) {
     e.preventDefault()
