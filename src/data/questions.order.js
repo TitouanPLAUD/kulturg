@@ -49,8 +49,8 @@ export const ORDER_QUESTIONS = [
   // ── SPORT ─────────────────────────────────────────
   { id: 'ord_sp1', theme: 'sport', difficulty: 2, q: "Classe ces distances de course de la plus courte à la plus longue", hint: "Plus courte → plus longue",
     items: ["100 mètres", "1 500 mètres", "10 000 mètres", "Marathon"] },
-  { id: 'ord_sp2', theme: 'sport', difficulty: 2, q: "Classe ces Coupes du Monde de football de la plus ancienne à la plus récente", hint: "Plus ancienne → plus récente",
-    items: ["France 1998", "Allemagne 2006", "Brésil 2014", "Qatar 2022"] },
+  { id: 'ord_sp2', theme: 'sport', difficulty: 2, q: "Classe ces pays hôtes de Coupe du Monde de football de la plus ancienne à la plus récente", hint: "Plus ancienne → plus récente",
+    items: ["France", "Allemagne", "Brésil", "Qatar"] },
   { id: 'ord_sp3', theme: 'sport', difficulty: 1, q: "Classe ces médailles de la plus prestigieuse à la moins prestigieuse", hint: "Plus prestigieuse → moins prestigieuse",
     items: ["Or", "Argent", "Bronze", "Aucune"] },
   { id: 'ord_sp4', theme: 'sport', difficulty: 3, q: "Classe ces sports par nombre de joueurs sur le terrain (du plus au moins)", hint: "Plus de joueurs → moins",
@@ -66,7 +66,7 @@ export const ORDER_QUESTIONS = [
 
   // ── CINÉMA ────────────────────────────────────────
   { id: 'ord_c1', theme: 'cinema', difficulty: 2, q: "Classe ces films Star Wars dans l'ordre de sortie au cinéma", hint: "Plus ancien → plus récent",
-    items: ["Un nouvel espoir (1977)", "Le Retour du Jedi (1983)", "La Menace fantôme (1999)", "Le Réveil de la Force (2015)"] },
+    items: ["Un nouvel espoir", "Le Retour du Jedi", "La Menace fantôme", "Le Réveil de la Force"] },
   { id: 'ord_c2', theme: 'cinema', difficulty: 3, q: "Classe ces films du Seigneur des Anneaux dans l'ordre de l'histoire", hint: "Début → fin",
     items: ["La Communauté de l'Anneau", "Les Deux Tours", "Le Retour du Roi", "(fin)"] },
   { id: 'ord_c3', theme: 'cinema', difficulty: 2, q: "Classe ces réalisateurs du plus ancien au plus récent (naissance)", hint: "Plus ancien → plus récent",
