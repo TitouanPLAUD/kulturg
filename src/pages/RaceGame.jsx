@@ -486,7 +486,7 @@ function RacePlaying({ pd, participants, answers, myAnswers, isHost, submitAnswe
               cls += 'border-white/10 bg-white/5 cursor-pointer hover:border-green-500/40 hover:bg-green-500/10 hover:-translate-y-0.5 hover:scale-[1.02] hover:shadow-lg hover:shadow-green-500/10 active:scale-95'
             }
             return (
-              <button key={idx} className={cls} onClick={() => pick(idx)}>
+              <button key={idx} data-testid="race-choice" className={cls} onClick={() => pick(idx)}>
                 <span className="text-xs opacity-50 mr-2">{['A', 'B', 'C', 'D'][idx]}</span>
                 {choice}
                 {revealed && isCorrect && <span className="ml-2 text-green-400">✓</span>}
@@ -554,7 +554,7 @@ function RacePlaying({ pd, participants, answers, myAnswers, isHost, submitAnswe
       {/* ── Sidebar classement ── */}
       <aside className="lg:w-72 lg:min-h-screen border-t border-white/10 lg:border-t-0 lg:border-l px-4 py-4 lg:py-8 shrink-0">
         <p className="text-xs text-slate-500 uppercase tracking-widest mb-3">📊 Classement</p>
-        <Scoreboard participants={participants} answers={answers} q_count={q_idx + (revealed ? 1 : 0)} currentUserId={userId} questions={questions} />
+        <Scoreboard participants={participants} answers={answers} q_count={q_idx + (revealed ? 1 : 0)} scoreQCount={questions.length} currentUserId={userId} questions={questions} />
       </aside>
     </div>
   )
@@ -646,8 +646,10 @@ function ListResults({ answers, q_idx, participants, userId, pool = [] }) {
 }
 
 // ─── Scoreboard sidebar ────────────────────────────────────────
-function Scoreboard({ participants, answers, q_count, currentUserId, questions = [] }) {
-  const scores  = computeScores(answers, q_count, questions)
+function Scoreboard({ participants, answers, q_count, currentUserId, questions = [], scoreQCount }) {
+  // Score calculé sur l'ensemble des questions (cohérent avec le podium final) ;
+  // la série (streak) reste basée sur la progression révélée.
+  const scores  = computeScores(answers, scoreQCount ?? q_count, questions)
   const streaks = computeStreaks(answers, q_count)
   const ranked = [...participants]
     .map(p => ({ ...p, score: scores[p.profile_id] ?? 0 }))
@@ -684,7 +686,8 @@ function Scoreboard({ participants, answers, q_count, currentUserId, questions =
 // ─── Écran final ───────────────────────────────────────────────
 function RaceFinished({ participants, answers, q_count, questions, myAnswers, userId, roomId, isPublic, isRanked }) {
   const { profile } = useAuth()
-  const scores = computeScores(answers, q_count, questions)
+  // Même base de calcul que la sidebar en cours de partie (nombre total de questions)
+  const scores = computeScores(answers, questions.length || q_count, questions)
   const ranked = [...participants]
     .map(p => ({ ...p, score: scores[p.profile_id] ?? 0 }))
     .sort((a, b) => b.score - a.score)
