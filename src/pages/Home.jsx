@@ -302,9 +302,9 @@ function Podium({ currentUserId, myElo = 0 }) {
   // Ordre d'affichage : 2e · 1er · 3e
   const slots = [top[1], top[0], top[2]]
   const meta = {
-    0: { medal: '/medals/gold.svg',   ms: 'h-12', h: 'h-28', ring: 'ring-yellow-400/60', grad: 'from-yellow-500/25 to-yellow-500/5',  txt: 'text-yellow-400' },
-    1: { medal: '/medals/silver.svg', ms: 'h-10', h: 'h-20', ring: 'ring-slate-300/50',  grad: 'from-slate-400/20 to-slate-400/5',    txt: 'text-slate-300' },
-    2: { medal: '/medals/bronze.svg', ms: 'h-9',  h: 'h-16', ring: 'ring-amber-700/50',  grad: 'from-amber-700/20 to-amber-700/5',    txt: 'text-amber-600' },
+    0: { medal: '/medals/medal-1.png', ms: 'h-14', h: 'h-28', ring: 'ring-yellow-400/60', grad: 'from-yellow-500/25 to-yellow-500/5',  txt: 'text-yellow-400' },
+    1: { medal: '/medals/medal-2.png', ms: 'h-12', h: 'h-20', ring: 'ring-slate-300/50',  grad: 'from-slate-400/20 to-slate-400/5',    txt: 'text-slate-300' },
+    2: { medal: '/medals/medal-3.png', ms: 'h-11', h: 'h-16', ring: 'ring-amber-700/50',  grad: 'from-amber-700/20 to-amber-700/5',    txt: 'text-amber-600' },
   }
   const rankBySlot = [1, 0, 2] // index dans meta pour chaque slot affiché
 
