@@ -47,7 +47,11 @@
       "Bash(rm -f /Users/titouanplaud/Documents/KULTURG/.claude/launch.json; rm -rf /tmp/loop-preview; echo \"preview nettoyé\")",
       "Bash(rm -f /Users/titouanplaud/Documents/KULTURG/.claude/launch.json; rm -rf /tmp/loop-preview)",
       "Bash(python3 -m py_compile test_pompe.py)",
-      "Bash(python3 -m py_compile test_moustache.py)"
+      "Bash(python3 -m py_compile test_moustache.py)",
+      "Bash(sips public/logo.png --getProperty pixelWidth --getProperty pixelHeight)",
+      "Bash(cp /tmp/favicon-256.png public/favicon.png)",
+      "Bash(cp /tmp/favicon-180.png public/apple-touch-icon.png)",
+      "Bash(cp /tmp/favicon-32.png  public/favicon-32x32.png)"
     ]
   }
 }
