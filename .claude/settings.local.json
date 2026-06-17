@@ -38,7 +38,16 @@
       "Bash(cp \"/Users/titouanplaud/Library/Mobile Documents/com~apple~CloudDocs/Documents/ICAM/A4/Projet Mécatronique/PROJET_CLAUDE_CODE/index.html\" /tmp/loop-preview/ && echo \"OK\")",
       "Bash(rm -f /Users/titouanplaud/Documents/KULTURG/.claude/launch.json)",
       "Bash(rm -rf /tmp/loop-preview)",
-      "Bash(python3 -m py_compile loop.py)"
+      "Bash(python3 -m py_compile loop.py)",
+      "Bash(python3 -c ' *)",
+      "Bash(python3 - index.html)",
+      "Bash(node --check /tmp/_chk.js)",
+      "Bash(rm -f /tmp/_chk.js)",
+      "Bash(rm -rf __pycache__)",
+      "Bash(rm -f /Users/titouanplaud/Documents/KULTURG/.claude/launch.json; rm -rf /tmp/loop-preview; echo \"preview nettoyé\")",
+      "Bash(rm -f /Users/titouanplaud/Documents/KULTURG/.claude/launch.json; rm -rf /tmp/loop-preview)",
+      "Bash(python3 -m py_compile test_pompe.py)",
+      "Bash(python3 -m py_compile test_moustache.py)"
     ]
   }
 }
