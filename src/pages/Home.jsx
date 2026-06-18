@@ -135,18 +135,18 @@ export default function Home() {
           </div>
           <div className="flex-1 grid grid-rows-2 gap-4">
             <SplitGameCard
-              user={user} emoji="📺" logo="/logos/jeu-tv.png" title="Jeu TV"
-              desc="À 4 joueurs : reproduction de la mécanique télé en 4 phases."
-              tone="from-amber-500 to-orange-600"
-              useHook={() => useTvRoom(null)} route="tv"
-              highlight="#4b8ef8" highlightSubtle="#a7c4ff"
-            />
-            <SplitGameCard
               user={user} emoji="🏁" logo="/logos/course-points.png" title="Course aux Points"
               desc="2 à 15 joueurs : le plus rapide pour scorer un max."
               tone="from-green-500 to-emerald-600"
               useHook={() => useRaceRoom(null)} route="race"
               highlight="#4ade80" highlightSubtle="#bbf7d0"
+            />
+            <SplitGameCard
+              user={user} emoji="📺" logo="/logos/jeu-tv.png" title="Jeu TV"
+              desc="À 4 joueurs : reproduction de la mécanique télé en 4 phases."
+              tone="from-amber-500 to-orange-600"
+              useHook={() => useTvRoom(null)} route="tv"
+              highlight="#4b8ef8" highlightSubtle="#a7c4ff"
             />
           </div>
         </section>
